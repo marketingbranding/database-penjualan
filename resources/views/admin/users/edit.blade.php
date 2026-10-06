@@ -1,0 +1,19 @@
+<x-app-layout>
+    <x-slot name="header"><h2 class="text-xl font-semibold leading-tight text-gray-800">Akses {{ $user->name }}</h2></x-slot>
+    <div class="py-10"><div class="mx-auto grid max-w-5xl gap-6 px-4 sm:px-6 lg:px-8">
+        @if (session('status'))<div class="rounded-md bg-emerald-50 p-4 text-sm text-emerald-700">Akses pengguna berhasil diperbarui.</div>@endif
+        <form method="POST" action="{{ route('admin.users.update', $user) }}" class="grid gap-6">@csrf @method('PUT')
+            <div class="bg-white p-6 shadow-sm sm:rounded-lg"><h3 class="font-semibold text-gray-900">Role global</h3><p class="mt-1 text-sm text-gray-500">Role ini berlaku di seluruh tim.</p><div class="mt-4 grid gap-3 sm:grid-cols-3">@foreach($globalRoles as $role)<label class="flex items-center gap-3 rounded-md border border-gray-200 p-3"><input type="checkbox" name="global_role_ids[]" value="{{ $role->id }}" class="rounded border-gray-300 text-indigo-600" @checked(in_array($role->id, old('global_role_ids', $user->globalRoles->modelKeys())))><span class="text-sm font-medium text-gray-700">{{ $role->name }}</span></label>@endforeach</div><x-input-error class="mt-3" :messages="$errors->get('global_role_ids')"/></div>
+            <div class="bg-white p-6 shadow-sm sm:rounded-lg"><h3 class="font-semibold text-gray-900">Keanggotaan dan role tim</h3><div class="mt-4 grid gap-4">
+                @foreach($teams as $team)
+                    @php($isMember = in_array($team->id, old('team_ids', $user->teams->modelKeys())))
+                    <div class="rounded-lg border border-gray-200 p-4"><div class="flex flex-wrap items-center justify-between gap-3"><label class="flex items-center gap-3"><input type="checkbox" name="team_ids[]" value="{{ $team->id }}" class="rounded border-gray-300 text-indigo-600" @checked($isMember)><span class="font-semibold text-gray-900">{{ $team->name }}</span></label><label class="flex items-center gap-2 text-sm text-gray-600"><input type="radio" name="default_team_id" value="{{ $team->id }}" @checked((string) old('default_team_id', $user->teams->firstWhere('pivot.is_default', true)?->id) === (string) $team->id)>Tim default</label></div>
+                        <div class="mt-3 flex flex-wrap gap-4">@foreach($teamRoles->get($team->id, collect()) as $role)<label class="flex items-center gap-2 text-sm text-gray-600"><input type="checkbox" name="team_role_ids[{{ $team->id }}][]" value="{{ $role->id }}" class="rounded border-gray-300 text-indigo-600" @checked(in_array($role->id, old("team_role_ids.{$team->id}", $teamRoleIds->get($team->id, []))))>{{ $role->name }}</label>@endforeach</div>
+                    </div>
+                @endforeach
+            </div><x-input-error class="mt-3" :messages="$errors->get('team_ids')"/><x-input-error class="mt-3" :messages="$errors->get('team_role_ids')"/></div>
+            <div class="flex justify-end"><x-primary-button>Simpan akses</x-primary-button></div>
+        </form>
+        @can('users.delete')<div class="border border-red-200 bg-white p-6 shadow-sm sm:rounded-lg"><x-input-error class="mb-3" :messages="$errors->get('user')"/><form method="POST" action="{{ route('admin.users.destroy', $user) }}">@csrf @method('DELETE')<x-danger-button onclick="return confirm('Hapus pengguna ini?')">Hapus pengguna</x-danger-button></form></div>@endcan
+    </div></div>
+</x-app-layout>

@@ -1,0 +1,20 @@
+@import 'tailwindcss';
+@config '../../tailwind.config.js';
+
+:root {
+    color-scheme: light dark;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+body {
+    min-width: 0;
+    overflow-x: hidden;
+}
+
+[x-cloak] {
+    display: none !important;
+}

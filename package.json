@@ -1,0 +1,22 @@
+{
+    "$schema": "https://www.schemastore.org/package.json",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "vite build",
+        "dev": "vite"
+    },
+    "devDependencies": {
+        "@tailwindcss/forms": "0.5.2",
+        "@tailwindcss/postcss": "4.3.3",
+        "alpinejs": "3.15.12",
+        "concurrently": "9.0.1",
+        "laravel-vite-plugin": "3.1.0",
+        "postcss": "8.5.26",
+        "tailwindcss": "4.3.3",
+        "vite": "8.0.16"
+    },
+    "dependencies": {
+        "sortablejs": "1.15.7"
+    }
+}

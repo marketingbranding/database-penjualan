@@ -1,0 +1,19 @@
+<x-app-layout>
+    <x-slot name="header"><h2 class="text-xl font-semibold leading-tight text-gray-800">Edit tim</h2></x-slot>
+    <div class="py-10"><div class="mx-auto grid max-w-3xl gap-6 px-4 sm:px-6 lg:px-8">
+        @if (session('status'))<div class="rounded-md bg-emerald-50 p-4 text-sm text-emerald-700">Perubahan berhasil disimpan.</div>@endif
+        <div class="bg-white p-6 shadow-sm sm:rounded-lg">
+            <form method="POST" action="{{ route('admin.teams.update', $team) }}" class="grid gap-6">
+                @csrf @method('PUT')
+                @include('admin.teams._form')
+                <div class="flex justify-end"><x-primary-button>Simpan perubahan</x-primary-button></div>
+            </form>
+        </div>
+        @can('teams.delete')
+            <div class="border border-red-200 bg-white p-6 shadow-sm sm:rounded-lg">
+                <x-input-error class="mb-3" :messages="$errors->get('team')" />
+                <form method="POST" action="{{ route('admin.teams.destroy', $team) }}">@csrf @method('DELETE')<x-danger-button onclick="return confirm('Hapus tim ini?')">Hapus tim</x-danger-button></form>
+            </div>
+        @endcan
+    </div></div>
+</x-app-layout>

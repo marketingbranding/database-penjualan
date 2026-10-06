@@ -1,0 +1,8 @@
+<x-app-layout>
+    <x-slot name="header"><div class="flex items-center justify-between gap-4"><h2 class="text-xl font-semibold leading-tight text-gray-800">Pengguna</h2>@can('users.create')<a href="{{ route('admin.users.create') }}" class="rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700">Tambah pengguna</a>@endcan</div></x-slot>
+    <div class="py-10"><div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"><div class="overflow-hidden bg-white shadow-sm sm:rounded-lg"><div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 text-sm"><thead class="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500"><tr><th class="px-6 py-3">Pengguna</th><th class="px-6 py-3">Role global</th><th class="px-6 py-3">Tim</th><th class="px-6 py-3"></th></tr></thead>
+            <tbody class="divide-y divide-gray-100">@forelse($users as $user)<tr><td class="px-6 py-4"><div class="font-semibold text-gray-900">{{ $user->name }}</div><div class="text-gray-500">{{ $user->email }}</div></td><td class="px-6 py-4 text-gray-600">{{ $user->globalRoles->pluck('name')->join(', ') ?: '-' }}</td><td class="px-6 py-4 text-gray-600">{{ $user->teams->pluck('name')->join(', ') ?: '-' }}</td><td class="px-6 py-4 text-right">@can('users.update')<a href="{{ route('admin.users.edit', $user) }}" class="font-semibold text-indigo-600 hover:text-indigo-900">Kelola akses</a>@endcan</td></tr>@empty<tr><td colspan="4" class="px-6 py-10 text-center text-gray-500">Belum ada pengguna.</td></tr>@endforelse</tbody>
+        </table>
+    </div></div><div class="mt-6">{{ $users->links() }}</div></div></div>
+</x-app-layout>
