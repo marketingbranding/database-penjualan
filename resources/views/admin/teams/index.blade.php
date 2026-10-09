@@ -14,19 +14,21 @@
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200 text-sm">
                         <thead class="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                            <tr><th class="px-6 py-3">Tim</th><th class="px-6 py-3">Induk</th><th class="px-6 py-3">Anggota</th><th class="px-6 py-3">Status</th><th class="px-6 py-3"></th></tr>
+                            <tr><th class="px-6 py-3">Tim</th><th class="px-6 py-3">Cabang</th><th class="px-6 py-3">SPV</th><th class="px-6 py-3">Koordinator</th><th class="px-6 py-3">Anggota</th><th class="px-6 py-3">Status</th><th class="px-6 py-3"></th></tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
                             @forelse ($teams as $team)
                                 <tr>
                                     <td class="px-6 py-4"><div class="font-semibold text-gray-900">{{ $team->name }}</div><div class="text-gray-500">{{ $team->code }}</div></td>
-                                    <td class="px-6 py-4 text-gray-600">{{ $team->parent?->name ?? '-' }}</td>
+                                    <td class="px-6 py-4 text-gray-600">{{ $team->branch?->name ?? '-' }}</td>
+                                    <td class="px-6 py-4 text-gray-600">{{ $team->supervisor?->name ?? '-' }}</td>
+                                    <td class="px-6 py-4 text-gray-600">{{ $team->coordinator?->name ?? '-' }}</td>
                                     <td class="px-6 py-4 text-gray-600">{{ $team->users_count }}</td>
                                     <td class="px-6 py-4"><span class="rounded-full px-2 py-1 text-xs font-semibold {{ $team->is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600' }}">{{ $team->is_active ? 'Aktif' : 'Nonaktif' }}</span></td>
                                     <td class="px-6 py-4 text-right">@can('teams.update')<a href="{{ route('admin.teams.edit', $team) }}" class="font-semibold text-indigo-600 hover:text-indigo-900">Edit</a>@endcan</td>
                                 </tr>
                             @empty
-                                <tr><td colspan="5" class="px-6 py-10 text-center text-gray-500">Belum ada tim.</td></tr>
+                                <tr><td colspan="7" class="px-6 py-10 text-center text-gray-500">Belum ada tim.</td></tr>
                             @endforelse
                         </tbody>
                     </table>

@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['parent_id', 'code', 'name', 'is_active'])]
+#[Fillable(['parent_id', 'branch_id', 'supervisor_id', 'coordinator_id', 'code', 'name', 'is_active'])]
 class Team extends Model
 {
     /** @use HasFactory<TeamFactory> */
@@ -24,6 +24,21 @@ class Team extends Model
     public function children(): HasMany
     {
         return $this->hasMany(self::class, 'parent_id');
+    }
+
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
+    public function supervisor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'supervisor_id');
+    }
+
+    public function coordinator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'coordinator_id');
     }
 
     public function users(): BelongsToMany

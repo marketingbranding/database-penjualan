@@ -26,6 +26,24 @@ class TeamContextTest extends TestCase
             ->assertSessionHas('active_team_id', $team->id);
     }
 
+    public function test_admin_can_create_team_with_an_automatic_code(): void
+    {
+        Rbac::provision();
+        $admin = User::factory()->create();
+        $role = Role::query()->whereNull('team_id')->where('name', 'super_admin')->firstOrFail();
+        $admin->globalRoles()->attach($role);
+
+        $this->actingAs($admin)
+            ->post(route('admin.teams.store'), [
+                'name' => 'Sales Magelang',
+                'parent_id' => null,
+                'is_active' => true,
+            ])
+            ->assertRedirect();
+
+        $this->assertSame('TEAM-001', Team::query()->firstOrFail()->code);
+    }
+
     public function test_user_cannot_switch_to_another_users_team(): void
     {
         $team = Team::factory()->create();

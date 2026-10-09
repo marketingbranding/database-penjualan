@@ -19,6 +19,8 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call(RolePermissionSeeder::class);
+        $this->call(BankSeeder::class);
+        $this->call(LeadTimeTargetSeeder::class);
 
         $team = Team::query()->firstOrCreate(
             ['code' => 'GENERAL'],

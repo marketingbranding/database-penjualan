@@ -7,12 +7,14 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable(['branch_id', 'reports_to_id', 'name', 'email', 'password'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -24,6 +26,41 @@ class User extends Authenticatable
         return $this->belongsToMany(Team::class)
             ->withPivot('is_default')
             ->withTimestamps();
+    }
+
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
+    public function reportsTo(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'reports_to_id');
+    }
+
+    public function directReports(): HasMany
+    {
+        return $this->hasMany(self::class, 'reports_to_id');
+    }
+
+    public function salesAgendas(): HasMany
+    {
+        return $this->hasMany(SalesAgenda::class, 'created_by');
+    }
+
+    public function leads(): HasMany
+    {
+        return $this->hasMany(Lead::class, 'sales_pic_id');
+    }
+
+    public function createdLeads(): HasMany
+    {
+        return $this->hasMany(Lead::class, 'created_by');
+    }
+
+    public function canAccessAllBranches(): bool
+    {
+        return $this->hasGlobalRole('super_admin');
     }
 
     public function globalRoles(): BelongsToMany

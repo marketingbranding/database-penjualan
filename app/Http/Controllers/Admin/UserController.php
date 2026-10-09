@@ -3,11 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\BulkUserRequest;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserAccessRequest;
+use App\Models\Branch;
 use App\Models\Role;
 use App\Models\Team;
 use App\Models\User;
+use App\Notifications\BranchAssignmentChangedNotification;
+use App\Support\AuditLogger;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -21,12 +25,29 @@ class UserController extends Controller
      */
     public function index(): View
     {
-        $users = User::query()
-            ->with(['teams', 'globalRoles'])
-            ->orderBy('name')
-            ->paginate(20);
+        $search = trim((string) request('search'));
+        $branchId = request()->integer('branch_id') ?: null;
+        $globalRoleId = request()->integer('global_role_id') ?: null;
 
-        return view('admin.users.index', compact('users'));
+        $users = User::query()
+            ->with(['branch', 'teams', 'globalRoles'])
+            ->when($search !== '', fn ($query) => $query->where(fn ($query) => $query
+                ->where('name', 'like', "%{$search}%")
+                ->orWhere('email', 'like', "%{$search}%")))
+            ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->when($globalRoleId, fn ($query) => $query->whereHas('globalRoles', fn ($query) => $query->whereKey($globalRoleId)))
+            ->orderBy('name')
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('admin.users.index', [
+            'users' => $users,
+            'branches' => Branch::query()->orderBy('name')->get(),
+            'globalRoles' => Role::query()->whereNull('team_id')->orderBy('name')->get(),
+            'search' => $search,
+            'branchId' => $branchId,
+            'globalRoleId' => $globalRoleId,
+        ]);
     }
 
     /**
@@ -34,7 +55,9 @@ class UserController extends Controller
      */
     public function create(): View
     {
-        return view('admin.users.create');
+        return view('admin.users.create', [
+            'branches' => Branch::query()->where('is_active', true)->orderBy('name')->get(),
+        ]);
     }
 
     /**
@@ -52,8 +75,12 @@ class UserController extends Controller
      */
     public function edit(User $user): View
     {
+        $actor = request()->user();
+        $branchId = $actor->canAccessAllBranches() ? null : $actor->branch_id;
+
         $teams = Team::query()
             ->with(['users' => fn ($query) => $query->whereKey($user)])
+            ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
@@ -66,11 +93,17 @@ class UserController extends Controller
             ->map(fn ($rows) => $rows->pluck('role_id')->map(fn ($id) => (int) $id)->all());
 
         return view('admin.users.edit', [
-            'user' => $user->load(['teams', 'globalRoles']),
+            'user' => $user->load(['teams', 'globalRoles', 'reportsTo']),
             'teams' => $teams,
             'globalRoles' => Role::query()->whereNull('team_id')->orderBy('name')->get(),
             'teamRoles' => Role::query()->whereNotNull('team_id')->orderBy('name')->get()->groupBy('team_id'),
             'teamRoleIds' => $teamRoleIds,
+            'branches' => Branch::query()->where('is_active', true)->orderBy('name')->get(),
+            'supervisors' => User::query()
+                ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+                ->whereKeyNot($user)
+                ->orderBy('name')
+                ->get(),
         ]);
     }
 
@@ -80,6 +113,13 @@ class UserController extends Controller
     public function update(UpdateUserAccessRequest $request, User $user): RedirectResponse
     {
         $data = $request->validated();
+        $previousBranchId = $user->branch_id;
+        $previousAccess = [
+            'branch_id' => $user->branch_id,
+            'reports_to_id' => $user->reports_to_id,
+            'global_role_ids' => $user->globalRoles->modelKeys(),
+            'team_ids' => $user->teams()->pluck('teams.id')->all(),
+        ];
         $teamIds = collect($data['team_ids'] ?? [])->map(fn ($id) => (int) $id)->unique();
         $globalRoleIds = collect($data['global_role_ids'] ?? [])->map(fn ($id) => (int) $id)->unique();
         $teamRoleIds = collect($data['team_role_ids'] ?? []);
@@ -96,6 +136,23 @@ class UserController extends Controller
         }
 
         $superAdminRole = Role::query()->whereNull('team_id')->where('name', 'super_admin')->firstOrFail();
+        $branchRoleIds = Role::query()->whereNull('team_id')->where('name', '!=', 'super_admin')->pluck('id');
+
+        if ($globalRoleIds->contains(fn ($id) => $branchRoleIds->contains($id)) && empty($data['branch_id'])) {
+            throw ValidationException::withMessages([
+                'branch_id' => 'Role cabang wajib ditugaskan ke satu cabang.',
+            ]);
+        }
+
+        if (! empty($data['reports_to_id'])) {
+            $supervisor = User::query()->findOrFail((int) $data['reports_to_id']);
+
+            if (! empty($data['branch_id']) && $supervisor->branch_id !== (int) $data['branch_id']) {
+                throw ValidationException::withMessages([
+                    'reports_to_id' => 'Atasan harus berada di cabang yang sama.',
+                ]);
+            }
+        }
 
         if ($user->hasGlobalRole('super_admin')
             && ! $globalRoleIds->contains($superAdminRole->getKey())
@@ -106,6 +163,10 @@ class UserController extends Controller
         }
 
         DB::transaction(function () use ($data, $globalRoleIds, $teamIds, $teamRoleIds, $user): void {
+            $user->update([
+                'branch_id' => $data['branch_id'] ?? null,
+                'reports_to_id' => $data['reports_to_id'] ?? null,
+            ]);
             $user->teams()->sync($teamIds->mapWithKeys(fn (int $teamId): array => [
                 $teamId => ['is_default' => $teamId === (int) ($data['default_team_id'] ?? 0)],
             ])->all());
@@ -126,7 +187,72 @@ class UserController extends Controller
         setPermissionsTeamId(session('active_team_id'));
         $user->unsetRelation('globalRoles')->unsetRelation('roles')->unsetRelation('permissions');
 
+        if ($previousBranchId !== $user->fresh()->branch_id) {
+            $user->notify(new BranchAssignmentChangedNotification($user->branch));
+        }
+
+        AuditLogger::record($user, 'access_updated', $previousAccess, [
+            'branch_id' => $user->branch_id,
+            'reports_to_id' => $user->reports_to_id,
+            'global_role_ids' => $globalRoleIds->all(),
+            'team_ids' => $teamIds->all(),
+        ], 'Akses pengguna diperbarui');
+
         return back()->with('status', 'user-access-updated');
+    }
+
+    /**
+     * Apply a bulk action to the selected users.
+     */
+    public function bulk(BulkUserRequest $request): RedirectResponse
+    {
+        $action = $request->validated('action');
+        $current = request()->user();
+        $users = User::query()
+            ->with('globalRoles')
+            ->whereKey(collect($request->validated('ids'))->map(fn ($id) => (int) $id)->unique())
+            ->get();
+
+        if ($action === 'assign-branch') {
+            abort_unless($current->can('users.update'), 403);
+
+            $branchId = (int) $request->validated('branch_id');
+            $assigned = 0;
+
+            foreach ($users as $user) {
+                if ($user->branch_id !== $branchId) {
+                    $user->update(['branch_id' => $branchId]);
+                    $assigned++;
+                }
+            }
+
+            return back()->with('status', 'users-branch-assigned')->with('count', $assigned);
+        }
+
+        abort_unless($current->can('users.delete'), 403);
+
+        $superAdminRole = Role::query()->whereNull('team_id')->where('name', 'super_admin')->firstOrFail();
+        $superAdminCount = $superAdminRole->globalUsers()->count();
+        $deleted = 0;
+        $skipped = 0;
+
+        foreach ($users as $user) {
+            if ($user->is($current)
+                || ($user->hasGlobalRole('super_admin') && $superAdminCount <= 1)) {
+                $skipped++;
+
+                continue;
+            }
+
+            $user->delete();
+            $deleted++;
+        }
+
+        return redirect()
+            ->route('admin.users.index')
+            ->with('status', 'users-deleted')
+            ->with('count', $deleted)
+            ->with('skipped', $skipped);
     }
 
     /**

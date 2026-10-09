@@ -17,7 +17,7 @@ class ModuleNavigationTest extends TestCase
     {
         Rbac::provision();
         $admin = User::factory()->create();
-        $role = Role::query()->whereNull('team_id')->where('name', 'admin')->firstOrFail();
+        $role = Role::query()->whereNull('team_id')->where('name', 'super_admin')->firstOrFail();
         $admin->globalRoles()->attach($role);
 
         $routes = [
@@ -45,7 +45,7 @@ class ModuleNavigationTest extends TestCase
     {
         Rbac::provision();
         $admin = User::factory()->create();
-        $role = Role::query()->whereNull('team_id')->where('name', 'admin')->firstOrFail();
+        $role = Role::query()->whereNull('team_id')->where('name', 'super_admin')->firstOrFail();
         $admin->globalRoles()->attach($role);
 
         $this->actingAs($admin)
@@ -79,24 +79,29 @@ class ModuleNavigationTest extends TestCase
         $this->actingAs($user)->get(route('admin.branches.index'))->assertForbidden();
     }
 
-    public function test_supervisor_can_open_sales_process_but_not_consumer_data(): void
+    public function test_koordinator_can_open_dashboard_but_not_sales_process_or_consumer_data(): void
     {
         Rbac::provision();
         $team = Team::factory()->create();
         Rbac::provisionTeam($team);
-        $supervisor = User::factory()->create();
-        $supervisor->teams()->attach($team);
+        $koordinator = User::factory()->create();
+        $koordinator->teams()->attach($team);
 
         setPermissionsTeamId($team->id);
-        $role = Role::query()->where('team_id', $team->id)->where('name', 'supervisor')->firstOrFail();
-        $supervisor->assignRole($role);
+        $role = Role::query()->where('team_id', $team->id)->where('name', 'koordinator_sales')->firstOrFail();
+        $koordinator->assignRole($role);
 
-        $this->actingAs($supervisor)
+        $this->actingAs($koordinator)
             ->withSession(['active_team_id' => $team->id])
-            ->get(route('sales-process.bi-checking'))
+            ->get(route('dashboard'))
             ->assertOk();
 
-        $this->actingAs($supervisor)
+        $this->actingAs($koordinator)
+            ->withSession(['active_team_id' => $team->id])
+            ->get(route('sales-process.bi-checking'))
+            ->assertForbidden();
+
+        $this->actingAs($koordinator)
             ->withSession(['active_team_id' => $team->id])
             ->get(route('consumers.index'))
             ->assertForbidden();

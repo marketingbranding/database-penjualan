@@ -24,6 +24,8 @@ class UpdateUserAccessRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'branch_id' => ['nullable', 'integer', Rule::exists('branches', 'id')->where('is_active', true)],
+            'reports_to_id' => ['nullable', 'integer', Rule::exists('users', 'id')],
             'team_ids' => ['array'],
             'team_ids.*' => ['integer', Rule::exists('teams', 'id')->where('is_active', true)],
             'default_team_id' => ['nullable', 'integer', Rule::in($this->input('team_ids', []))],

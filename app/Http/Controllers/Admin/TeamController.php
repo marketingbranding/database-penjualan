@@ -5,7 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreTeamRequest;
 use App\Http\Requests\UpdateTeamRequest;
+use App\Models\Branch;
 use App\Models\Team;
+use App\Models\User;
+use App\Support\CodeGenerator;
 use App\Support\Rbac;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -19,7 +22,11 @@ class TeamController extends Controller
     public function index(): View
     {
         $teams = Team::query()
-            ->with('parent')
+            ->with(['parent', 'branch', 'supervisor', 'coordinator'])
+            ->when(! request()->user()->canAccessAllBranches(), fn ($query) => $query->where(
+                'branch_id',
+                request()->user()->branch_id,
+            ))
             ->withCount(['users', 'children'])
             ->orderBy('name')
             ->paginate(20);
@@ -32,18 +39,17 @@ class TeamController extends Controller
      */
     public function create(): View
     {
-        return view('admin.teams.create', [
-            'parents' => Team::query()->orderBy('name')->get(),
-        ]);
+        return view('admin.teams.create', $this->formData());
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreTeamRequest $request): RedirectResponse
+    public function store(StoreTeamRequest $request, CodeGenerator $codeGenerator): RedirectResponse
     {
-        $team = DB::transaction(function () use ($request): Team {
-            $team = Team::query()->create($request->validated());
+        $team = DB::transaction(function () use ($request, $codeGenerator): Team {
+            $team = Team::query()->create($request->validated() + ['code' => $codeGenerator->placeholder()]);
+            $team->update(['code' => $codeGenerator->team($team->getKey())]);
             Rbac::provisionTeam($team);
 
             return $team;
@@ -59,7 +65,7 @@ class TeamController extends Controller
     {
         return view('admin.teams.edit', [
             'team' => $team,
-            'parents' => Team::query()->whereKeyNot($team)->orderBy('name')->get(),
+            ...$this->formData($team),
         ]);
     }
 
@@ -68,7 +74,9 @@ class TeamController extends Controller
      */
     public function update(UpdateTeamRequest $request, Team $team): RedirectResponse
     {
-        $team->update($request->validated());
+        $team->update($request->safe()->only([
+            'name', 'parent_id', 'branch_id', 'supervisor_id', 'coordinator_id', 'is_active',
+        ]));
 
         return back()->with('status', 'team-updated');
     }
@@ -89,5 +97,25 @@ class TeamController extends Controller
         $team->delete();
 
         return redirect()->route('admin.teams.index')->with('status', 'team-deleted');
+    }
+
+    /** @return array<string, mixed> */
+    private function formData(?Team $team = null): array
+    {
+        $user = request()->user();
+        $branchId = $user->canAccessAllBranches() ? null : $user->branch_id;
+
+        return [
+            'parents' => Team::query()
+                ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+                ->when($team, fn ($query) => $query->whereKeyNot($team))
+                ->orderBy('name')
+                ->get(),
+            'branches' => Branch::query()->where('is_active', true)->orderBy('name')->get(),
+            'supervisors' => User::query()
+                ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+                ->orderBy('name')
+                ->get(),
+        ];
     }
 }

@@ -1,0 +1,33 @@
+<?php
+
+namespace App\Http\Requests;
+
+use App\Models\SalesAgenda;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+
+class UpdateSalesAgendaRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        $agenda = $this->route('salesAgenda');
+
+        return $agenda instanceof SalesAgenda
+            && $this->user()?->can('update', $agenda) === true;
+    }
+
+    public function rules(): array
+    {
+        return [
+            'sales_case_id' => ['nullable', 'integer', 'exists:sales_cases,id'],
+            'lead_id' => ['nullable', 'integer', 'exists:leads,id'],
+            'agenda_date' => ['required', 'date'],
+            'activity_category' => ['required', Rule::in(SalesAgenda::CATEGORIES)],
+            'title' => ['required', 'string', 'max:255'],
+            'location' => ['nullable', 'string', 'max:255'],
+            'activity_result' => ['nullable', 'string', 'max:5000'],
+            'evidence' => ['nullable', 'array', 'max:2'],
+            'evidence.*' => ['file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
+        ];
+    }
+}

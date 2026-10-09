@@ -45,6 +45,8 @@ class SetPermissionTeam
 
         View::share('availableTeams', $availableTeams);
         View::share('activeTeam', $activeTeam);
+        View::share('unreadNotificationsCount', $user->unreadNotifications()->count());
+        View::share('recentNotifications', $user->notifications()->latest()->limit(5)->get());
 
         return $next($request);
     }

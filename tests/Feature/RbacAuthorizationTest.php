@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Branch;
 use App\Models\Role;
 use App\Models\Team;
 use App\Models\User;
@@ -29,11 +30,11 @@ class RbacAuthorizationTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_global_admin_permission_applies_without_a_team_membership(): void
+    public function test_global_role_applies_without_a_team_membership(): void
     {
         Rbac::provision();
         $user = User::factory()->create();
-        $adminRole = Role::query()->whereNull('team_id')->where('name', 'admin')->firstOrFail();
+        $adminRole = Role::query()->whereNull('team_id')->where('name', 'super_admin')->firstOrFail();
         $user->globalRoles()->attach($adminRole);
 
         $this->actingAs($user)
@@ -61,11 +62,11 @@ class RbacAuthorizationTest extends TestCase
 
         setPermissionsTeamId($supervisorTeam->id);
         $user->unsetRelation('roles')->unsetRelation('permissions');
-        $user->assignRole(Role::query()->where('team_id', $supervisorTeam->id)->where('name', 'supervisor')->firstOrFail());
+        $user->assignRole(Role::query()->where('team_id', $supervisorTeam->id)->where('name', 'koordinator_sales')->firstOrFail());
         $user->unsetRelation('roles')->unsetRelation('permissions');
 
         $this->assertTrue(Gate::forUser($user)->allows('sales.view-team'));
-        $this->assertTrue(Gate::forUser($user)->allows('reports.view'));
+        $this->assertFalse(Gate::forUser($user)->allows('reports.view'));
     }
 
     public function test_team_permission_only_applies_in_its_team_context(): void
@@ -126,5 +127,58 @@ class RbacAuthorizationTest extends TestCase
         $this->actingAs($superAdmin)->get(route('admin.teams.edit', $team))->assertOk();
         $this->actingAs($superAdmin)->get(route('admin.roles.index'))->assertOk();
         $this->actingAs($superAdmin)->get(route('admin.roles.edit', $role))->assertOk();
+    }
+
+    public function test_branch_role_requires_exactly_one_branch_assignment(): void
+    {
+        Rbac::provision();
+        $branch = Branch::factory()->create();
+        $superAdmin = User::factory()->create();
+        $target = User::factory()->create();
+        $superAdminRole = Role::query()->whereNull('team_id')->where('name', 'super_admin')->firstOrFail();
+        $spvRole = Role::query()->whereNull('team_id')->where('name', 'spv')->firstOrFail();
+        $superAdmin->globalRoles()->attach($superAdminRole);
+
+        $payload = [
+            'team_ids' => [],
+            'global_role_ids' => [$spvRole->id],
+            'team_role_ids' => [],
+        ];
+
+        $this->actingAs($superAdmin)
+            ->put(route('admin.users.update', $target), $payload)
+            ->assertSessionHasErrors('branch_id');
+
+        $this->actingAs($superAdmin)
+            ->put(route('admin.users.update', $target), [...$payload, 'branch_id' => $branch->id])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame($branch->id, $target->fresh()->branch_id);
+    }
+
+    public function test_reports_to_must_be_in_the_same_branch(): void
+    {
+        Rbac::provision();
+        $magelang = Branch::factory()->create(['name' => 'Magelang']);
+        $semarang = Branch::factory()->create(['name' => 'Semarang']);
+        $superAdmin = User::factory()->create();
+        $superAdminRole = Role::query()->whereNull('team_id')->where('name', 'super_admin')->firstOrFail();
+        $spvRole = Role::query()->whereNull('team_id')->where('name', 'spv')->firstOrFail();
+        $superAdmin->globalRoles()->attach($superAdminRole);
+
+        $bm = User::factory()->for($semarang)->create();
+        $target = User::factory()->for($semarang)->create();
+
+        $this->actingAs($superAdmin)
+            ->put(route('admin.users.update', $target), [
+                'branch_id' => $magelang->id,
+                'reports_to_id' => $bm->id,
+                'global_role_ids' => [$spvRole->id],
+                'team_ids' => [],
+                'team_role_ids' => [],
+            ])
+            ->assertSessionHasErrors('reports_to_id');
+
+        $this->assertNull($target->fresh()->reports_to_id);
     }
 }

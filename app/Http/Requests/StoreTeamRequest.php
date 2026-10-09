@@ -25,8 +25,10 @@ class StoreTeamRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'code' => ['required', 'string', 'max:50', 'alpha_dash:ascii', Rule::unique('teams', 'code')],
             'parent_id' => ['nullable', 'integer', Rule::exists('teams', 'id')],
+            'branch_id' => ['nullable', 'integer', Rule::exists('branches', 'id')->where('is_active', true)],
+            'supervisor_id' => ['nullable', 'integer', Rule::exists('users', 'id')],
+            'coordinator_id' => ['nullable', 'integer', Rule::exists('users', 'id')],
             'is_active' => ['required', 'boolean'],
         ];
     }

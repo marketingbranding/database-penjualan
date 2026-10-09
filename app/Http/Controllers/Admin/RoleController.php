@@ -7,6 +7,7 @@ use App\Http\Requests\StoreRoleRequest;
 use App\Http\Requests\UpdateRoleRequest;
 use App\Models\Role;
 use App\Models\Team;
+use App\Support\AuditLogger;
 use App\Support\Rbac;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -54,6 +55,9 @@ class RoleController extends Controller
             'guard_name' => 'web',
         ]);
         $role->syncPermissions($request->validated('permissions', []));
+        AuditLogger::record($role, 'permissions_updated', newValues: [
+            'permissions' => $role->permissions()->pluck('name')->all(),
+        ], description: 'Permission role ditetapkan');
 
         return redirect()->route('admin.roles.edit', $role)->with('status', 'role-created');
     }
@@ -74,6 +78,7 @@ class RoleController extends Controller
      */
     public function update(UpdateRoleRequest $request, Role $role): RedirectResponse
     {
+        $previousPermissions = $role->permissions()->pluck('name')->all();
         if (array_key_exists($role->name, Rbac::GLOBAL_ROLES + Rbac::TEAM_ROLES)
             && $request->validated('name') !== $role->name) {
             throw ValidationException::withMessages([
@@ -83,6 +88,11 @@ class RoleController extends Controller
 
         $role->update(['name' => $request->validated('name')]);
         $role->syncPermissions($request->validated('permissions', []));
+        AuditLogger::record($role, 'permissions_updated', [
+            'permissions' => $previousPermissions,
+        ], [
+            'permissions' => $role->permissions()->pluck('name')->all(),
+        ], 'Permission role diperbarui');
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         return back()->with('status', 'role-updated');

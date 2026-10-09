@@ -1,8 +1,22 @@
 @import 'tailwindcss';
 @config '../../tailwind.config.js';
 
+@theme {
+    --color-marison-forest-950: #102a24;
+    --color-marison-forest-900: #173b31;
+    --color-marison-cream-50: #f6f2e9;
+    --color-marison-paper: #fffdfa;
+    --color-marison-terracotta-600: #c96545;
+    --color-marison-terracotta-700: #aa4f36;
+    --color-marison-gold-400: #d9aa45;
+    --color-marison-gold-100: #f5e8bf;
+    --color-marison-teal-600: #167d72;
+    --color-marison-ink-950: #18211e;
+    --color-marison-line: #e5e0d6;
+}
+
 :root {
-    color-scheme: light dark;
+    color-scheme: light;
 }
 
 html {
@@ -13,6 +27,94 @@ html {
 body {
     min-width: 0;
     overflow-x: hidden;
+    background: #f6f2e9;
+    color: #18211e;
+}
+
+/* Shared Work OS surfaces keep operational pages visually consistent. */
+body .bg-white {
+    background-color: #fffdfa !important;
+}
+
+body .bg-gray-50 {
+    background-color: #f6f2e9 !important;
+}
+
+body .bg-gray-100 {
+    background-color: #eee9de !important;
+}
+
+body .bg-gray-950 {
+    background-color: #102a24 !important;
+}
+
+body .border-gray-100,
+body .border-gray-200,
+body .border-gray-300 {
+    border-color: #e5e0d6 !important;
+}
+
+body .text-gray-950,
+body .text-gray-900 {
+    color: #18211e !important;
+}
+
+body .text-gray-800,
+body .text-gray-700 {
+    color: #34443d !important;
+}
+
+body .text-gray-600,
+body .text-gray-500 {
+    color: #68736d !important;
+}
+
+body .text-amber-700 {
+    color: #c96545 !important;
+}
+
+body .text-amber-900 {
+    color: #102a24 !important;
+}
+
+body .bg-amber-100 {
+    background-color: #f5e8bf !important;
+}
+
+body .bg-amber-400 {
+    background-color: #d9aa45 !important;
+}
+
+body input:not([type='checkbox']):not([type='radio']),
+body select,
+body textarea {
+    border-color: #d8d2c6;
+    background-color: #fffdfa;
+}
+
+body input:not([type='checkbox']):not([type='radio']):focus,
+body select:focus,
+body textarea:focus {
+    border-color: #c96545;
+    --tw-ring-color: rgb(201 101 69 / 0.2);
+}
+
+body table thead {
+    background-color: #173b31 !important;
+    color: #fffdfa !important;
+}
+
+body table thead th {
+    color: inherit !important;
+    letter-spacing: 0.08em;
+}
+
+body table tbody tr {
+    transition: background-color 150ms ease;
+}
+
+body table tbody tr:hover {
+    background-color: #fbf8f1 !important;
 }
 
 [x-cloak] {
