@@ -68,6 +68,25 @@ class ModuleNavigationTest extends TestCase
             ->assertSeeText('Promo');
     }
 
+    public function test_monitoring_page_only_marks_monitoring_link_as_active(): void
+    {
+        Rbac::provision();
+        $admin = User::factory()->create();
+        $role = Role::query()->whereNull('team_id')->where('name', 'super_admin')->firstOrFail();
+        $admin->globalRoles()->attach($role);
+
+        $response = $this->actingAs($admin)->get(route('leads.monitoring'));
+        $content = $response->getContent();
+
+        preg_match('/<a href="[^"]*\/leads" class="([^"]+)">Leads<\/a>/', $content, $leadsLink);
+        preg_match('/<a href="[^"]*\/leads\/monitoring" class="([^"]+)">Monitoring Leads<\/a>/', $content, $monitoringLink);
+
+        $this->assertNotEmpty($leadsLink);
+        $this->assertNotEmpty($monitoringLink);
+        $this->assertStringNotContainsString('bg-marison-terracotta-600', $leadsLink[1]);
+        $this->assertStringContainsString('bg-marison-terracotta-600', $monitoringLink[1]);
+    }
+
     public function test_user_without_permission_cannot_open_module_containers(): void
     {
         Rbac::provision();

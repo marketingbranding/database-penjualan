@@ -38,7 +38,7 @@
         @endcanany
 
         @canany(['leads.view-own', 'leads.view-team', 'leads.view-branch', 'leads.view-all', 'leads.monitor'])
-            <a href="{{ route('leads.index') }}" class="{{ $link }} {{ request()->routeIs('leads.*') ? $activeLink : $inactiveLink }}">Leads</a>
+            <a href="{{ route('leads.index') }}" class="{{ $link }} {{ request()->routeIs('leads.*') && ! request()->routeIs('leads.monitoring') ? $activeLink : $inactiveLink }}">Leads</a>
             @canany(['leads.monitor', 'leads.view-team', 'leads.view-all'])
                 <a href="{{ route('leads.monitoring') }}" class="{{ $link }} {{ request()->routeIs('leads.monitoring') ? $activeLink : $inactiveLink }}">Monitoring Leads</a>
             @endcanany
