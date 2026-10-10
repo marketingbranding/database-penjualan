@@ -7,7 +7,7 @@
         <form method="GET" class="mb-6 grid gap-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:grid-cols-3">
             <div><label class="text-xs font-bold uppercase tracking-wider text-gray-500">Pencarian</label><input name="search" value="{{ $search }}" class="mt-2 block w-full rounded-md border-gray-300" placeholder="PSJB, konsumen, NIK, kavling"></div>
             <div><label class="text-xs font-bold uppercase tracking-wider text-gray-500">Status konsumen</label><select name="consumer_status" class="mt-2 block w-full rounded-md border-gray-300"><option value="">Semua status</option><option value="LANJUT" @selected($consumerStatus === 'LANJUT')>Lanjut</option><option value="MUNDUR" @selected($consumerStatus === 'MUNDUR')>Mundur</option></select></div>
-            <div><label class="text-xs font-bold uppercase tracking-wider text-gray-500">Status pemberkasan</label><input name="filing_status" value="{{ $filingStatus }}" class="mt-2 block w-full rounded-md border-gray-300" placeholder="Contoh: Done, Internal"></div>
+            <div><label class="text-xs font-bold uppercase tracking-wider text-gray-500">Status pemberkasan</label><select name="filing_status" class="mt-2 block w-full rounded-md border-gray-300"><option value="">Semua status</option><option value="INTERNAL" @selected($filingStatus === 'INTERNAL')>Internal</option><option value="Done" @selected($filingStatus === 'Done')>Done</option></select></div>
             <div class="flex items-end gap-2 sm:col-span-3"><button class="rounded-md bg-gray-950 px-4 py-2 text-sm font-semibold text-white">Filter</button><a href="{{ route('sales-process.psjb-utj') }}" class="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold">Reset</a></div>
         </form>
 

@@ -29,6 +29,10 @@
                         <svg class="size-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
                     </button>
 
+                    <a href="{{ route('search') }}" class="rounded-lg p-2 text-marison-forest-900 hover:bg-marison-cream-50 lg:hidden" aria-label="Buka pencarian" title="Cari">
+                        <svg class="size-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6" stroke-width="2" /><path stroke-linecap="round" stroke-width="2" d="m16 16 4 4" /></svg>
+                    </a>
+
                     <div class="min-w-0 flex-1 py-4">
                         @isset($header)
                             {{ $header }}

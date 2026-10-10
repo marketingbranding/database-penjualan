@@ -47,4 +47,17 @@ class GlobalSearchTest extends TestCase
             ->assertOk()
             ->assertSee('Masukkan minimal 2 karakter');
     }
+
+    public function test_authenticated_layout_exposes_search_on_mobile(): void
+    {
+        Rbac::provision();
+        $admin = User::factory()->create();
+        $admin->globalRoles()->attach(Role::query()->whereNull('team_id')->where('name', 'super_admin')->firstOrFail());
+
+        $this->actingAs($admin)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('aria-label="Buka pencarian"', false)
+            ->assertSee('href="'.route('search').'"', false);
+    }
 }

@@ -81,6 +81,21 @@ class SalesAgendaManagementTest extends TestCase
         ]);
     }
 
+    public function test_planned_agenda_has_cancel_confirmation(): void
+    {
+        [$sales] = $this->salesUser();
+        SalesAgenda::factory()->create([
+            'branch_id' => $sales->branch_id,
+            'created_by' => $sales->id,
+            'status' => 'planned',
+        ]);
+
+        $this->actingAs($sales)
+            ->get(route('sales-agendas.index'))
+            ->assertOk()
+            ->assertSee('Yakin membatalkan agenda ini?');
+    }
+
     public function test_sales_can_link_agenda_to_a_lead(): void
     {
         [$sales, $branch] = $this->salesUser();

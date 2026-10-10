@@ -81,6 +81,32 @@ class PsjbUtjManagementTest extends TestCase
             ->assertViewHas('salesCases', fn ($salesCases) => ! $salesCases->contains('id', $salesCase->id));
     }
 
+    public function test_psjb_index_filters_by_filing_status(): void
+    {
+        [$admin, , , $lot] = $this->propertyContext();
+        $internalCase = SalesCase::factory()->for($lot)->for($admin, 'creator')->create();
+        $doneLot = Lot::factory()->for($lot->project)->for($lot->block, 'block')->create([
+            'number' => 2,
+            'code' => 'A02',
+            'status' => LotStatus::Reserved,
+        ]);
+        $doneCase = SalesCase::factory()->for($doneLot)->for($admin, 'creator')->create();
+        $internal = PsjbUtjCase::factory()->for($internalCase)->create(['filing_status' => 'INTERNAL']);
+        $done = PsjbUtjCase::factory()->for($doneCase)->create(['filing_status' => 'Done']);
+
+        $this->actingAs($admin)
+            ->get(route('sales-process.psjb-utj', ['filing_status' => 'INTERNAL']))
+            ->assertOk()
+            ->assertSee($internal->psjb_id)
+            ->assertDontSee($done->psjb_id);
+
+        $this->actingAs($admin)
+            ->get(route('sales-process.psjb-utj', ['filing_status' => 'Done']))
+            ->assertOk()
+            ->assertSee($done->psjb_id)
+            ->assertDontSee($internal->psjb_id);
+    }
+
     public function test_branch_role_without_create_permission_cannot_create_psjb(): void
     {
         [$admin] = $this->propertyContext('Magelang', 'Marison', 'A01');
