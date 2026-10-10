@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 #[Fillable([
     'id_lead', 'id_promo', 'nama_promo', 'tanggal_lead', 'sumber_lead', 'kanal_masuk',
     'aktivitas_lead', 'nama_konsumen', 'no_hp', 'project_id', 'branch_id', 'team_id',
-    'sales_pic_id', 'created_by', 'status_lead', 'keterangan',
+    'sales_pic_id', 'created_by', 'status_lead', 'keterangan', 'origin_agenda_id',
 ])]
 class Lead extends Model
 {
@@ -82,6 +82,11 @@ class Lead extends Model
     public function salesAgendas(): HasMany
     {
         return $this->hasMany(SalesAgenda::class);
+    }
+
+    public function originAgenda(): BelongsTo
+    {
+        return $this->belongsTo(SalesAgenda::class, 'origin_agenda_id');
     }
 
     public function scopeForBranch(Builder $query, ?int $branchId): Builder

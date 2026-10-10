@@ -28,6 +28,7 @@ class StoreLeadRequest extends FormRequest
             'sales_pic_id' => ['required', 'integer', 'exists:users,id'],
             'status_lead' => ['required', Rule::in(Lead::STATUSES)],
             'keterangan' => ['nullable', 'string', 'max:5000'],
+            'origin_agenda_id' => ['nullable', 'integer', 'exists:sales_agendas,id'],
         ];
     }
 }

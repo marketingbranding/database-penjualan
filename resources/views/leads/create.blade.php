@@ -12,18 +12,22 @@
             @if ($lead)
                 @method('PUT')
             @endif
+            @if ($originAgenda)
+                <input type="hidden" name="origin_agenda_id" value="{{ $originAgenda->id }}">
+                <div class="rounded-xl border border-marison-gold-400/60 bg-marison-gold-100 px-4 py-3 text-sm text-marison-ink-950">Lead ini dibuat dari agenda <a href="{{ route('sales-agendas.edit', $originAgenda) }}" class="font-bold underline">{{ $originAgenda->title }}</a> — isian sudah diisi otomatis, periksa kembali sebelum menyimpan.</div>
+            @endif
 
             <div class="grid gap-5 rounded-xl border border-gray-200 bg-white p-6 shadow-sm md:grid-cols-2">
                 <div>
                     <x-input-label for="tanggal_lead" value="Tanggal Lead *" />
-                    <x-text-input id="tanggal_lead" name="tanggal_lead" type="date" class="mt-1 block w-full" required value="{{ old('tanggal_lead', $lead?->tanggal_lead?->format('Y-m-d') ?? today()->toDateString()) }}" />
+                    <x-text-input id="tanggal_lead" name="tanggal_lead" type="date" class="mt-1 block w-full" required value="{{ old('tanggal_lead', $prefill['tanggal_lead'] ?? $lead?->tanggal_lead?->format('Y-m-d') ?? today()->toDateString()) }}" />
                     <x-input-error :messages="$errors->get('tanggal_lead')" class="mt-2" />
                 </div>
                 <div>
                     <x-input-label for="status_lead" value="Status Lead *" />
                     <select id="status_lead" name="status_lead" class="mt-1 block w-full rounded-md border-gray-300" required>
                         @foreach ($statuses as $status)
-                            <option value="{{ $status }}" @selected(old('status_lead', $lead?->status_lead ?? 'No Respon') === $status)>{{ $status }}</option>
+                            <option value="{{ $status }}" @selected(old('status_lead', $prefill['status_lead'] ?? $lead?->status_lead ?? 'No Respon') === $status)>{{ $status }}</option>
                         @endforeach
                     </select>
                     <x-input-error :messages="$errors->get('status_lead')" class="mt-2" />
@@ -33,7 +37,7 @@
                     <select id="sumber_lead" name="sumber_lead" class="mt-1 block w-full rounded-md border-gray-300" required>
                         <option value="">Pilih sumber</option>
                         @foreach ($sources as $source)
-                            <option value="{{ $source }}" @selected(old('sumber_lead', $lead?->sumber_lead) === $source)>{{ $source }}</option>
+                            <option value="{{ $source }}" @selected(old('sumber_lead', $prefill['sumber_lead'] ?? $lead?->sumber_lead) === $source)>{{ $source }}</option>
                         @endforeach
                     </select>
                     <x-input-error :messages="$errors->get('sumber_lead')" class="mt-2" />
@@ -43,7 +47,7 @@
                     <select id="kanal_masuk" name="kanal_masuk" class="mt-1 block w-full rounded-md border-gray-300" required>
                         <option value="">Pilih kanal</option>
                         @foreach ($channels as $channel)
-                            <option value="{{ $channel }}" @selected(old('kanal_masuk', $lead?->kanal_masuk) === $channel)>{{ $channel }}</option>
+                            <option value="{{ $channel }}" @selected(old('kanal_masuk', $prefill['kanal_masuk'] ?? $lead?->kanal_masuk) === $channel)>{{ $channel }}</option>
                         @endforeach
                     </select>
                     <x-input-error :messages="$errors->get('kanal_masuk')" class="mt-2" />
@@ -53,7 +57,7 @@
                     <select id="aktivitas_lead" name="aktivitas_lead" class="mt-1 block w-full rounded-md border-gray-300" required>
                         <option value="">Pilih aktivitas</option>
                         @foreach ($activities as $activity)
-                            <option value="{{ $activity }}" @selected(old('aktivitas_lead', $lead?->aktivitas_lead) === $activity)>{{ $activity }}</option>
+                            <option value="{{ $activity }}" @selected(old('aktivitas_lead', $prefill['aktivitas_lead'] ?? $lead?->aktivitas_lead) === $activity)>{{ $activity }}</option>
                         @endforeach
                     </select>
                     <x-input-error :messages="$errors->get('aktivitas_lead')" class="mt-2" />
@@ -62,7 +66,7 @@
                     <x-input-label for="sales_pic_id" value="Sales PIC *" />
                     <select id="sales_pic_id" name="sales_pic_id" class="mt-1 block w-full rounded-md border-gray-300" required>
                         @foreach ($salesUsers as $salesUser)
-                            <option value="{{ $salesUser->id }}" @selected((string) old('sales_pic_id', $lead?->sales_pic_id ?? auth()->id()) === (string) $salesUser->id)>{{ $salesUser->name }}</option>
+                            <option value="{{ $salesUser->id }}" @selected((string) old('sales_pic_id', $prefill['sales_pic_id'] ?? $lead?->sales_pic_id ?? auth()->id()) === (string) $salesUser->id)>{{ $salesUser->name }}</option>
                         @endforeach
                     </select>
                     <x-input-error :messages="$errors->get('sales_pic_id')" class="mt-2" />
@@ -97,7 +101,7 @@
                 </div>
                 <div class="md:col-span-2">
                     <x-input-label for="keterangan" value="Keterangan" />
-                    <textarea id="keterangan" name="keterangan" rows="4" class="mt-1 block w-full rounded-md border-gray-300">{{ old('keterangan', $lead?->keterangan) }}</textarea>
+                    <textarea id="keterangan" name="keterangan" rows="4" class="mt-1 block w-full rounded-md border-gray-300">{{ old('keterangan', $prefill['keterangan'] ?? $lead?->keterangan) }}</textarea>
                     <x-input-error :messages="$errors->get('keterangan')" class="mt-2" />
                 </div>
             </div>

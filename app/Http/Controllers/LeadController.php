@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateLeadRequest;
 use App\Models\Branch;
 use App\Models\Lead;
 use App\Models\Project;
+use App\Models\SalesAgenda;
 use App\Models\Team;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
@@ -154,7 +155,14 @@ class LeadController extends Controller
     {
         $this->authorize('create', Lead::class);
 
-        return view('leads.create', $this->formData($request->user()));
+        $originAgenda = $this->originAgendaForUser($request);
+        $prefill = $originAgenda !== null ? $this->prefillFromAgenda($originAgenda, $request->user()) : [];
+
+        return view('leads.create', [
+            ...$this->formData($request->user()),
+            'originAgenda' => $originAgenda,
+            'prefill' => $prefill,
+        ]);
     }
 
     public function store(StoreLeadRequest $request): RedirectResponse
@@ -162,14 +170,16 @@ class LeadController extends Controller
         $data = $request->validated();
         [$branchId, $teamId] = $this->resolveOwnership($request->user(), (int) $data['sales_pic_id']);
         $this->ensureProjectBelongsToBranch($data['project_id'] ?? null, $branchId);
+        $originAgenda = $this->resolveOriginAgenda($request->user(), $data['origin_agenda_id'] ?? null);
 
-        $lead = DB::transaction(function () use ($data, $request, $branchId, $teamId): Lead {
+        $lead = DB::transaction(function () use ($data, $request, $branchId, $teamId, $originAgenda): Lead {
             $lead = Lead::query()->create([
                 ...$data,
                 'id_lead' => Lead::generateLeadId($data['tanggal_lead'], $data['sumber_lead'], $data['kanal_masuk']),
                 'branch_id' => $branchId,
                 'team_id' => $teamId,
                 'created_by' => $request->user()->getKey(),
+                'origin_agenda_id' => $originAgenda?->getKey(),
             ]);
 
             $lead->activities()->create([
@@ -190,7 +200,7 @@ class LeadController extends Controller
     {
         $this->authorize('view', $lead);
 
-        return view('leads.show', ['lead' => $lead->load(['branch', 'team', 'project', 'salesPic', 'creator', 'activities.user', 'salesAgendas.creator'])]);
+        return view('leads.show', ['lead' => $lead->load(['branch', 'team', 'project', 'salesPic', 'creator', 'activities.user', 'salesAgendas.creator', 'originAgenda'])]);
     }
 
     public function edit(Lead $lead): View
@@ -267,6 +277,63 @@ class LeadController extends Controller
             'activities' => Lead::ACTIVITIES,
             'statuses' => Lead::STATUSES,
             'lead' => null,
+            'originAgenda' => null,
+            'prefill' => [],
+        ];
+    }
+
+    /** @var array<string, array{sumber: string, kanal: string, aktivitas: string}> */
+    private const AGENDA_PREFILL = [
+        'TikTok Live' => ['sumber' => 'Online', 'kanal' => 'TikTok', 'aktivitas' => 'Live'],
+        'Canvassing' => ['sumber' => 'Offline', 'kanal' => 'Canvassing', 'aktivitas' => 'Sebar Brosur'],
+        'Event/Pameran' => ['sumber' => 'Offline', 'kanal' => 'Pameran', 'aktivitas' => 'Event'],
+        'Telepon/WhatsApp' => ['sumber' => 'Online', 'kanal' => 'WhatsApp', 'aktivitas' => 'Broadcast WhatsApp'],
+    ];
+
+    private function originAgendaForUser(Request $request): ?SalesAgenda
+    {
+        $agendaId = $request->integer('from_agenda') ?: null;
+
+        if ($agendaId === null) {
+            return null;
+        }
+
+        $agenda = SalesAgenda::query()->findOrFail($agendaId);
+        $this->authorize('view', $agenda);
+
+        return $agenda;
+    }
+
+    private function resolveOriginAgenda(User $user, mixed $agendaId): ?SalesAgenda
+    {
+        $agendaId = (int) $agendaId;
+
+        if ($agendaId <= 0) {
+            return null;
+        }
+
+        $agenda = SalesAgenda::query()->findOrFail($agendaId);
+        $this->authorize('view', $agenda);
+
+        return $agenda;
+    }
+
+    /** @return array<string, mixed> */
+    private function prefillFromAgenda(SalesAgenda $agenda, User $user): array
+    {
+        $mapped = self::AGENDA_PREFILL[$agenda->activity_category] ?? [
+            'sumber' => 'Offline', 'kanal' => 'Tidak Diketahui', 'aktivitas' => 'Tidak Diketahui',
+        ];
+
+        return [
+            'origin_agenda_id' => $agenda->getKey(),
+            'tanggal_lead' => today()->toDateString(),
+            'sumber_lead' => $mapped['sumber'],
+            'kanal_masuk' => $mapped['kanal'],
+            'aktivitas_lead' => $mapped['aktivitas'],
+            'status_lead' => 'No Respon',
+            'sales_pic_id' => $agenda->created_by,
+            'keterangan' => 'Berasal dari agenda: '.$agenda->title.' ('.$agenda->agenda_date->format('d M Y').').',
         ];
     }
 
