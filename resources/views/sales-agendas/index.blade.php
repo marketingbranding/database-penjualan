@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex flex-wrap items-center justify-between gap-4">
             <div>
-                <p class="text-xs font-bold uppercase tracking-widest text-marison-gold-700">Field loop</p>
+                <p class="text-xs font-bold uppercase tracking-widest text-marison-terracotta-600">Field loop</p>
                 <h1 class="mt-1 text-xl font-bold">Agenda Sales</h1>
             </div>
             @can('create', App\Models\SalesAgenda::class)
@@ -62,7 +62,7 @@
             </form>
 
             <div class="overflow-hidden rounded-2xl border border-marison-line bg-marison-paper shadow-sm">
-                <div class="flex items-center justify-between border-b border-marison-line px-5 py-4"><div><p class="text-xs font-bold uppercase tracking-widest text-gray-500">Activity queue</p><p class="mt-1 text-sm text-gray-500">{{ number_format($agendas->total()) }} agenda ditemukan</p></div><span class="rounded-full bg-marison-cream-100 px-3 py-1 text-xs font-bold text-marison-forest-950">{{ $agendas->currentPage() }} / {{ $agendas->lastPage() }}</span></div>
+                <div class="flex items-center justify-between border-b border-marison-line px-5 py-4"><div><p class="text-xs font-bold uppercase tracking-widest text-gray-500">Activity queue</p><p class="mt-1 text-sm text-gray-500">{{ number_format($agendas->total()) }} agenda ditemukan</p></div><span class="rounded-full bg-marison-cream-50 px-3 py-1 text-xs font-bold text-marison-forest-950">{{ $agendas->currentPage() }} / {{ $agendas->lastPage() }}</span></div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-marison-line text-sm">
                         <thead class="bg-marison-cream-50 text-left text-xs font-bold uppercase tracking-wider text-gray-500">

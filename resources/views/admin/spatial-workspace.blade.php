@@ -20,13 +20,13 @@
             <section class="relative min-h-[calc(100vh-10rem)] overflow-hidden rounded-2xl border border-marison-line bg-marison-forest-950 shadow-xl">
                 <div class="absolute inset-x-0 top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 bg-marison-forest-950/80 px-5 py-4 text-white backdrop-blur-sm">
                     <div>
-                        <p class="text-xs font-bold uppercase tracking-[0.2em] text-marison-gold-300">Spatial map</p>
+                        <p class="text-xs font-bold uppercase tracking-[0.2em] text-marison-gold-400">Spatial map</p>
                         <p class="mt-1 text-sm text-stone-300">Klik Branch, Team, atau User. Drag canvas untuk memutar scene.</p>
                     </div>
                     <div class="flex items-center gap-3 text-xs text-stone-300">
                         <span class="flex items-center gap-2"><span class="size-2 rounded-full bg-marison-gold-400"></span>Cabang</span>
-                        <span class="flex items-center gap-2"><span class="size-2 rounded-full bg-marison-teal-400"></span>Tim</span>
-                        <span class="flex items-center gap-2"><span class="size-2 rounded-full bg-marison-terracotta-400"></span>User</span>
+                        <span class="flex items-center gap-2"><span class="size-2 rounded-full bg-marison-teal-600"></span>Tim</span>
+                        <span class="flex items-center gap-2"><span class="size-2 rounded-full bg-marison-terracotta-600"></span>User</span>
                     </div>
                 </div>
                 <div data-spatial-workspace class="relative min-h-[calc(100vh-10rem)] w-full touch-none">
@@ -37,7 +37,7 @@
 
                 <aside class="absolute right-4 top-20 z-10 hidden w-72 rounded-2xl border border-white/15 bg-marison-paper/95 p-4 shadow-2xl backdrop-blur sm:right-6 sm:w-80" data-spatial-inspector>
                 <div data-spatial-empty class="flex min-h-[20rem] flex-col items-center justify-center text-center">
-                    <div class="grid size-14 place-items-center rounded-2xl bg-marison-cream-100 text-2xl text-marison-terracotta-600">⌘</div>
+                    <div class="grid size-14 place-items-center rounded-2xl bg-marison-cream-50 text-2xl text-marison-terracotta-600">⌘</div>
                     <h2 class="mt-4 font-bold text-marison-ink-950">Pilih objek</h2>
                     <p class="mt-2 max-w-xs text-sm leading-6 text-gray-500">Klik cabang, tim, atau user di dalam workspace untuk membuka ringkasan assignment.</p>
                 </div>
