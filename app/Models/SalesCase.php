@@ -109,7 +109,7 @@ class SalesCase extends Model
 
     public function scopeActive(Builder $query): Builder
     {
-        return $query->whereNull('cancelled_at');
+        return $query->whereNull('cancelled_at')->where('consumer_status', '!=', 'MUNDUR');
     }
 
     public function isCancelled(): bool
