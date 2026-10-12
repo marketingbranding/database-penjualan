@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Branch;
 use App\Models\Lead;
+use App\Models\LeadHandoff;
 use App\Models\Project;
 use App\Models\Role;
 use App\Models\Team;
@@ -65,6 +66,31 @@ class LeadManagementTest extends TestCase
         $this->assertSame('Diskusi', $lead->fresh()->status_lead);
     }
 
+    public function test_sales_can_create_a_lead_without_a_phone_number(): void
+    {
+        [, $team, $sales, $project] = $this->salesContext();
+        $payload = [
+            'tanggal_lead' => '2026-06-27',
+            'sumber_lead' => 'Online',
+            'kanal_masuk' => 'TikTok',
+            'aktivitas_lead' => 'Live',
+            'nama_konsumen' => 'Lead Tanpa Nomor',
+            'project_id' => $project->id,
+            'sales_pic_id' => $sales->id,
+            'status_lead' => 'No Respon',
+        ];
+
+        $this->actingAs($sales)
+            ->withSession(['active_team_id' => $team->id])
+            ->post(route('leads.store'), $payload)
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('leads', [
+            'nama_konsumen' => 'Lead Tanpa Nomor',
+            'no_hp' => null,
+        ]);
+    }
+
     public function test_sales_can_record_activity_and_change_lead_status(): void
     {
         [, $team, $sales] = $this->salesContext();
@@ -95,6 +121,136 @@ class LeadManagementTest extends TestCase
             'status_to' => 'Diskusi',
             'description' => 'Konsumen membalas WhatsApp.',
         ]);
+    }
+
+    public function test_lead_workspace_defaults_to_table_and_keeps_active_filter(): void
+    {
+        [, $team, $sales] = $this->salesContext();
+        $pipelineLead = Lead::factory()->create([
+            'id_lead' => '260627-ON-TI-01',
+            'branch_id' => $sales->branch_id,
+            'team_id' => $team->id,
+            'sales_pic_id' => $sales->id,
+            'created_by' => $sales->id,
+            'status_lead' => 'UTJ',
+            'nama_konsumen' => 'Lead Pipeline',
+        ]);
+        $lostLead = Lead::factory()->create([
+            'id_lead' => '260627-ON-TI-02',
+            'branch_id' => $sales->branch_id,
+            'team_id' => $team->id,
+            'sales_pic_id' => $sales->id,
+            'created_by' => $sales->id,
+            'status_lead' => 'Tidak Lolos BI Checking',
+            'nama_konsumen' => 'Lead Tidak Aktif',
+        ]);
+
+        $this->actingAs($sales)
+            ->withSession(['active_team_id' => $team->id])
+            ->get(route('leads.index'))
+            ->assertOk()
+            ->assertViewHas('view', 'table')
+            ->assertSee('Tabel Lead')
+            ->assertDontSee('Board saat ini read-only')
+            ->assertSee($pipelineLead->id_lead);
+
+        $this->actingAs($sales)
+            ->withSession(['active_team_id' => $team->id])
+            ->get(route('leads.index', ['view' => 'table', 'active' => 1]))
+            ->assertOk()
+            ->assertViewHas('view', 'table')
+            ->assertSee($pipelineLead->id_lead)
+            ->assertDontSee($lostLead->id_lead);
+    }
+
+    public function test_sales_can_schedule_qualify_and_handoff_a_lead_without_creating_a_sales_case(): void
+    {
+        [$branch, $team, $sales, , $coordinator] = $this->salesContext(withCoordinator: true);
+        $lead = Lead::factory()->create([
+            'branch_id' => $branch->id,
+            'team_id' => $team->id,
+            'sales_pic_id' => $sales->id,
+            'created_by' => $sales->id,
+        ]);
+
+        $this->actingAs($sales)->withSession(['active_team_id' => $team->id])
+            ->patch(route('leads.follow-up.update', $lead), [
+                'next_follow_up_at' => '2026-10-15 09:30',
+                'next_follow_up_note' => 'Konfirmasi jadwal kunjungan.',
+            ])->assertRedirect();
+
+        $this->actingAs($sales)->withSession(['active_team_id' => $team->id])
+            ->patch(route('leads.qualification.update', $lead), [
+                'qualification_status' => 'qualified',
+                'qualification_note' => 'Kebutuhan dan kemampuan bayar sudah dikonfirmasi.',
+            ])->assertRedirect();
+
+        $this->actingAs($sales)->withSession(['active_team_id' => $team->id])
+            ->post(route('leads.handoffs.store', $lead), [
+                'note' => 'Mohon ditinjau sebelum masuk proses penjualan.',
+            ])->assertRedirect();
+
+        $handoff = LeadHandoff::query()->firstOrFail();
+        $this->assertSame('submitted', $handoff->status);
+        $this->assertSame('qualified', $lead->fresh()->qualification_status);
+        $this->assertDatabaseCount('sales_cases', 0);
+
+        $this->actingAs($coordinator)->withSession(['active_team_id' => $team->id])
+            ->patch(route('lead-handoffs.review', $handoff), [
+                'status' => 'accepted',
+                'review_note' => 'Siap diteruskan saat alur proses sudah final.',
+            ])->assertRedirect();
+
+        $this->assertSame('accepted', $handoff->fresh()->status);
+        $this->assertDatabaseHas('leads', [
+            'id' => $lead->id,
+            'next_follow_up_note' => 'Konfirmasi jadwal kunjungan.',
+            'qualification_status' => 'qualified',
+        ]);
+    }
+
+    public function test_unqualified_lead_cannot_be_handed_off(): void
+    {
+        [, $team, $sales] = $this->salesContext();
+        $lead = Lead::factory()->create([
+            'branch_id' => $sales->branch_id,
+            'team_id' => $team->id,
+            'sales_pic_id' => $sales->id,
+            'created_by' => $sales->id,
+        ]);
+
+        $this->actingAs($sales)->withSession(['active_team_id' => $team->id])
+            ->post(route('leads.handoffs.store', $lead), ['note' => 'Belum qualified.'])
+            ->assertSessionHasErrors('note');
+
+        $this->assertDatabaseCount('lead_handoffs', 0);
+    }
+
+    public function test_sales_can_filter_leads_by_today_follow_up(): void
+    {
+        [, $team, $sales] = $this->salesContext();
+        $todayLead = Lead::factory()->create([
+            'id_lead' => '260627-ON-TI-01',
+            'branch_id' => $sales->branch_id,
+            'team_id' => $team->id,
+            'sales_pic_id' => $sales->id,
+            'created_by' => $sales->id,
+            'next_follow_up_at' => today()->setTime(10, 0),
+        ]);
+        $laterLead = Lead::factory()->create([
+            'id_lead' => '260627-ON-TI-02',
+            'branch_id' => $sales->branch_id,
+            'team_id' => $team->id,
+            'sales_pic_id' => $sales->id,
+            'created_by' => $sales->id,
+            'next_follow_up_at' => today()->addDay()->setTime(10, 0),
+        ]);
+
+        $this->actingAs($sales)->withSession(['active_team_id' => $team->id])
+            ->get(route('leads.index', ['follow_up' => 'today']))
+            ->assertOk()
+            ->assertSee($todayLead->id_lead)
+            ->assertDontSee($laterLead->id_lead);
     }
 
     public function test_second_lead_same_date_source_and_channel_gets_next_sequence(): void

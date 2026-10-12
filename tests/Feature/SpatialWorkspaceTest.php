@@ -27,7 +27,9 @@ class SpatialWorkspaceTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.spatial-workspace'))
             ->assertOk()
-            ->assertSeeText('Spatial Workspace')
+            ->assertSeeText('Spatial workspace')
+            ->assertSee('data-spatial-svg', false)
+            ->assertSeeText('Mode lihat')
             ->assertViewHas('workspace', function (array $workspace) use ($branch, $team, $member): bool {
                 return count($workspace['branches']) === 1
                     && $workspace['branches'][0]['id'] === $branch->id

@@ -36,6 +36,12 @@ class LeadFactory extends Factory
             'created_by' => User::factory(),
             'status_lead' => 'No Respon',
             'keterangan' => null,
+            'next_follow_up_at' => null,
+            'next_follow_up_note' => null,
+            'qualification_status' => 'not_qualified',
+            'qualification_note' => null,
+            'qualified_at' => null,
+            'qualified_by' => null,
         ];
     }
 }

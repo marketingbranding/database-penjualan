@@ -7,12 +7,12 @@
 
     <div>
         <x-input-label value="Kode" />
-        <p class="mt-1 rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-600">{{ $team?->code ?? 'Dibuat otomatis saat disimpan' }}</p>
+        <p class="workspace-control mt-1 bg-canvas px-3 py-2 text-sm text-muted">{{ $team?->code ?? 'Dibuat otomatis saat disimpan' }}</p>
     </div>
 
     <div>
         <x-input-label for="branch_id" value="Cabang" />
-        <select id="branch_id" name="branch_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+        <select id="branch_id" name="branch_id" class="workspace-control mt-1 block w-full py-2.5 text-sm">
             <option value="">Tanpa cabang</option>
             @foreach ($branches as $branch)
                 <option value="{{ $branch->id }}" @selected((string) old('branch_id', $team?->branch_id) === (string) $branch->id)>
@@ -25,7 +25,7 @@
 
     <div>
         <x-input-label for="parent_id" value="Induk tim" />
-        <select id="parent_id" name="parent_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+        <select id="parent_id" name="parent_id" class="workspace-control mt-1 block w-full py-2.5 text-sm">
             <option value="">Tanpa induk</option>
             @foreach ($parents as $parent)
                 <option value="{{ $parent->id }}" @selected((string) old('parent_id', $team?->parent_id) === (string) $parent->id)>
@@ -39,7 +39,7 @@
     <div class="grid gap-6 sm:grid-cols-2">
         <div>
             <x-input-label for="supervisor_id" value="SPV" />
-            <select id="supervisor_id" name="supervisor_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+            <select id="supervisor_id" name="supervisor_id" class="workspace-control mt-1 block w-full py-2.5 text-sm">
                 <option value="">Tanpa SPV</option>
                 @foreach ($supervisors as $user)
                     <option value="{{ $user->id }}" @selected((string) old('supervisor_id', $team?->supervisor_id) === (string) $user->id)>
@@ -52,7 +52,7 @@
 
         <div>
             <x-input-label for="coordinator_id" value="Koordinator Sales" />
-            <select id="coordinator_id" name="coordinator_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+            <select id="coordinator_id" name="coordinator_id" class="workspace-control mt-1 block w-full py-2.5 text-sm">
                 <option value="">Tanpa koordinator</option>
                 @foreach ($supervisors as $user)
                     <option value="{{ $user->id }}" @selected((string) old('coordinator_id', $team?->coordinator_id) === (string) $user->id)>
@@ -66,7 +66,7 @@
 
     <label class="flex items-center gap-3">
         <input type="hidden" name="is_active" value="0">
-        <input type="checkbox" name="is_active" value="1" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" @checked(old('is_active', $team?->is_active ?? true))>
-        <span class="text-sm text-gray-700">Tim aktif</span>
+        <input type="checkbox" name="is_active" value="1" class="size-4 rounded border-line text-lime-dark" @checked(old('is_active', $team?->is_active ?? true))>
+        <span class="text-sm text-ink">Tim aktif</span>
     </label>
 </div>

@@ -1,0 +1,36 @@
+@props([
+    'label',
+    'value',
+    'description' => null,
+    'tone' => 'surface',
+    'href' => null,
+])
+
+@php
+    $toneClass = match ($tone) {
+        'lime' => 'data-stripes border-lime-dark/20 bg-lime text-ink',
+        'ink' => 'border-ink bg-ink text-white',
+        'orange' => 'data-stripes border-orange/30 bg-orange/20 text-ink',
+        'yellow' => 'data-stripes border-yellow/40 bg-yellow/30 text-ink',
+        default => 'border-line bg-surface text-ink',
+    };
+    $mutedClass = $tone === 'ink' ? 'text-white/60' : 'text-muted';
+@endphp
+
+<article {{ $attributes->merge(['class' => 'rounded-3xl border p-5 '.$toneClass]) }}>
+    <div class="flex items-start justify-between gap-3">
+        <p class="text-sm font-medium">{{ $label }}</p>
+        @isset($icon)
+            <span class="grid size-8 place-items-center rounded-xl {{ $tone === 'ink' ? 'bg-white/10 text-lime' : 'bg-white/50 text-lime-dark' }}">
+                {{ $icon }}
+            </span>
+        @endisset
+    </div>
+    <p class="mt-6 text-4xl font-semibold tracking-tight">{{ $value }}</p>
+    @if ($description)
+        <p class="mt-4 text-xs {{ $mutedClass }}">{{ $description }}</p>
+    @endif
+    @if ($href)
+        <a href="{{ $href }}" class="mt-4 inline-flex text-xs font-semibold underline underline-offset-4">Buka detail</a>
+    @endif
+</article>

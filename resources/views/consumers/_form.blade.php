@@ -57,26 +57,26 @@
         }
     }"
 >
-    <section class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 class="text-lg font-bold text-gray-950">Kavling & Pembayaran</h2>
+    <section class="workspace-card p-6">
+        <h2 class="text-lg font-semibold tracking-tight text-ink">Kavling & Pembayaran</h2>
         <div class="mt-5 grid gap-5 md:grid-cols-3">
             <div>
                 <x-input-label value="Cabang" />
                 @if (Auth::user()->canAccessAllBranches())
-                    <select name="branch_id" x-model="branch" @change="project = ''; lot = ''; promotion = ''" class="mt-1 block w-full rounded-md border-gray-300" required>
+                    <select name="branch_id" x-model="branch" @change="project = ''; lot = ''; promotion = ''" class="workspace-control mt-1 block w-full py-2.5 text-sm" required>
                         <option value="">Pilih cabang</option>
                         @foreach ($branches as $branch)
                             <option value="{{ $branch->id }}">{{ $branch->name }}</option>
                         @endforeach
                     </select>
                 @else
-                    <div class="mt-1 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-700">{{ $assignedBranch?->name }}</div>
+                    <div class="workspace-control mt-1 flex min-h-11 items-center bg-canvas px-3 py-2 text-sm font-semibold text-muted">{{ $assignedBranch?->name }}</div>
                 @endif
                 <x-input-error class="mt-2" :messages="$errors->get('branch_id')" />
             </div>
             <div>
                 <x-input-label for="project_id" value="Proyek" />
-                <select id="project_id" name="project_id" x-model="project" @change="lot = ''; promotion = ''" class="mt-1 block w-full rounded-md border-gray-300" required>
+                <select id="project_id" name="project_id" x-model="project" @change="lot = ''; promotion = ''" class="workspace-control mt-1 block w-full py-2.5 text-sm" required>
                     <option value="">Pilih proyek</option>
                     <template x-for="item in filteredProjects" :key="item.id"><option :value="String(item.id)" x-text="item.name"></option></template>
                 </select>
@@ -84,7 +84,7 @@
             </div>
             <div>
                 <x-input-label for="lot_id" value="Kavling" />
-                <select id="lot_id" name="lot_id" x-model="lot" @change="promotion = ''" class="mt-1 block w-full rounded-md border-gray-300" required>
+                <select id="lot_id" name="lot_id" x-model="lot" @change="promotion = ''" class="workspace-control mt-1 block w-full py-2.5 text-sm" required>
                     <option value="">Pilih kavling</option>
                     <template x-for="item in filteredLots" :key="item.id"><option :value="String(item.id)" x-text="item.label"></option></template>
                 </select>
@@ -92,37 +92,37 @@
             </div>
             <div>
                 <x-input-label for="metode_pembayaran" value="Metode pembayaran" />
-                <select id="metode_pembayaran" name="metode_pembayaran" class="mt-1 block w-full rounded-md border-gray-300" required>
+                <select id="metode_pembayaran" name="metode_pembayaran" class="workspace-control mt-1 block w-full py-2.5 text-sm" required>
                     @foreach ($paymentMethods as $method)<option value="{{ $method->value }}" @selected(old('metode_pembayaran', $salesCase?->payment_method?->value) === $method->value)>{{ $method->label() }}</option>@endforeach
                 </select>
                 <x-input-error class="mt-2" :messages="$errors->get('metode_pembayaran')" />
             </div>
             <div>
                 <x-input-label for="promotion_id" value="Promo" />
-                <select id="promotion_id" name="promotion_id" x-model="promotion" class="mt-1 block w-full rounded-md border-gray-300">
+                <select id="promotion_id" name="promotion_id" x-model="promotion" class="workspace-control mt-1 block w-full py-2.5 text-sm">
                     <option value="">Tanpa promo</option>
                     <template x-for="item in filteredPromotions" :key="item.id"><option :value="String(item.id)" x-text="item.label"></option></template>
                 </select>
-                <p class="mt-1 text-xs text-gray-500">Pilih kavling untuk melihat promo yang berlaku.</p>
+                <p class="mt-1 text-xs text-muted">Pilih kavling untuk melihat promo yang berlaku.</p>
                 <x-input-error class="mt-2" :messages="$errors->get('promotion_id')" />
             </div>
         </div>
     </section>
 
-    <section class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 class="text-lg font-bold text-gray-950">Identitas Konsumen</h2>
+    <section class="workspace-card p-6">
+        <h2 class="text-lg font-semibold tracking-tight text-ink">Identitas konsumen</h2>
         <div class="mt-5 grid gap-5 md:grid-cols-2">
             <div><x-input-label for="no_ktp" value="NIK"/><x-text-input id="no_ktp" name="no_ktp" inputmode="numeric" maxlength="16" class="mt-1 block w-full" :value="old('no_ktp', $consumer?->no_ktp)" required/><x-input-error class="mt-2" :messages="$errors->get('no_ktp')"/></div>
             <div><x-input-label for="nama_konsumen" value="Nama sesuai KTP"/><x-text-input id="nama_konsumen" name="nama_konsumen" class="mt-1 block w-full" :value="old('nama_konsumen', $consumer?->nama_konsumen)" required/><x-input-error class="mt-2" :messages="$errors->get('nama_konsumen')"/></div>
             <div><x-input-label for="tanggal_lahir" value="Tanggal lahir"/><x-text-input id="tanggal_lahir" name="tanggal_lahir" type="date" lang="id-ID" x-model="birthDate" class="mt-1 block w-full" required/><x-input-error class="mt-2" :messages="$errors->get('tanggal_lahir')"/></div>
-            <div><x-input-label value="Umur"/><div class="mt-1 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700"><span x-text="age === null ? '-' : age + ' tahun'"></span></div></div>
+            <div><x-input-label value="Umur"/><div class="workspace-control mt-1 flex min-h-11 items-center bg-canvas px-3 py-2 text-sm text-muted"><span x-text="age === null ? '-' : age + ' tahun'"></span></div></div>
             <div><x-input-label for="pekerjaan" value="Pekerjaan"/><x-text-input id="pekerjaan" name="pekerjaan" class="mt-1 block w-full" :value="old('pekerjaan', $consumer?->pekerjaan)" required/><x-input-error class="mt-2" :messages="$errors->get('pekerjaan')"/></div>
             <div><x-input-label for="detail_pekerjaan" value="Detail pekerjaan"/><x-text-input id="detail_pekerjaan" name="detail_pekerjaan" class="mt-1 block w-full" :value="old('detail_pekerjaan', $consumer?->detail_pekerjaan)"/><x-input-error class="mt-2" :messages="$errors->get('detail_pekerjaan')"/></div>
         </div>
     </section>
 
-    <section class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 class="text-lg font-bold text-gray-950">Alamat & Kontak</h2>
+    <section class="workspace-card p-6">
+        <h2 class="text-lg font-semibold tracking-tight text-ink">Alamat & Kontak</h2>
         <div class="mt-5 grid gap-5 md:grid-cols-2">
             <div class="md:col-span-2"><x-input-label for="alamat" value="Alamat"/><textarea id="alamat" name="alamat" rows="3" class="mt-1 block w-full rounded-md border-gray-300" required>{{ old('alamat', $consumer?->alamat) }}</textarea><x-input-error class="mt-2" :messages="$errors->get('alamat')"/></div>
             <div><x-input-label for="kelurahan" value="Kelurahan"/><x-text-input id="kelurahan" name="kelurahan" class="mt-1 block w-full" :value="old('kelurahan', $consumer?->kelurahan)" required/><x-input-error class="mt-2" :messages="$errors->get('kelurahan')"/></div>

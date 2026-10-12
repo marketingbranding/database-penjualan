@@ -20,6 +20,8 @@ class PromotionFactory extends Factory
         return [
             'promo_id' => 'PROMO-'.fake()->date('Ym').'-'.str_pad((string) fake()->unique()->numberBetween(1, 9999), 4, '0', STR_PAD_LEFT),
             'name' => fake()->sentence(3),
+            'is_active' => true,
+            'is_global' => false,
             'start_date' => today()->subDays(10)->toDateString(),
             'end_date' => today()->addDays(20)->toDateString(),
             'description' => null,

@@ -52,6 +52,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/leads/monitoring', [LeadController::class, 'monitoring'])->name('leads.monitoring');
     Route::post('/leads/{lead}/activities', [LeadController::class, 'storeActivity'])->name('leads.activities.store');
+    Route::patch('/leads/{lead}/follow-up', [LeadController::class, 'updateFollowUp'])->name('leads.follow-up.update');
+    Route::patch('/leads/{lead}/qualification', [LeadController::class, 'updateQualification'])->name('leads.qualification.update');
+    Route::post('/leads/{lead}/handoffs', [LeadController::class, 'storeHandoff'])->name('leads.handoffs.store');
+    Route::patch('/lead-handoffs/{leadHandoff}', [LeadController::class, 'reviewHandoff'])->name('lead-handoffs.review');
     Route::resource('leads', LeadController::class)->only(['index', 'create', 'store', 'show', 'edit', 'update']);
     Route::get('/sales-fee-reports/print', [SalesFeeReportController::class, 'print'])->name('sales-fee-reports.print');
     Route::get('/sales-fee-reports/export', [SalesFeeReportController::class, 'export'])->name('sales-fee-reports.export');
@@ -158,6 +162,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified'])->group(
     Route::post('/promotions', [PromotionController::class, 'store'])->name('promotions.store');
     Route::get('/promotions/{promotion}/edit', [PromotionController::class, 'edit'])->middleware('permission:promotions.update')->name('promotions.edit');
     Route::put('/promotions/{promotion}', [PromotionController::class, 'update'])->name('promotions.update');
+    Route::patch('/promotions/{promotion}/toggle-active', [PromotionController::class, 'toggleActive'])->name('promotions.toggle-active');
     Route::delete('/promotions/{promotion}', [PromotionController::class, 'destroy'])->name('promotions.destroy');
 
     Route::get('/teams', [TeamController::class, 'index'])->middleware('permission:teams.view')->name('teams.index');

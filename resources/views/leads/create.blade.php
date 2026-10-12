@@ -14,7 +14,7 @@
             @endif
             @if ($originAgenda)
                 <input type="hidden" name="origin_agenda_id" value="{{ $originAgenda->id }}">
-                <div class="rounded-xl border border-marison-gold-400/60 bg-marison-gold-100 px-4 py-3 text-sm text-marison-ink-950">Lead ini dibuat dari agenda <a href="{{ route('sales-agendas.edit', $originAgenda) }}" class="font-bold underline">{{ $originAgenda->title }}</a> — isian sudah diisi otomatis, periksa kembali sebelum menyimpan.</div>
+                <div class="rounded-2xl border border-orange/40 bg-orange/10 px-4 py-3 text-sm text-ink">Lead ini dibuat dari agenda <a href="{{ route('sales-agendas.edit', $originAgenda) }}" class="font-bold underline">{{ $originAgenda->title }}</a> — isian sudah diisi otomatis, periksa kembali sebelum menyimpan.</div>
             @endif
 
             <div class="grid gap-5 rounded-xl border border-gray-200 bg-white p-6 shadow-sm md:grid-cols-2">
@@ -77,8 +77,8 @@
                     <x-input-error :messages="$errors->get('nama_konsumen')" class="mt-2" />
                 </div>
                 <div>
-                    <x-input-label for="no_hp" value="No. HP *" />
-                    <x-text-input id="no_hp" name="no_hp" type="text" class="mt-1 block w-full" required value="{{ old('no_hp', $lead?->no_hp) }}" />
+                    <x-input-label for="no_hp" value="No. HP" />
+                    <x-text-input id="no_hp" name="no_hp" type="text" class="mt-1 block w-full" value="{{ old('no_hp', $lead?->no_hp) }}" />
                     <x-input-error :messages="$errors->get('no_hp')" class="mt-2" />
                 </div>
                 <div>

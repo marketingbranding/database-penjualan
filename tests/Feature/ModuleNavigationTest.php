@@ -51,21 +51,22 @@ class ModuleNavigationTest extends TestCase
         $this->actingAs($admin)
             ->get(route('consumers.index'))
             ->assertSeeText('Dashboard')
-            ->assertSeeText('Data Konsumen')
-            ->assertSeeText('Proses Penjualan')
-            ->assertSeeText('PSJB / UTJ')
+            ->assertSeeText('Data konsumen')
+            ->assertSeeText('Proses penjualan')
+            ->assertSeeText('Alur kavling')
             ->assertSeeText('BI Checking')
             ->assertSeeText('Pemberkasan')
-            ->assertSeeText('Proses Bank')
-            ->assertSeeText('PPJB Developer')
-            ->assertSeeText('Akad & BAST')
+            ->assertSeeText('Proses bank')
+            ->assertSeeText('PPJB developer')
+            ->assertSeeText('Akad dan BAST')
             ->assertSeeText('Garansi')
             ->assertSeeText('Pengaturan')
             ->assertSeeText('Cabang')
             ->assertSeeText('Proyek')
             ->assertSeeText('Kavling')
             ->assertSeeText('Bank')
-            ->assertSeeText('Promo');
+            ->assertSeeText('Promo')
+            ->assertDontSeeText('Performa sales');
     }
 
     public function test_monitoring_page_only_marks_monitoring_link_as_active(): void
@@ -78,13 +79,13 @@ class ModuleNavigationTest extends TestCase
         $response = $this->actingAs($admin)->get(route('leads.monitoring'));
         $content = $response->getContent();
 
-        preg_match('/<a href="[^"]*\/leads" class="([^"]+)">Leads<\/a>/', $content, $leadsLink);
-        preg_match('/<a href="[^"]*\/leads\/monitoring" class="([^"]+)">Monitoring Leads<\/a>/', $content, $monitoringLink);
+        preg_match('/<a href="[^"]*\/leads" class="([^"]+)"[^>]*>.*?Leads.*?<\/a>/s', $content, $leadsLink);
+        preg_match('/<a href="[^"]*\/leads\/monitoring" class="([^"]+)"[^>]*>.*?Monitoring leads.*?<\/a>/s', $content, $monitoringLink);
 
         $this->assertNotEmpty($leadsLink);
         $this->assertNotEmpty($monitoringLink);
-        $this->assertStringNotContainsString('bg-marison-terracotta-600', $leadsLink[1]);
-        $this->assertStringContainsString('bg-marison-terracotta-600', $monitoringLink[1]);
+        $this->assertStringNotContainsString('bg-lime-soft', $leadsLink[1]);
+        $this->assertStringContainsString('bg-lime-soft', $monitoringLink[1]);
     }
 
     public function test_user_without_permission_cannot_open_module_containers(): void

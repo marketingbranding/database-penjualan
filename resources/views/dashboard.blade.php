@@ -1,23 +1,106 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-wrap items-center justify-between gap-4">
-            <div><p class="text-xs font-bold uppercase tracking-widest text-amber-700">Workspace Operasional</p><h1 class="mt-1 text-xl font-bold">Ringkasan Hari Ini</h1><p class="mt-1 text-sm text-gray-500">Pantau pipeline, aktivitas, dan agenda tanpa berpindah konteks.</p></div>
-            <div class="flex items-center gap-3">@if(Auth::user()->canAccessAllBranches())<form method="GET"><select name="branch_id" onchange="this.form.submit()" class="rounded-lg border-gray-300 bg-white text-sm"><option value="">Semua cabang</option>@foreach($branches as $branch)<option value="{{ $branch->id }}" @selected($branchId === $branch->id)>{{ $branch->name }}</option>@endforeach</select></form>@elseif(Auth::user()->branch)<span class="rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-900">{{ Auth::user()->branch->name }}</span>@endif</div>
+        <div>
+            <p class="text-xs font-medium text-lime-dark">Workspace operasional</p>
+            <h1 class="mt-1 text-xl font-semibold tracking-tight text-ink">Selamat datang kembali, {{ str(Auth::user()->name)->before(' ') }}</h1>
+            <p class="mt-1 text-sm text-muted">Pantau Lead, agenda, dan ritme kerja tim dalam satu ruang.</p>
         </div>
     </x-slot>
 
-    <div class="py-10"><div class="mx-auto max-w-7xl space-y-8 px-4 sm:px-6 lg:px-8">
-        <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">@foreach([['Lead aktif', $metrics['leads'], 'bg-marison-terracotta-600 text-white'], ['Agenda mendatang', $metrics['plannedAgendas'], 'bg-marison-gold-400 text-marison-forest-950'], ['Agenda selesai', $metrics['completedAgendas'], 'bg-marison-teal-600 text-white'], ['Konsumen', $metrics['consumers'], 'bg-marison-forest-950 text-white'], ['Kavling tersedia', $metrics['availableLots'], 'bg-white text-marison-ink-950'], ['Kavling terjual', $metrics['soldLots'], 'bg-white text-marison-ink-950']] as [$label, $value, $style])<article class="rounded-xl border border-gray-200 p-5 shadow-sm {{ $style }}"><p class="text-xs font-bold uppercase tracking-wider opacity-75">{{ $label }}</p><p class="mt-3 text-3xl font-bold">{{ number_format($value) }}</p></article>@endforeach</section>
-
-        <section class="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-            <div class="rounded-xl border border-gray-200 bg-white shadow-sm"><div class="flex items-center justify-between border-b border-gray-100 px-6 py-5"><div><p class="text-xs font-bold uppercase tracking-wider text-amber-700">Field loop</p><h2 class="mt-1 font-bold text-gray-950">Agenda Mendatang</h2></div>@can('create', App\Models\SalesAgenda::class)<a href="{{ route('sales-agendas.create') }}" class="rounded-lg bg-gray-950 px-3 py-2 text-xs font-bold uppercase tracking-wider text-white">Agenda Baru</a>@endcan</div><div class="divide-y divide-gray-100">@forelse($upcomingAgendas as $agenda)<a href="{{ route('sales-agendas.edit', $agenda) }}" class="block px-6 py-4 transition hover:bg-gray-50"><div class="flex items-start justify-between gap-4"><div class="min-w-0"><p class="truncate font-semibold text-gray-950">{{ $agenda->title }}</p><p class="mt-1 text-xs text-gray-500">{{ $agenda->agenda_date->translatedFormat('d M Y') }} · {{ $agenda->activity_category }} · {{ $agenda->location ?: 'Lokasi belum diisi' }}</p>@if($agenda->lead)<p class="mt-1 text-xs font-semibold text-amber-700">{{ $agenda->lead->id_lead }} · {{ $agenda->lead->nama_konsumen }}</p>@elseif($agenda->salesCase)<p class="mt-1 text-xs font-semibold text-amber-700">{{ $agenda->salesCase->consumer->nama_konsumen }}</p>@endif</div><span class="shrink-0 rounded-full bg-amber-100 px-2 py-1 text-xs font-bold text-amber-900">{{ $agenda->agenda_date->format('d/m') }}</span></div></a>@empty<p class="px-6 py-12 text-center text-sm text-gray-500">Tidak ada agenda mendatang.</p>@endforelse</div></div>
-
-            <div class="rounded-xl border border-gray-200 bg-white shadow-sm"><div class="flex items-center justify-between border-b border-gray-100 px-6 py-5"><div><p class="text-xs font-bold uppercase tracking-wider text-amber-700">Lead desk</p><h2 class="mt-1 font-bold text-gray-950">Lead Terbaru</h2></div>@can('create', App\Models\Lead::class)<a href="{{ route('leads.create') }}" class="rounded-lg bg-gray-950 px-3 py-2 text-xs font-bold uppercase tracking-wider text-white">Lead Baru</a>@endcan</div><div class="divide-y divide-gray-100">@forelse($recentLeads as $lead)<a href="{{ route('leads.show', $lead) }}" class="block px-6 py-4 transition hover:bg-gray-50"><div class="flex items-center justify-between gap-3"><div class="min-w-0"><p class="truncate font-semibold text-gray-950">{{ $lead->nama_konsumen }}</p><p class="mt-1 truncate text-xs text-gray-500">{{ $lead->id_lead }} · {{ $lead->salesPic->name }}</p></div><span class="shrink-0 rounded-full bg-gray-100 px-2 py-1 text-xs font-bold text-gray-700">{{ $lead->status_lead }}</span></div></a>@empty<p class="px-6 py-12 text-center text-sm text-gray-500">Belum ada Lead.</p>@endforelse</div></div>
+    <div class="space-y-6 px-4 py-8 sm:px-6 lg:px-8">
+        <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <x-ui.stat-card label="Lead aktif" :value="number_format($metrics['leads'])" tone="lime">
+                <x-slot:icon><svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="1.8" d="M5 19V9m7 10V5m7 14v-7" /></svg></x-slot:icon>
+            </x-ui.stat-card>
+            <x-ui.stat-card label="Agenda mendatang" :value="number_format($metrics['plannedAgendas'])" description="Agenda terjadwal mulai hari ini." tone="orange">
+                <x-slot:icon><svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="1.8" d="M8 3v4m8-4v4M4 10h16m-9 4h.01M15 14h.01M9 17h.01M15 17h.01" /></svg></x-slot:icon>
+            </x-ui.stat-card>
+            <x-ui.stat-card label="Agenda selesai" :value="number_format($metrics['completedAgendas'])" description="Selesai sejak awal bulan ini." tone="surface">
+                <x-slot:icon><svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="1.8" d="m5 12 4 4L19 6" /></svg></x-slot:icon>
+            </x-ui.stat-card>
+            <x-ui.stat-card label="Konsumen" :value="number_format($metrics['consumers'])" description="Konsumen dengan proses aktif." tone="ink">
+                <x-slot:icon><svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="1.8" d="M16 20v-1.5A3.5 3.5 0 0 0 12.5 15h-5A3.5 3.5 0 0 0 4 18.5V20m6-9a4 4 0 1 0-8 0 4 4 0 0 0 8 0Zm6-7.5a3.5 3.5 0 0 1 0 6.8M17 15a3.5 3.5 0 0 1 3 3.5V20" /></svg></x-slot:icon>
+            </x-ui.stat-card>
+            <x-ui.stat-card label="Kavling tersedia" :value="number_format($metrics['availableLots'])" description="Kavling yang masih tersedia." tone="surface">
+                <x-slot:icon><svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 19h16M6 16V8l6-4 6 4v8M9 19v-5h6v5" /></svg></x-slot:icon>
+            </x-ui.stat-card>
+            <x-ui.stat-card label="Kavling terjual" :value="number_format($metrics['soldLots'])" description="Kavling dengan status akad." tone="yellow">
+                <x-slot:icon><svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m5 12 4 4L19 6" /></svg></x-slot:icon>
+            </x-ui.stat-card>
         </section>
 
-        <section class="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
-            <div class="rounded-xl border border-gray-200 bg-white shadow-sm"><div class="border-b border-gray-100 px-6 py-5"><p class="text-xs font-bold uppercase tracking-wider text-amber-700">Kolaborasi</p><h2 class="mt-1 font-bold text-gray-950">Aktivitas Terbaru</h2></div><div class="space-y-5 p-6">@forelse($activityFeed as $activity)<a href="{{ $activity['url'] }}" class="flex gap-3"><span class="mt-1 size-2 shrink-0 rounded-full {{ $activity['accent'] === 'terracotta' ? 'bg-marison-terracotta-600' : 'bg-marison-gold-400' }}"></span><span class="min-w-0"><span class="block text-sm font-semibold text-gray-900">{{ $activity['label'] }}</span><span class="mt-1 block text-xs leading-5 text-gray-500">{{ $activity['description'] }}</span><time class="mt-1 block text-[11px] text-gray-400">{{ $activity['date']->format('d/m/Y H:i') }}</time></span></a>@empty<p class="text-sm text-gray-500">Belum ada aktivitas terbaru.</p>@endforelse</div></div>
-            <div class="rounded-xl border border-gray-200 bg-white shadow-sm"><div class="border-b border-gray-100 px-6 py-5"><p class="text-xs font-bold uppercase tracking-wider text-amber-700">Portfolio</p><h2 class="mt-1 font-bold text-gray-950">Ringkasan Proyek</h2></div><div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-200 text-sm"><thead class="bg-gray-50 text-left text-xs font-bold uppercase tracking-wider text-gray-500"><tr><th class="px-6 py-3">Proyek</th><th class="px-6 py-3">Kavling</th><th class="px-6 py-3">Konsumen</th></tr></thead><tbody class="divide-y divide-gray-100">@forelse($projects as $project)<tr><td class="px-6 py-4 font-semibold text-gray-950">{{ $project->name }}</td><td class="px-6 py-4 text-gray-600">{{ $project->lots_count }}</td><td class="px-6 py-4 text-gray-600">{{ $project->sales_cases_count }}</td></tr>@empty<tr><td colspan="3" class="px-6 py-10 text-center text-gray-500">Belum ada proyek.</td></tr>@endforelse</tbody></table></div></div>
+        <section>
+            <x-ui.card title="Aksi cepat" description="Buka pekerjaan yang paling sering digunakan." padding="p-6">
+                <div class="grid gap-2">
+                    @can('create', App\Models\Lead::class)
+                        <a href="{{ route('leads.create') }}" class="flex min-h-11 items-center gap-3 rounded-2xl bg-lime px-4 py-3 text-sm font-semibold text-ink transition hover:bg-lime-dark hover:text-white"><span class="grid size-7 place-items-center rounded-xl bg-white/40">+</span>Lead baru</a>
+                    @endcan
+                    @can('create', App\Models\SalesAgenda::class)
+                        <a href="{{ route('sales-agendas.create') }}" class="flex min-h-11 items-center gap-3 rounded-2xl border border-line px-4 py-3 text-sm font-medium text-ink transition hover:bg-lime-soft"><span class="grid size-7 place-items-center rounded-xl bg-orange/20 text-orange">+</span>Agenda baru</a>
+                    @endcan
+                    @can('bi-checking.create')
+                        <a href="{{ route('sales-process.bi-checking.create') }}" class="flex min-h-11 items-center gap-3 rounded-2xl border border-line px-4 py-3 text-sm font-medium text-ink transition hover:bg-lime-soft"><span class="grid size-7 place-items-center rounded-xl bg-yellow/40 text-ink">↗</span>Mulai SLIK</a>
+                    @endcan
+                    @can('psjb-utj.create')
+                        <a href="{{ route('sales-process.psjb-utj.create') }}" class="flex min-h-11 items-center gap-3 rounded-2xl border border-line px-4 py-3 text-sm font-medium text-ink transition hover:bg-lime-soft"><span class="grid size-7 place-items-center rounded-xl bg-orange/20 text-orange">↗</span>Buat UTJ</a>
+                    @endcan
+                </div>
+            </x-ui.card>
         </section>
-    </div></div>
+
+        <section class="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+            <x-ui.card title="Agenda mendatang" description="Pekerjaan lapangan yang perlu dijaga ritmenya." padding="p-0">
+                <x-slot:actions>
+                    @can('create', App\Models\SalesAgenda::class)
+                        <a href="{{ route('sales-agendas.create') }}" class="rounded-xl bg-lime px-3 py-2 text-xs font-semibold text-ink transition hover:bg-lime-dark hover:text-white">Agenda baru</a>
+                    @endcan
+                </x-slot:actions>
+                @forelse ($upcomingAgendas as $agenda)
+                    <a href="{{ route('sales-agendas.edit', $agenda) }}" class="flex items-center gap-4 border-t border-line px-6 py-4 transition first:border-t-0 hover:bg-lime-soft/30">
+                        <span class="grid size-11 shrink-0 place-items-center rounded-2xl bg-orange/20 text-xs font-semibold text-ink">{{ $agenda->agenda_date->format('d/m') }}</span>
+                        <span class="min-w-0 flex-1"><span class="block truncate text-sm font-semibold text-ink">{{ $agenda->title }}</span><span class="mt-1 block truncate text-xs text-muted">{{ $agenda->activity_category }} · {{ $agenda->location ?: 'Lokasi belum diisi' }}</span>@if($agenda->lead)<span class="mt-1 block truncate text-xs font-medium text-lime-dark">{{ $agenda->lead->id_lead }} · {{ $agenda->lead->nama_konsumen }}</span>@elseif($agenda->salesCase)<span class="mt-1 block truncate text-xs font-medium text-lime-dark">{{ $agenda->salesCase->consumer->nama_konsumen }}</span>@endif</span>
+                        <svg class="size-4 shrink-0 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m9 18 6-6-6-6" /></svg>
+                    </a>
+                @empty
+                    <div class="px-6 py-10">
+                        <p class="text-sm font-semibold text-ink">Belum ada agenda mendatang.</p>
+                        <p class="mt-1 text-sm leading-6 text-muted">Buat agenda agar follow-up Lead tidak terlewat.</p>
+                        @can('create', App\Models\SalesAgenda::class)
+                            <a href="{{ route('sales-agendas.create') }}" class="mt-4 inline-flex rounded-xl bg-lime px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-lime-dark hover:text-white">Buat agenda baru</a>
+                        @endcan
+                    </div>
+                @endforelse
+            </x-ui.card>
+
+            <x-ui.card title="Lead terbaru" description="Lead yang baru masuk ke ruang kerja." padding="p-0">
+                <x-slot:actions>
+                    <a href="{{ route('leads.index') }}" class="text-xs font-semibold text-lime-dark hover:underline">Lihat semua</a>
+                </x-slot:actions>
+                @forelse ($recentLeads as $lead)
+                    <a href="{{ route('leads.show', $lead) }}" class="flex items-center gap-3 border-t border-line px-6 py-4 transition first:border-t-0 hover:bg-lime-soft/30">
+                        <x-ui.avatar :name="$lead->nama_konsumen" size="sm" />
+                        <span class="min-w-0 flex-1"><span class="block truncate text-sm font-semibold text-ink">{{ $lead->nama_konsumen }}</span><span class="mt-1 block truncate text-xs text-muted">{{ $lead->id_lead }} · {{ $lead->salesPic?->name ?? 'Sales belum ditentukan' }}</span></span>
+                        <x-ui.stage-chip :stage="$lead->status_lead" size="sm" />
+                    </a>
+                @empty
+                    <p class="px-6 py-10 text-sm text-muted">Belum ada Lead terbaru.</p>
+                @endforelse
+            </x-ui.card>
+        </section>
+
+        <x-ui.card title="Aktivitas terbaru" description="Perubahan terakhir pada Lead dan Agenda." padding="p-6">
+            @if ($activityFeed->isNotEmpty())
+                <div class="grid gap-4 md:grid-cols-2">
+                    @foreach ($activityFeed as $activity)
+                        <a href="{{ $activity['url'] }}" class="flex gap-3 rounded-2xl border border-line p-4 transition hover:border-lime hover:bg-lime-soft/30">
+                            <span class="mt-1.5 size-2.5 shrink-0 rounded-full {{ $activity['accent'] === 'terracotta' ? 'bg-orange' : 'bg-lime' }}"></span>
+                            <span class="min-w-0"><span class="block truncate text-sm font-semibold text-ink">{{ $activity['label'] }}</span><span class="mt-1 block text-xs leading-5 text-muted">{{ $activity['description'] }}</span><time class="mt-2 block text-[11px] text-muted" datetime="{{ $activity['date']->toIso8601String() }}">{{ $activity['date']->diffForHumans() }}</time></span>
+                        </a>
+                    @endforeach
+                </div>
+            @else
+                <p class="text-sm text-muted">Belum ada aktivitas terbaru.</p>
+            @endif
+        </x-ui.card>
+    </div>
 </x-app-layout>

@@ -16,6 +16,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'id_lead', 'id_promo', 'nama_promo', 'tanggal_lead', 'sumber_lead', 'kanal_masuk',
     'aktivitas_lead', 'nama_konsumen', 'no_hp', 'project_id', 'branch_id', 'team_id',
     'sales_pic_id', 'created_by', 'status_lead', 'keterangan', 'origin_agenda_id',
+    'next_follow_up_at', 'next_follow_up_note', 'qualification_status', 'qualification_note',
+    'qualified_at', 'qualified_by',
 ])]
 class Lead extends Model
 {
@@ -35,6 +37,10 @@ class Lead extends Model
     public const STATUSES = [
         'No Respon', 'Diskusi', 'Tatap Muka', 'Cek Lokasi', 'Jadi Freelance', 'UTJ',
         'Cek SLIK', 'Tidak Lolos BI Checking', 'Akad',
+    ];
+
+    public const QUALIFICATION_STATUSES = [
+        'not_qualified', 'qualified', 'not_fit', 'deferred',
     ];
 
     public const ACTIVITY_TYPES = [
@@ -89,6 +95,21 @@ class Lead extends Model
         return $this->belongsTo(SalesAgenda::class, 'origin_agenda_id');
     }
 
+    public function qualifiedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'qualified_by');
+    }
+
+    public function handoffs(): HasMany
+    {
+        return $this->hasMany(LeadHandoff::class)->latest();
+    }
+
+    public function latestHandoff(): HasOne
+    {
+        return $this->hasOne(LeadHandoff::class)->latestOfMany();
+    }
+
     public function scopeForBranch(Builder $query, ?int $branchId): Builder
     {
         return $query->when($branchId, fn (Builder $query) => $query->where('branch_id', $branchId));
@@ -116,7 +137,11 @@ class Lead extends Model
 
     protected function casts(): array
     {
-        return ['tanggal_lead' => 'date'];
+        return [
+            'tanggal_lead' => 'date',
+            'next_follow_up_at' => 'datetime',
+            'qualified_at' => 'datetime',
+        ];
     }
 
     private static function sourceCode(string $source): string

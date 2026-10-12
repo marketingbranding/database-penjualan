@@ -1,11 +1,99 @@
-<x-app-layout><x-slot name="header"><div class="flex items-center justify-between gap-4"><div><p class="text-xs font-bold uppercase tracking-widest text-amber-700">Database Penjualan</p><h1 class="mt-1 text-xl font-bold">Data Konsumen</h1></div><div class="flex gap-2">@can('consumers.export')<a href="{{ route('consumers.export', request()->query()) }}" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">Export Excel</a>@endcan @can('create', App\Models\SalesCase::class)<a href="{{ route('consumers.create') }}" class="rounded-lg bg-gray-950 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800">Tambah konsumen</a>@endcan</div></div></x-slot><div class="py-10"><div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-    @if(session('status'))<div class="mb-6 rounded-lg bg-emerald-50 p-4 text-sm text-emerald-800">Data konsumen berhasil diperbarui.</div>@endif
-    <form method="GET" class="mb-6 grid gap-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:grid-cols-2 xl:grid-cols-5">
-        @if(Auth::user()->canAccessAllBranches())<div><label class="text-xs font-bold uppercase tracking-wider text-gray-500">Cabang</label><select name="branch_id" onchange="this.form.submit()" class="mt-2 block w-full rounded-md border-gray-300"><option value="">Semua cabang</option>@foreach($branches as $branch)<option value="{{ $branch->id }}" @selected($branchId === $branch->id)>{{ $branch->name }}</option>@endforeach</select></div>@else<div><label class="text-xs font-bold uppercase tracking-wider text-gray-500">Cabang</label><div class="mt-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-semibold">{{ Auth::user()->branch?->name }}</div></div>@endif
-        <div><label class="text-xs font-bold uppercase tracking-wider text-gray-500">Proyek</label><select name="project_id" onchange="this.form.submit()" class="mt-2 block w-full rounded-md border-gray-300"><option value="">Semua proyek</option>@foreach($projects as $project)<option value="{{ $project->id }}" @selected($projectId === $project->id)>{{ $project->name }}</option>@endforeach</select></div>
-        <div><label class="text-xs font-bold uppercase tracking-wider text-gray-500">Pembayaran</label><select name="payment_method" onchange="this.form.submit()" class="mt-2 block w-full rounded-md border-gray-300"><option value="">Semua metode</option>@foreach($paymentMethods as $method)<option value="{{ $method->value }}" @selected($paymentMethod === $method)>{{ $method->label() }}</option>@endforeach</select></div>
-        <div><label class="text-xs font-bold uppercase tracking-wider text-gray-500">Cari</label><input name="search" value="{{ $search }}" class="mt-2 block w-full rounded-md border-gray-300" placeholder="Nama, NIK, kavling"></div>
-        <div class="flex items-end gap-2"><button class="flex-1 rounded-md bg-gray-950 px-4 py-2 text-sm font-semibold text-white">Cari</button><a href="{{ route('consumers.index') }}" class="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold">Reset</a></div>
-    </form>
-    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"><div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-200 text-sm"><thead class="bg-gray-50 text-left text-xs font-bold uppercase tracking-wider text-gray-500"><tr><th class="px-6 py-3">Konsumen</th><th class="px-6 py-3">Kavling</th><th class="px-6 py-3">Status</th><th class="px-6 py-3">Lahir / Umur</th><th class="px-6 py-3">Pekerjaan</th><th class="px-6 py-3">Kontak</th><th class="px-6 py-3">Metode</th><th class="px-6 py-3">Promo</th><th class="px-6 py-3"></th></tr></thead><tbody class="divide-y divide-gray-100">@forelse($salesCases as $case)<tr><td class="px-6 py-4"><div class="font-semibold text-gray-950">{{ $case->consumer->nama_konsumen }}</div><div class="text-xs text-gray-500">{{ $case->consumer->no_ktp }}</div></td><td class="whitespace-nowrap px-6 py-4"><div class="font-semibold">{{ $case->lot->project->name }}-{{ $case->lot->code }}</div><div class="text-xs text-gray-500">{{ $case->lot->project->branch->name }}</div></td><td class="px-6 py-4 text-gray-600">{{ $case->lot->status->label() }}</td><td class="px-6 py-4 text-gray-600">{{ $case->consumer->tanggal_lahir->translatedFormat('d M Y') }}<div class="text-xs">{{ $case->consumer->age }} tahun</div></td><td class="px-6 py-4 text-gray-600">{{ $case->consumer->pekerjaan }}</td><td class="px-6 py-4 text-gray-600">{{ $case->consumer->no_hp }}</td><td class="px-6 py-4"><span class="whitespace-nowrap rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-900">{{ $case->payment_method->label() }}</span></td><td class="px-6 py-4 text-gray-600">@if($case->promotion)<span class="font-semibold">{{ $case->promotion->promo_id }}</span><div class="text-xs text-gray-500">{{ $case->promotion->name }}</div>@else<span class="text-gray-400">-</span>@endif</td><td class="px-6 py-4 text-right"><a href="{{ route('consumers.show', $case) }}" class="font-semibold text-gray-700">Detail</a>@can('update', $case)<a href="{{ route('consumers.edit', $case) }}" class="ml-3 font-semibold text-amber-700">Edit</a>@endcan</td></tr>@empty<tr><td colspan="9" class="px-6 py-12 text-center text-gray-500">Belum ada data konsumen.</td></tr>@endforelse</tbody></table></div></div><div class="mt-6">{{ $salesCases->links() }}</div>
-</div></div></x-app-layout>
+<x-app-layout>
+    <x-slot name="header">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <div>
+                <p class="text-xs font-medium text-orange">Database penjualan</p>
+                <h1 class="mt-1 text-xl font-semibold tracking-tight text-ink">Data konsumen</h1>
+                <p class="mt-1 text-sm text-muted">Kelola data konsumen dan reservasi aktif dalam satu ruang kerja.</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                @can('consumers.export')
+                    <a href="{{ route('consumers.export', request()->query()) }}" class="inline-flex min-h-10 items-center rounded-2xl border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink transition hover:bg-canvas">Export Excel</a>
+                @endcan
+                @can('create', App\Models\SalesCase::class)
+                    <a href="{{ route('consumers.create') }}" class="inline-flex min-h-10 items-center rounded-2xl bg-lime px-4 py-2 text-sm font-semibold text-ink transition hover:bg-lime-dark hover:text-white">Tambah konsumen</a>
+                @endcan
+            </div>
+        </div>
+    </x-slot>
+
+    <div class="space-y-6 px-4 py-8 sm:px-6 lg:px-8">
+        @if (session('status'))
+            <x-ui.toast message="Data konsumen berhasil diperbarui." />
+        @endif
+
+        <x-ui.card title="Filter konsumen" description="Cari berdasarkan konsumen, NIK, kavling, atau cakupan penjualan." padding="p-5">
+            <form method="GET" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+                @if (Auth::user()->canAccessAllBranches())
+                    <div>
+                        <label for="branch_id" class="text-sm font-medium text-ink">Cabang</label>
+                        <select id="branch_id" name="branch_id" class="workspace-control mt-2 block w-full py-2.5 text-sm">
+                            <option value="">Semua cabang</option>
+                            @foreach ($branches as $branch)
+                                <option value="{{ $branch->id }}" @selected($branchId === $branch->id)>{{ $branch->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @else
+                    <div>
+                        <label class="text-sm font-medium text-ink">Cabang</label>
+                        <div class="workspace-control mt-2 flex min-h-11 items-center bg-canvas text-sm font-semibold text-muted">{{ Auth::user()->branch?->name ?? 'Belum diatur' }}</div>
+                    </div>
+                @endif
+                <div>
+                    <label for="project_id" class="text-sm font-medium text-ink">Proyek</label>
+                    <select id="project_id" name="project_id" class="workspace-control mt-2 block w-full py-2.5 text-sm">
+                        <option value="">Semua proyek</option>
+                        @foreach ($projects as $project)
+                            <option value="{{ $project->id }}" @selected($projectId === $project->id)>{{ $project->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label for="payment_method" class="text-sm font-medium text-ink">Pembayaran</label>
+                    <select id="payment_method" name="payment_method" class="workspace-control mt-2 block w-full py-2.5 text-sm">
+                        <option value="">Semua metode</option>
+                        @foreach ($paymentMethods as $method)
+                            <option value="{{ $method->value }}" @selected($paymentMethod === $method)>{{ $method->label() }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label for="search" class="text-sm font-medium text-ink">Cari</label>
+                    <input id="search" name="search" value="{{ $search }}" class="workspace-control mt-2 block w-full py-2.5 text-sm" placeholder="Nama, NIK, atau kavling">
+                </div>
+                <div class="flex items-end gap-2">
+                    <button class="inline-flex min-h-10 flex-1 items-center justify-center rounded-2xl bg-ink px-4 py-2 text-sm font-semibold text-white transition hover:bg-lime-dark">Cari</button>
+                    <a href="{{ route('consumers.index') }}" class="inline-flex min-h-10 items-center rounded-2xl border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink transition hover:bg-canvas">Reset</a>
+                </div>
+            </form>
+        </x-ui.card>
+
+        <x-ui.card title="Reservasi aktif" description="{{ number_format($salesCases->total()) }} konsumen ditemukan." padding="p-0">
+            <x-slot:actions><span class="rounded-xl bg-lime-soft px-3 py-2 text-xs font-semibold text-lime-dark">Halaman {{ $salesCases->currentPage() }} / {{ $salesCases->lastPage() }}</span></x-slot:actions>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-line text-sm">
+                    <thead class="bg-ink text-left text-xs font-medium text-white"><tr><th class="px-6 py-4">Konsumen</th><th class="px-6 py-4">Kavling</th><th class="px-6 py-4">Status</th><th class="px-6 py-4">Lahir / umur</th><th class="px-6 py-4">Pekerjaan</th><th class="px-6 py-4">Kontak</th><th class="px-6 py-4">Metode</th><th class="px-6 py-4">Promo</th><th class="px-6 py-4"></th></tr></thead>
+                    <tbody class="divide-y divide-line">
+                        @forelse ($salesCases as $case)
+                            <tr class="transition hover:bg-lime-soft/30">
+                                <td class="px-6 py-4"><div class="font-semibold text-ink">{{ $case->consumer->nama_konsumen }}</div><div class="mt-1 text-xs text-muted">{{ $case->consumer->no_ktp }}</div></td>
+                                <td class="whitespace-nowrap px-6 py-4"><div class="font-semibold text-ink">{{ $case->lot->project->name }}-{{ $case->lot->code }}</div><div class="mt-1 text-xs text-muted">{{ $case->lot->project->branch->name }}</div></td>
+                                <td class="px-6 py-4"><span class="inline-flex rounded-[9px] bg-lime-soft px-2.5 py-1 text-xs font-medium text-lime-dark">{{ $case->lot->status->label() }}</span></td>
+                                <td class="whitespace-nowrap px-6 py-4 text-muted">{{ $case->consumer->tanggal_lahir->translatedFormat('d M Y') }}<div class="mt-1 text-xs">{{ $case->consumer->age }} tahun</div></td>
+                                <td class="px-6 py-4 text-muted">{{ $case->consumer->pekerjaan }}</td>
+                                <td class="px-6 py-4 text-muted">{{ $case->consumer->no_hp }}</td>
+                                <td class="px-6 py-4"><span class="inline-flex whitespace-nowrap rounded-[9px] bg-orange/20 px-2.5 py-1 text-xs font-medium text-ink">{{ $case->payment_method->label() }}</span></td>
+                                <td class="px-6 py-4 text-muted">@if($case->promotion)<span class="font-semibold text-ink">{{ $case->promotion->promo_id }}</span><div class="mt-1 text-xs">{{ $case->promotion->name }}</div>@else<span class="text-muted">-</span>@endif</td>
+                                <td class="whitespace-nowrap px-6 py-4 text-right"><a href="{{ route('consumers.show', $case) }}" class="font-semibold text-lime-dark hover:underline">Detail</a>@can('update', $case)<a href="{{ route('consumers.edit', $case) }}" class="ml-3 font-semibold text-orange hover:underline">Edit</a>@endcan</td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="9" class="px-6 py-14 text-center text-sm text-muted">Belum ada data konsumen sesuai filter.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+            @if ($salesCases->hasPages())<div class="border-t border-line px-6 py-4">{{ $salesCases->links() }}</div>@endif
+        </x-ui.card>
+    </div>
+</x-app-layout>

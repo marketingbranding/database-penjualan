@@ -42,6 +42,36 @@ class RbacAuthorizationTest extends TestCase
             ->assertOk();
     }
 
+    public function test_pusat_role_can_access_central_sales_process_data(): void
+    {
+        Rbac::provision();
+        $pusat = User::factory()->create();
+        $pusatRole = Role::query()->whereNull('team_id')->where('name', 'pusat')->firstOrFail();
+        $pusat->globalRoles()->attach($pusatRole);
+
+        $this->actingAs($pusat)
+            ->get(route('sales-process.bank'))
+            ->assertOk();
+
+        $this->assertTrue($pusat->fresh()->canAccessAllBranches());
+    }
+
+    public function test_sap_role_is_limited_to_filing(): void
+    {
+        Rbac::provision();
+        $sap = User::factory()->create();
+        $sapRole = Role::query()->whereNull('team_id')->where('name', 'sap')->firstOrFail();
+        $sap->globalRoles()->attach($sapRole);
+
+        $this->actingAs($sap)
+            ->get(route('sales-process.pemberkasan'))
+            ->assertOk();
+
+        $this->actingAs($sap)
+            ->get(route('sales-process.bank'))
+            ->assertForbidden();
+    }
+
     public function test_same_user_can_have_different_roles_in_different_teams(): void
     {
         Rbac::provision();

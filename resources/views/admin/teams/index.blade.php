@@ -1,40 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between gap-4">
-            <h2 class="text-xl font-semibold leading-tight text-gray-800">Tim</h2>
-            @can('teams.create')
-                <a href="{{ route('admin.teams.create') }}" class="rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700">Tambah tim</a>
-            @endcan
-        </div>
+        <div class="flex flex-wrap items-center justify-between gap-4"><div><p class="text-xs font-medium text-orange">Pengaturan organisasi</p><h1 class="mt-1 text-xl font-semibold tracking-tight text-ink">Tim</h1><p class="mt-1 text-sm text-muted">Kelola struktur tim, penanggung jawab, dan keanggotaan.</p></div>@can('teams.create')<a href="{{ route('admin.teams.create') }}" class="inline-flex min-h-10 items-center rounded-2xl bg-lime px-4 py-2 text-sm font-semibold text-ink transition hover:bg-lime-dark hover:text-white">Tambah tim</a>@endcan</div>
     </x-slot>
-
-    <div class="py-10">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 text-sm">
-                        <thead class="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                            <tr><th class="px-6 py-3">Tim</th><th class="px-6 py-3">Cabang</th><th class="px-6 py-3">SPV</th><th class="px-6 py-3">Koordinator</th><th class="px-6 py-3">Anggota</th><th class="px-6 py-3">Status</th><th class="px-6 py-3"></th></tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100">
-                            @forelse ($teams as $team)
-                                <tr>
-                                    <td class="px-6 py-4"><div class="font-semibold text-gray-900">{{ $team->name }}</div><div class="text-gray-500">{{ $team->code }}</div></td>
-                                    <td class="px-6 py-4 text-gray-600">{{ $team->branch?->name ?? '-' }}</td>
-                                    <td class="px-6 py-4 text-gray-600">{{ $team->supervisor?->name ?? '-' }}</td>
-                                    <td class="px-6 py-4 text-gray-600">{{ $team->coordinator?->name ?? '-' }}</td>
-                                    <td class="px-6 py-4 text-gray-600">{{ $team->users_count }}</td>
-                                    <td class="px-6 py-4"><span class="rounded-full px-2 py-1 text-xs font-semibold {{ $team->is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600' }}">{{ $team->is_active ? 'Aktif' : 'Nonaktif' }}</span></td>
-                                    <td class="px-6 py-4 text-right">@can('teams.update')<a href="{{ route('admin.teams.edit', $team) }}" class="font-semibold text-indigo-600 hover:text-indigo-900">Edit</a>@endcan</td>
-                                </tr>
-                            @empty
-                                <tr><td colspan="7" class="px-6 py-10 text-center text-gray-500">Belum ada tim.</td></tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="mt-6">{{ $teams->links() }}</div>
-        </div>
-    </div>
+    <div class="space-y-6 px-4 py-8 sm:px-6 lg:px-8"><x-ui.card title="Daftar tim" description="{{ number_format($teams->total()) }} tim terdaftar." padding="p-0"><div class="overflow-x-auto"><table class="min-w-full divide-y divide-line text-sm"><thead class="bg-ink text-left text-xs font-medium text-white"><tr><th class="px-6 py-4">Tim</th><th class="px-6 py-4">Cabang</th><th class="px-6 py-4">SPV</th><th class="px-6 py-4">Koordinator</th><th class="px-6 py-4">Anggota</th><th class="px-6 py-4">Status</th><th class="px-6 py-4"></th></tr></thead><tbody class="divide-y divide-line">@forelse($teams as $team)<tr class="transition hover:bg-lime-soft/30"><td class="px-6 py-4"><div class="font-semibold text-ink">{{ $team->name }}</div><div class="text-xs text-muted">{{ $team->code }}</div></td><td class="px-6 py-4 text-muted">{{ $team->branch?->name ?? '-' }}</td><td class="px-6 py-4 text-muted">{{ $team->supervisor?->name ?? '-' }}</td><td class="px-6 py-4 text-muted">{{ $team->coordinator?->name ?? '-' }}</td><td class="px-6 py-4 text-muted">{{ $team->users_count }}</td><td class="px-6 py-4"><x-ui.pill :tone="$team->is_active ? 'success' : 'neutral'">{{ $team->is_active ? 'Aktif' : 'Nonaktif' }}</x-ui.pill></td><td class="px-6 py-4 text-right">@can('teams.update')<a href="{{ route('admin.teams.edit', $team) }}" class="font-semibold text-lime-dark hover:underline">Edit</a>@endcan</td></tr>@empty<tr><td colspan="7" class="px-6 py-14 text-center text-sm text-muted">Belum ada tim.</td></tr>@endforelse</tbody></table></div>@if($teams->hasPages())<div class="border-t border-line px-6 py-4">{{ $teams->links() }}</div>@endif</x-ui.card></div>
 </x-app-layout>

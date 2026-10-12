@@ -25,7 +25,7 @@ class UpdateLeadRequest extends FormRequest
             'kanal_masuk' => ['required', Rule::in(Lead::CHANNELS)],
             'aktivitas_lead' => ['required', Rule::in(Lead::ACTIVITIES)],
             'nama_konsumen' => ['required', 'string', 'max:255'],
-            'no_hp' => ['required', 'string', 'max:40'],
+            'no_hp' => ['nullable', 'string', 'max:40'],
             'project_id' => ['nullable', 'integer', 'exists:projects,id'],
             'sales_pic_id' => ['required', 'integer', 'exists:users,id'],
             'status_lead' => ['required', Rule::in(Lead::STATUSES)],

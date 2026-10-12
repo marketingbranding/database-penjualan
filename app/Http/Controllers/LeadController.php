@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ReviewLeadHandoffRequest;
 use App\Http\Requests\StoreLeadActivityRequest;
+use App\Http\Requests\StoreLeadHandoffRequest;
 use App\Http\Requests\StoreLeadRequest;
+use App\Http\Requests\UpdateLeadFollowUpRequest;
+use App\Http\Requests\UpdateLeadQualificationRequest;
 use App\Http\Requests\UpdateLeadRequest;
 use App\Models\Branch;
 use App\Models\Lead;
+use App\Models\LeadHandoff;
 use App\Models\Project;
 use App\Models\SalesAgenda;
 use App\Models\Team;
@@ -32,6 +37,8 @@ class LeadController extends Controller
         $branchId = $user->canAccessAllBranches()
             ? ($request->integer('branch_id') ?: null)
             : $user->branch_id;
+        $salesPicId = $request->integer('sales_pic_id') ?: null;
+        $active = $request->boolean('active');
         $status = in_array($request->string('status_lead')->toString(), Lead::STATUSES, true)
             ? $request->string('status_lead')->toString()
             : null;
@@ -41,10 +48,13 @@ class LeadController extends Controller
         $channel = in_array($request->string('kanal_masuk')->toString(), Lead::CHANNELS, true)
             ? $request->string('kanal_masuk')->toString()
             : null;
+        $followUp = in_array($request->string('follow_up')->toString(), ['today', 'overdue', 'upcoming'], true)
+            ? $request->string('follow_up')->toString()
+            : null;
         $search = trim($request->string('search')->toString());
+        $activeStatuses = array_values(array_diff(Lead::STATUSES, ['Tidak Lolos BI Checking']));
 
-        $leads = Lead::query()
-            ->with(['project', 'salesPic', 'team', 'creator'])
+        $leadsQuery = Lead::query()
             ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
             ->when(! $user->canAccessAllBranches() && ! $branchId, fn ($query) => $query->whereRaw('1 = 0'))
             ->when(! $user->can('leads.view-all'), function ($query) use ($user): void {
@@ -60,17 +70,25 @@ class LeadController extends Controller
 
                 $query->where('sales_pic_id', $user->getKey());
             })
+            ->when($salesPicId, fn ($query) => $query->where('sales_pic_id', $salesPicId))
+            ->when($active, fn ($query) => $query->whereIn('status_lead', $activeStatuses))
             ->when($status, fn ($query) => $query->where('status_lead', $status))
             ->when($source, fn ($query) => $query->where('sumber_lead', $source))
             ->when($channel, fn ($query) => $query->where('kanal_masuk', $channel))
             ->when($request->filled('date_from'), fn ($query) => $query->whereDate('tanggal_lead', '>=', $request->date('date_from')))
             ->when($request->filled('date_to'), fn ($query) => $query->whereDate('tanggal_lead', '<=', $request->date('date_to')))
             ->when($request->filled('project_id'), fn ($query) => $query->where('project_id', $request->integer('project_id')))
+            ->when($followUp === 'today', fn ($query) => $query->whereDate('next_follow_up_at', today()))
+            ->when($followUp === 'overdue', fn ($query) => $query->whereNotNull('next_follow_up_at')->where('next_follow_up_at', '<', now()))
+            ->when($followUp === 'upcoming', fn ($query) => $query->where('next_follow_up_at', '>', now()))
             ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search): void {
                 $query->where('id_lead', 'like', "%{$search}%")
                     ->orWhere('nama_konsumen', 'like', "%{$search}%")
                     ->orWhere('no_hp', 'like', "%{$search}%");
-            }))
+            }));
+
+        $leads = (clone $leadsQuery)
+            ->with(['project', 'salesPic', 'team', 'creator', 'latestHandoff'])
             ->latest('tanggal_lead')
             ->latest('id')
             ->paginate(20)
@@ -78,14 +96,19 @@ class LeadController extends Controller
 
         return view('leads.index', [
             'leads' => $leads,
+            'view' => 'table',
             'branches' => $user->canAccessAllBranches()
                 ? Branch::query()->where('is_active', true)->orderBy('name')->get()
                 : collect([$user->branch])->filter(),
+            'salesUsers' => $this->availableSalesUsers($user),
             'projects' => $this->availableProjects($user),
             'branchId' => $branchId,
+            'salesPicId' => $salesPicId,
+            'active' => $active,
             'status' => $status,
             'source' => $source,
             'channel' => $channel,
+            'followUp' => $followUp,
             'statuses' => Lead::STATUSES,
             'sources' => Lead::SOURCES,
             'channels' => Lead::CHANNELS,
@@ -200,7 +223,87 @@ class LeadController extends Controller
     {
         $this->authorize('view', $lead);
 
-        return view('leads.show', ['lead' => $lead->load(['branch', 'team', 'project', 'salesPic', 'creator', 'activities.user', 'salesAgendas.creator', 'originAgenda'])]);
+        return view('leads.show', ['lead' => $lead->load([
+            'branch', 'team', 'project', 'salesPic', 'creator', 'activities.user',
+            'salesAgendas.creator', 'originAgenda', 'latestHandoff.requester', 'latestHandoff.reviewer',
+        ])]);
+    }
+
+    public function updateFollowUp(UpdateLeadFollowUpRequest $request, Lead $lead): RedirectResponse
+    {
+        $data = $request->validated();
+
+        DB::transaction(function () use ($data, $lead, $request): void {
+            $lead->update($data);
+            $followUpNote = $data['next_follow_up_note'] ?? null;
+
+            if (($data['next_follow_up_at'] ?? null) !== null || $followUpNote !== null) {
+                $lead->activities()->create([
+                    'user_id' => $request->user()->getKey(),
+                    'activity_type' => 'Follow Up',
+                    'description' => 'Follow-up berikutnya dijadwalkan'.($followUpNote ? ': '.$followUpNote : '.'),
+                    'happened_at' => now(),
+                ]);
+            }
+        });
+
+        return back()->with('status', 'lead-follow-up-updated');
+    }
+
+    public function updateQualification(UpdateLeadQualificationRequest $request, Lead $lead): RedirectResponse
+    {
+        $data = $request->validated();
+        $isQualified = $data['qualification_status'] === 'qualified';
+
+        DB::transaction(function () use ($data, $lead, $request, $isQualified): void {
+            $lead->update([
+                ...$data,
+                'qualified_at' => $isQualified ? now() : null,
+                'qualified_by' => $isQualified ? $request->user()->getKey() : null,
+            ]);
+            $lead->activities()->create([
+                'user_id' => $request->user()->getKey(),
+                'activity_type' => 'Status Update',
+                'description' => 'Kualifikasi Buku Saku diubah menjadi '.str($data['qualification_status'])->replace('_', ' ')->title().'.',
+                'status_to' => $lead->status_lead,
+                'happened_at' => now(),
+            ]);
+        });
+
+        return back()->with('status', 'lead-qualification-updated');
+    }
+
+    public function storeHandoff(StoreLeadHandoffRequest $request, Lead $lead): RedirectResponse
+    {
+        if ($lead->qualification_status !== 'qualified') {
+            throw ValidationException::withMessages(['note' => 'Lead harus berstatus Qualified sebelum diserahkan.']);
+        }
+
+        if ($lead->handoffs()->whereIn('status', ['submitted', 'accepted'])->exists()) {
+            throw ValidationException::withMessages(['note' => 'Lead sudah memiliki handoff aktif.']);
+        }
+
+        $lead->handoffs()->create([
+            ...$request->validated(),
+            'requested_by' => $request->user()->getKey(),
+            'status' => 'submitted',
+        ]);
+
+        return back()->with('status', 'lead-handoff-created');
+    }
+
+    public function reviewHandoff(ReviewLeadHandoffRequest $request, LeadHandoff $leadHandoff): RedirectResponse
+    {
+        $lead = $leadHandoff->lead;
+        $this->authorize('view', $lead);
+
+        $leadHandoff->update([
+            ...$request->validated(),
+            'reviewed_by' => $request->user()->getKey(),
+            'reviewed_at' => now(),
+        ]);
+
+        return back()->with('status', 'lead-handoff-reviewed');
     }
 
     public function edit(Lead $lead): View

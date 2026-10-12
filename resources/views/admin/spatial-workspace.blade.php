@@ -1,69 +1,98 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-wrap items-center justify-between gap-4">
-            <div>
-                <p class="text-xs font-bold uppercase tracking-widest text-marison-terracotta-600">Organization Lab</p>
-                <h1 class="mt-1 text-xl font-bold">Spatial Workspace</h1>
-                <p class="mt-1 text-sm text-gray-500">Peta 3D struktur cabang, tim, dan assignment user.</p>
-            </div>
-            <div class="flex items-center gap-3">
-                @can('users.assign-roles')
-                    <button type="button" data-spatial-toggle-edit class="rounded-lg border border-marison-line bg-marison-paper px-3 py-2 text-xs font-bold uppercase tracking-wider text-marison-forest-950 hover:bg-marison-cream-50">Edit mode</button>
-                @endcan
-                <span data-spatial-mode class="rounded-full bg-marison-gold-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-marison-forest-950">View mode</span>
-            </div>
+        <div>
+            <h1 class="text-[24px] font-semibold leading-7 tracking-[-0.5px] text-ink">Spatial Workspace <span class="sr-only">Spatial workspace</span></h1>
+            <p class="workspace-page-description mt-0.5 text-xs text-muted">Atur cabang, tim, dan akses dalam scene organisasi 3D.</p>
         </div>
     </x-slot>
 
-    <div class="py-6">
-        <div class="mx-auto max-w-[1800px] px-3 sm:px-5 lg:px-6">
-            <section class="relative min-h-[calc(100vh-10rem)] overflow-hidden rounded-2xl border border-marison-line bg-marison-forest-950 shadow-xl">
-                <div class="absolute inset-x-0 top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 bg-marison-forest-950/80 px-5 py-4 text-white backdrop-blur-sm">
-                    <div>
-                        <p class="text-xs font-bold uppercase tracking-[0.2em] text-marison-gold-400">Spatial map</p>
-                        <p class="mt-1 text-sm text-stone-300">Klik Branch, Team, atau User. Drag canvas untuk memutar scene.</p>
-                    </div>
-                    <div class="flex items-center gap-3 text-xs text-stone-300">
-                        <span class="flex items-center gap-2"><span class="size-2 rounded-full bg-marison-gold-400"></span>Cabang</span>
-                        <span class="flex items-center gap-2"><span class="size-2 rounded-full bg-marison-teal-600"></span>Tim</span>
-                        <span class="flex items-center gap-2"><span class="size-2 rounded-full bg-marison-terracotta-600"></span>User</span>
+    <div class="flex h-full min-h-0 flex-col">
+        @php($hasTeams = collect($workspace['branches'])->sum(fn (array $branch): int => count($branch['teams'])) > 0)
+        @php($assignedUserIds = collect($workspace['branches'])->flatMap(fn (array $branch) => collect($branch['teams'])->flatMap(fn (array $team) => $team['userIds'] ?? []))->map(fn ($id): int => (int) $id)->all())
+        @php($unassignedUsers = collect($workspace['users'])->reject(fn (array $user): bool => in_array((int) $user['id'], $assignedUserIds, true))->values())
+        @php($unassignedCount = $unassignedUsers->count())
+        @if (count($workspace['branches']) === 0 || ! $hasTeams)
+            <x-ui.card title="Belum ada struktur organisasi" description="Tambahkan cabang atau tim melalui halaman Pengaturan yang sudah tersedia." padding="p-6" class="m-4">
+                <div class="grid min-h-64 place-items-center rounded-3xl border border-dashed border-line bg-canvas px-6 py-10 text-center">
+                    <div class="max-w-md">
+                        <div class="mx-auto grid size-14 place-items-center rounded-2xl bg-lime-soft text-lime-dark"><svg class="size-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 20h18M5 17V7l7-4 7 4v10M8 20v-5h8v5" /></svg></div>
+                        <p class="mt-4 text-sm leading-6 text-muted">Workspace akan menampilkan cabang, tim, dan user setelah data organisasi tersedia.</p>
                     </div>
                 </div>
-                <div data-spatial-workspace class="relative min-h-[calc(100vh-10rem)] w-full touch-none">
-                    <div data-spatial-loading class="absolute inset-0 grid place-items-center text-sm text-stone-300">Menyiapkan workspace 3D...</div>
-                    <div data-spatial-error class="absolute inset-0 hidden place-items-center px-6 text-center text-sm text-stone-300"></div>
-                    <div data-spatial-labels class="pointer-events-none absolute inset-0 z-[2] overflow-hidden"></div>
-                </div>
+            </x-ui.card>
+        @else
+            <section data-spatial-workspace class="spatial-workspace-shell relative min-h-0 flex-1 overflow-hidden rounded-[28px]">
+                <div class="spatial-scene-stage absolute inset-0">
+                    <div data-spatial-loading class="absolute inset-0 z-10 grid place-items-center text-xs text-muted">Menyiapkan peta organisasi...</div>
+                    <canvas data-spatial-canvas data-spatial-svg class="spatial-scene-canvas h-full w-full" role="img" tabindex="0" aria-keyshortcuts="Q E" aria-label="Peta 3D organisasi cabang dan tim"></canvas>
+                    <div data-spatial-mobile class="hidden"></div>
 
-                <aside class="absolute right-4 top-20 z-10 hidden w-72 rounded-2xl border border-white/15 bg-marison-paper/95 p-4 shadow-2xl backdrop-blur sm:right-6 sm:w-80" data-spatial-inspector>
-                <div data-spatial-empty class="flex min-h-[20rem] flex-col items-center justify-center text-center">
-                    <div class="grid size-14 place-items-center rounded-2xl bg-marison-cream-50 text-2xl text-marison-terracotta-600">⌘</div>
-                    <h2 class="mt-4 font-bold text-marison-ink-950">Pilih objek</h2>
-                    <p class="mt-2 max-w-xs text-sm leading-6 text-gray-500">Klik cabang, tim, atau user di dalam workspace untuk membuka ringkasan assignment.</p>
-                </div>
-                <div data-spatial-detail class="hidden">
-                    <p data-spatial-kind class="text-xs font-bold uppercase tracking-widest text-marison-terracotta-600"></p>
-                    <h2 data-spatial-title class="mt-1 text-xl font-bold text-marison-ink-950"></h2>
-                    <p data-spatial-subtitle class="mt-1 text-sm text-gray-500"></p>
-                    <div data-spatial-content class="mt-6 grid gap-4"></div>
-                    @can('users.assign-roles')
-                        <div data-spatial-actions class="mt-6 hidden border-t border-marison-line pt-5">
-                            <p class="text-xs font-bold uppercase tracking-widest text-marison-terracotta-600">Edit assignment</p>
-                            <label class="mt-4 block text-xs font-semibold text-gray-600">Team<select data-spatial-team class="mt-1 block w-full rounded-lg border-marison-line bg-marison-cream-50 text-sm"></select></label>
-                            <label class="mt-3 block text-xs font-semibold text-gray-600">Atasan<select data-spatial-reports-to class="mt-1 block w-full rounded-lg border-marison-line bg-marison-cream-50 text-sm"></select></label>
-                            <button type="button" data-spatial-save class="mt-4 w-full rounded-lg bg-marison-forest-950 px-4 py-2.5 text-sm font-bold text-white hover:bg-marison-forest-900">Simpan assignment</button>
-                            <p data-spatial-save-status class="mt-3 hidden text-xs"></p>
+                    <div data-spatial-toolbar class="spatial-hud spatial-mode-switch absolute left-5 top-[18px] z-10 flex items-center gap-1.5 rounded-[18px] bg-white/90 p-1.5 backdrop-blur-sm">
+                        @can('users.assign-roles')
+                            <button type="button" data-spatial-edit-toggle aria-pressed="false" class="spatial-mode-button">Mode edit</button>
+                        @endcan
+                        <button type="button" data-spatial-view-toggle aria-pressed="true" class="spatial-mode-button is-active">Mode lihat</button>
+                    </div>
+
+                    <div data-spatial-legend class="spatial-hud spatial-legend absolute left-5 top-[78px] z-10 w-[275px] rounded-[18px] bg-white/90 p-3.5 backdrop-blur-sm">
+                        <button type="button" data-spatial-legend-toggle class="flex w-full items-center justify-between text-left"><span><span class="block text-xs font-semibold text-ink">Peta organisasi</span><span class="mt-0.5 block text-[10px] text-muted">Cabang, tim, dan role dalam scene 3D</span></span><span class="text-[10px] font-semibold text-lime-dark">Legenda</span></button>
+                        <div data-spatial-legend-content class="mt-2.5 flex flex-wrap gap-1.5">
+                            <span class="spatial-legend-key"><i class="bg-orange"></i>Cabang</span><span class="spatial-legend-key"><i class="bg-lime-dark"></i>Tim</span><span class="spatial-legend-key"><i class="bg-ink"></i>User</span>
+                            <div data-spatial-role-legend class="contents"></div>
                         </div>
+                    </div>
+
+                    <div class="spatial-scene-tools absolute left-5 top-1/2 z-10 flex -translate-y-1/2 flex-col gap-2 rounded-[18px] bg-white/90 p-1.5 backdrop-blur-sm" aria-label="Alat scene">
+                        <button type="button" class="spatial-tool-button is-active" aria-label="Pilih"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m5 3 4.2 17 2.3-6.1L17.6 11 5 3Z" /></svg></button>
+                        <button type="button" class="spatial-tool-button" aria-label="Geser kanvas"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 11V5a1.5 1.5 0 0 1 3 0v5m0-2V3.5a1.5 1.5 0 0 1 3 0V10m0-2.5a1.5 1.5 0 0 1 3 0v5m0-2a1.5 1.5 0 0 1 3 0v3.5c0 4.4-2.6 7-7 7h-1.5c-2.2 0-3.5-1.1-4.7-2.8L4 15a1.5 1.5 0 0 1 2.6-1.5L8 15" /></svg></button>
+                        <button type="button" class="spatial-tool-button" aria-label="Hubungkan" title="Pilih user untuk mengatur atasan"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9.5 14.5 14.5 9.5m-7.2 8.2-1-1a3 3 0 0 1 0-4.2l2.2-2.2a3 3 0 0 1 4.2 0m1-1 1-1a3 3 0 0 1 4.2 0l1 1a3 3 0 0 1 0 4.2l-2.2 2.2a3 3 0 0 1-4.2 0" /></svg></button>
+                        @can('users.assign-roles')
+                            <button type="button" data-spatial-undo class="spatial-tool-button hidden" aria-label="Undo">↶</button>
+                        @endcan
+                    </div>
+
+                    @if ($unassignedCount > 0)
+                        <div class="spatial-unassigned-card spatial-hud absolute bottom-[18px] left-5 z-10 w-full max-w-[330px] rounded-[18px] bg-white/90 p-3.5 backdrop-blur-sm">
+                            <div class="flex items-center justify-between gap-3"><p class="text-xs font-semibold text-ink">Belum ditugaskan</p><span class="rounded-full bg-lime-soft px-2 py-1 text-[10px] font-semibold text-lime-dark">{{ $unassignedCount }} user</span></div>
+                            <div class="spatial-unassigned-list mt-2.5">
+                                @foreach ($unassignedUsers->take(3) as $unassignedUser)
+                                    <div class="spatial-unassigned-person"><span class="spatial-unassigned-avatar">{{ str($unassignedUser['name'])->substr(0, 1)->upper() }}</span><span class="truncate">{{ $unassignedUser['name'] }}</span></div>
+                                @endforeach
+                                @if ($unassignedCount > 3)<span class="spatial-unassigned-more">+{{ $unassignedCount - 3 }}</span>@endif
+                            </div>
+                        </div>
+                    @endif
+
+                    @can('users.assign-roles')
+                        <span data-spatial-pending class="spatial-pending-pill absolute right-[344px] top-[18px] z-10 hidden items-center gap-1.5 rounded-xl bg-[#fff3e8] px-2.5 py-1.5 text-[11px] font-semibold text-[#a75e25]" aria-live="polite"><i class="size-1.5 rounded-full bg-orange"></i>0 perubahan</span>
                     @endcan
+                    <div class="spatial-camera-hud spatial-hud absolute bottom-[18px] right-[344px] z-10 flex items-center gap-1.5 rounded-[18px] bg-white/90 p-1.5 backdrop-blur-sm" aria-label="Kontrol kamera">
+                        <button type="button" data-spatial-zoom-out class="spatial-camera-button" aria-label="Perkecil tampilan">−</button>
+                        <span data-spatial-zoom-value class="min-w-10 text-center text-[11px] font-semibold text-ink">100%</span>
+                        <button type="button" data-spatial-zoom-in class="spatial-camera-button" aria-label="Perbesar tampilan">+</button>
+                        <button type="button" data-spatial-reset class="spatial-camera-button px-2" aria-label="Reset tampilan">Reset</button>
+                        <button type="button" data-spatial-rotate-right class="spatial-camera-button" aria-label="Putar kamera 90 derajat" title="Putar kanan (E)">↷</button>
+                    </div>
+
+                    <aside data-spatial-panel class="spatial-inspector absolute right-[18px] top-[18px] bottom-[18px] z-20 w-[308px] rounded-3xl bg-white p-5" aria-label="Detail user" aria-hidden="true">
+                        <div class="flex items-start justify-between gap-3"><div><p class="text-[10px] font-medium text-muted">Detail pilihan</p><h2 data-spatial-panel-name class="mt-1 text-base font-semibold text-ink">Scene organisasi</h2></div><button type="button" data-spatial-panel-close class="grid size-7 place-items-center rounded-lg text-muted hover:bg-canvas" aria-label="Tutup detail">×</button></div>
+                        <div data-spatial-panel-body class="mt-4 min-h-0 overflow-y-auto thin-scrollbar pb-20"><p class="text-xs leading-5 text-muted">Pilih pion user untuk melihat detail, role, dan struktur pelaporannya.</p></div>
+                        @can('users.assign-roles')
+                            <div class="spatial-inspector-actions absolute inset-x-5 bottom-5 flex gap-2"><button type="button" data-spatial-cancel class="hidden flex-1 rounded-xl border border-line bg-white px-3 py-2.5 text-[11px] font-semibold text-ink">Batalkan</button><button type="button" data-spatial-save class="hidden flex-1 rounded-xl bg-lime px-3 py-2.5 text-[11px] font-semibold text-ink hover:bg-lime-dark hover:text-white">Simpan perubahan</button></div>
+                        @endcan
+                        <p data-spatial-status class="absolute inset-x-5 bottom-1 text-[10px] text-muted" role="status" aria-live="polite"></p>
+                    </aside>
                 </div>
-                </aside>
             </section>
-        </div>
+        @endif
     </div>
 
     <script>
         window.spatialWorkspace = {{ Illuminate\Support\Js::from($workspace) }};
-        window.spatialWorkspaceCanEdit = @json(auth()->user()->can('users.assign-roles'));
+        window.spatialWorkspaceCanEdit = @json(Auth::user()->can('users.assign-roles'));
+        window.spatialWorkspaceCanAccessAllBranches = @json(Auth::user()->canAccessAllBranches());
         window.spatialWorkspaceUpdateUrl = @json(route('admin.spatial-workspace.users.update', ['user' => '__USER__']));
+        window.spatialWorkspaceGlobalRoleOrder = @json(array_keys(\App\Support\Rbac::GLOBAL_ROLES));
+        window.spatialWorkspaceTeamRoleOrder = @json(array_keys(\App\Support\Rbac::TEAM_ROLES));
     </script>
 </x-app-layout>

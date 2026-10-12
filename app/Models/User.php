@@ -60,7 +60,7 @@ class User extends Authenticatable
 
     public function canAccessAllBranches(): bool
     {
-        return $this->hasGlobalRole('super_admin');
+        return $this->hasGlobalRole('super_admin') || $this->hasGlobalRole('pusat');
     }
 
     public function globalRoles(): BelongsToMany

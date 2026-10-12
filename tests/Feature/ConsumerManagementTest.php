@@ -58,7 +58,7 @@ class ConsumerManagementTest extends TestCase
         $this->actingAs($admin)
             ->get(route('consumers.show', SalesCase::query()->firstOrFail()))
             ->assertOk()
-            ->assertSeeText('Riwayat Pembelian');
+            ->assertSeeText('Riwayat pembelian');
     }
 
     public function test_admin_cannot_use_or_edit_a_lot_from_another_branch(): void

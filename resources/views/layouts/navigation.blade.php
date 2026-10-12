@@ -1,118 +1,171 @@
 @php
-    $link = 'group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition';
-    $activeLink = 'bg-marison-terracotta-600 text-white shadow-sm';
-    $inactiveLink = 'text-stone-300 hover:bg-marison-forest-900 hover:text-white';
+    $panelLink = 'group flex h-[35px] min-h-0 items-center gap-2.5 rounded-xl px-2.5 py-1.5 text-[13px] font-medium transition duration-150';
+    $activePanelLink = 'bg-lime-soft text-ink';
+    $inactivePanelLink = 'text-muted hover:bg-canvas hover:text-ink';
+    $railLink = 'group relative grid size-[42px] place-items-center rounded-[14px] text-[#9aa293] transition duration-150 hover:bg-[#2b3325] hover:text-lime';
+    $activeRailLink = 'bg-white/10 text-lime';
+    $settingsRoute = Auth::user()->can('spatial-workspace.view')
+        ? 'admin.spatial-workspace'
+        : (Auth::user()->can('users.view')
+            ? 'admin.users.index'
+            : (Auth::user()->can('teams.view')
+                ? 'admin.teams.index'
+                : (Auth::user()->can('projects.view') ? 'admin.projects.index' : 'admin.audit-logs.index')));
 @endphp
 
-<div x-cloak x-show="sidebarOpen" x-transition.opacity class="fixed inset-0 z-40 bg-gray-950/60 lg:hidden" @click="sidebarOpen = false"></div>
+<div x-cloak x-show="sidebarOpen" x-transition.opacity class="fixed inset-0 z-40 bg-ink/60 lg:hidden" @click="sidebarOpen = false"></div>
 
-<aside
-    class="fixed inset-y-0 left-0 z-50 flex w-72 -translate-x-full flex-col bg-marison-forest-950 text-white shadow-2xl transition-transform duration-200 lg:translate-x-0"
-    :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
->
-    <div class="flex h-20 items-center justify-between border-b border-white/10 px-5">
-        <a href="{{ route('dashboard') }}" class="flex min-w-0 items-center gap-3">
-            <span class="grid size-10 shrink-0 place-items-center bg-marison-gold-400"><span class="size-5 rotate-45 bg-marison-forest-950"></span></span>
-            <span class="min-w-0"><span class="block truncate text-sm font-bold uppercase tracking-wider">Marison</span><span class="block truncate text-xs text-stone-400">Work OS</span></span>
+<aside class="fixed inset-y-3.5 left-3.5 z-50 hidden w-[66px] flex-col items-center gap-2.5 rounded-3xl bg-ink py-4 text-white lg:flex" aria-label="Navigasi utama">
+    <a href="{{ route('dashboard') }}" class="mb-2.5 grid size-10 place-items-center rounded-[13px] bg-lime text-ink" aria-label="Dashboard" title="Dashboard">
+        <span class="text-lg font-bold">O</span>
+    </a>
+
+    <nav class="flex flex-col items-center gap-2.5">
+        @can('dashboard.view')
+            <a href="{{ route('dashboard') }}" class="{{ $railLink }} {{ request()->routeIs('dashboard') ? $activeRailLink : '' }}" aria-label="Dashboard" title="Dashboard">
+                <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 13h6V4H4v9Zm0 7h6v-4H4v4Zm10 0h6v-9h-6v9Zm0-13h6V4h-6v3Z" /></svg>
+            </a>
+        @endcan
+        @can('consumers.view')
+            <a href="{{ route('consumers.index') }}" class="{{ $railLink }} {{ request()->routeIs('consumers.*') ? $activeRailLink : '' }}" aria-label="Data konsumen" title="Data konsumen">
+                <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 20v-1.5A3.5 3.5 0 0 0 12.5 15h-5A3.5 3.5 0 0 0 4 18.5V20m6-9a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm6-7.5a3.5 3.5 0 0 1 0 6.8M17 15a3.5 3.5 0 0 1 3 3.5V20" /></svg>
+            </a>
+        @endcan
+        @canany(['sales.view-own', 'sales.view-team', 'sales.view-all'])
+            <a href="{{ route('sales-agendas.index') }}" class="{{ $railLink }} {{ request()->routeIs('sales-agendas.*') ? $activeRailLink : '' }}" aria-label="Agenda sales" title="Agenda sales">
+                <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><rect width="16" height="16" x="4" y="5" rx="2" stroke-width="1.8" /><path stroke-linecap="round" stroke-width="1.8" d="M8 3v4m8-4v4M4 10h16m-9 4h.01M15 14h.01M9 17h.01M15 17h.01" /></svg>
+            </a>
+        @endcanany
+        @canany(['leads.view-own', 'leads.view-team', 'leads.view-branch', 'leads.view-all', 'leads.monitor'])
+            <a href="{{ route('leads.index') }}" class="{{ $railLink }} {{ request()->routeIs('leads.index', 'leads.create', 'leads.show', 'leads.edit') ? $activeRailLink : '' }}" aria-label="Leads" title="Leads">
+                <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M5 19V9m7 10V5m7 14v-7" /></svg>
+            </a>
+        @endcanany
+    </nav>
+
+    <div class="mt-auto flex flex-col items-center gap-2">
+        @canany(['branches.view', 'projects.view', 'lots.view', 'audit-logs.view', 'banks.view', 'lead-time.view', 'promotions.view', 'users.view', 'teams.view', 'roles.view'])
+            <a href="{{ route($settingsRoute) }}" class="{{ $railLink }} {{ request()->routeIs('admin.*') ? $activeRailLink : '' }}" aria-label="Pengaturan" title="Pengaturan">
+                <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 15.25A3.25 3.25 0 1 0 12 8.75a3.25 3.25 0 0 0 0 6.5Zm0-12.25v2m0 14v2m9-9h-2m-16 0H1m17.36-6.36-1.42 1.42M7.05 16.95l-1.41 1.41m12.72 0-1.41-1.41M7.05 7.05 5.64 5.64" /></svg>
+            </a>
+        @endcanany
+        <button type="button" class="{{ $railLink }} lg:hidden" @click="sidebarOpen = true" aria-label="Buka navigasi" title="Buka navigasi">
+            <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 6h16M4 12h16M4 18h16" /></svg>
+        </button>
+    </div>
+</aside>
+
+<aside class="fixed inset-y-3.5 left-[94px] z-50 flex w-[216px] -translate-x-full flex-col rounded-3xl bg-white p-3.5 text-ink transition-transform duration-200 xl:translate-x-0" :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full xl:translate-x-0'" aria-label="Panel navigasi">
+    <div class="flex items-center justify-between pb-3.5">
+        <a href="{{ route('dashboard') }}" class="min-w-0">
+            <span class="block truncate text-[15px] font-bold leading-5 text-ink">Oasis Next</span>
+            <span class="block truncate text-[10px] leading-4 text-muted">Workspace operasional</span>
         </a>
-        <button type="button" class="rounded-lg p-2 text-stone-400 hover:bg-white/10 lg:hidden" @click="sidebarOpen = false" aria-label="Tutup menu">
-            <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 18 6M6 6l12 12" /></svg>
+        <button type="button" class="grid size-9 place-items-center rounded-xl text-muted transition hover:bg-canvas hover:text-ink lg:hidden" @click="sidebarOpen = false" aria-label="Tutup navigasi">
+            <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M6 6l12 12M18 6 6 18" /></svg>
         </button>
     </div>
 
-    <nav class="flex-1 overflow-y-auto px-4 py-5">
+    <nav class="workspace-nav-scroll min-h-0 flex-1 overflow-y-auto" aria-label="Menu workspace">
         <div class="grid gap-1">
             @can('dashboard.view')
-                <a href="{{ route('dashboard') }}" class="{{ $link }} {{ request()->routeIs('dashboard') ? $activeLink : $inactiveLink }}">Dashboard</a>
+                <a href="{{ route('dashboard') }}" class="{{ $panelLink }} {{ request()->routeIs('dashboard') ? $activePanelLink : $inactivePanelLink }}">
+                    <svg class="size-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 13h6V4H4v9Zm0 7h6v-4H4v4Zm10 0h6v-9h-6v9Zm0-13h6V4h-6v3Z" /></svg><span>Dashboard</span>
+                </a>
+            @endcan
+            @can('consumers.view')
+                <a href="{{ route('consumers.index') }}" class="{{ $panelLink }} {{ request()->routeIs('consumers.*') ? $activePanelLink : $inactivePanelLink }}">
+                    <svg class="size-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 20v-1.5A3.5 3.5 0 0 0 12.5 15h-5A3.5 3.5 0 0 0 4 18.5V20m6-9a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm6-7.5a3.5 3.5 0 0 1 0 6.8M17 15a3.5 3.5 0 0 1 3 3.5V20" /></svg><span>Data konsumen</span>
+                </a>
             @endcan
         </div>
 
-        @can('consumers.view')
-            <div class="my-5 border-t border-white/10"></div>
-            <a href="{{ route('consumers.index') }}" class="{{ $link }} {{ request()->routeIs('consumers.*') ? $activeLink : $inactiveLink }}">Data Konsumen</a>
-        @endcan
-
-        @canany(['sales.view-own', 'sales.view-team', 'sales.view-all'])
-            <div class="my-5 border-t border-white/10"></div>
-            <a href="{{ route('sales-agendas.index') }}" class="{{ $link }} {{ request()->routeIs('sales-agendas.*') ? $activeLink : $inactiveLink }}">Agenda Sales</a>
-        @endcanany
-
-        @canany(['leads.view-own', 'leads.view-team', 'leads.view-branch', 'leads.view-all', 'leads.monitor'])
-            <a href="{{ route('leads.index') }}" class="{{ $link }} {{ request()->routeIs('leads.*') && ! request()->routeIs('leads.monitoring') ? $activeLink : $inactiveLink }}">Leads</a>
-            @canany(['leads.monitor', 'leads.view-team', 'leads.view-all'])
-                <a href="{{ route('leads.monitoring') }}" class="{{ $link }} {{ request()->routeIs('leads.monitoring') ? $activeLink : $inactiveLink }}">Monitoring Leads</a>
-            @endcanany
-            @canany(['sales-fee-reports.view', 'leads.monitor', 'leads.view-team', 'leads.view-all'])
-                <a href="{{ route('sales-fee-reports.index') }}" class="{{ $link }} {{ request()->routeIs('sales-fee-reports.*') ? $activeLink : $inactiveLink }}">Laporan Performa Sales</a>
-            @endcanany
+        @canany(['sales.view-own', 'sales.view-team', 'sales.view-all', 'leads.view-own', 'leads.view-team', 'leads.view-branch', 'leads.view-all', 'leads.monitor'])
+            <div class="my-3 border-t border-line"></div>
+            <p class="mb-1.5 px-2.5 pt-3.5 text-[11px] font-medium text-[#8b9086]">Buku Saku Sales</p>
+            <div class="grid gap-1">
+                @canany(['sales.view-own', 'sales.view-team', 'sales.view-all'])
+                    <a href="{{ route('sales-agendas.index') }}" class="{{ $panelLink }} {{ request()->routeIs('sales-agendas.*') ? $activePanelLink : $inactivePanelLink }}">
+                        <svg class="size-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><rect width="16" height="16" x="4" y="5" rx="2" stroke-width="1.8" /><path stroke-linecap="round" stroke-width="1.8" d="M8 3v4m8-4v4M4 10h16" /></svg><span>Agenda sales</span>
+                    </a>
+                @endcanany
+                @canany(['leads.view-own', 'leads.view-team', 'leads.view-branch', 'leads.view-all', 'leads.monitor'])
+                    <a href="{{ route('leads.index') }}" class="{{ $panelLink }} {{ request()->routeIs('leads.index', 'leads.create', 'leads.show', 'leads.edit') ? $activePanelLink : $inactivePanelLink }}">
+                        <svg class="size-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M5 19V9m7 10V5m7 14v-7" /></svg><span class="min-w-0 flex-1">Leads</span>
+                    </a>
+                @endcanany
+                @canany(['leads.monitor', 'leads.view-team', 'leads.view-all'])
+                    <a href="{{ route('leads.monitoring') }}" class="{{ $panelLink }} {{ request()->routeIs('leads.monitoring') ? $activePanelLink : $inactivePanelLink }}">
+                        <svg class="size-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="1.8" d="M4 18h16M6 15V9m4 6V5m4 10v-3m4 3V7" /></svg><span>Monitoring leads</span>
+                    </a>
+                @endcanany
+            </div>
         @endcanany
 
         @can('sales-process.view')
-            <div class="my-5 border-t border-white/10"></div>
+            <div class="my-3 border-t border-line"></div>
             <div x-data="{ open: {{ request()->routeIs('sales-process.*') ? 'true' : 'false' }} }">
-                <button type="button" class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-white" @click="open = ! open">
-                    <span>Proses Penjualan</span>
-                    <svg class="size-4 transition" :class="open && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 9-7 7-7-7" /></svg>
+                <button type="button" class="flex min-h-[35px] w-full items-center justify-between rounded-xl px-2.5 py-2 text-left text-[11px] font-medium text-[#8b9086] transition hover:bg-canvas hover:text-ink" @click="open = ! open" :aria-expanded="open.toString()">
+                    <span>Proses penjualan</span><svg class="size-3.5 transition" :class="open && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m6 9 6 6 6-6" /></svg>
                 </button>
-                <div x-show="open" class="mt-1 grid gap-1 pl-3">
-                    <a href="{{ route('sales-process.psjb-utj') }}" class="{{ $link }} {{ request()->routeIs('sales-process.psjb-utj') ? $activeLink : $inactiveLink }}">PSJB / UTJ</a>
-                    <a href="{{ route('sales-process.bi-checking') }}" class="{{ $link }} {{ request()->routeIs('sales-process.bi-checking') ? $activeLink : $inactiveLink }}">BI Checking</a>
-                     @can('filing.view')<a href="{{ route('sales-process.pemberkasan') }}" class="{{ $link }} {{ request()->routeIs('sales-process.pemberkasan') ? $activeLink : $inactiveLink }}">Pemberkasan</a>@endcan
-                     @can('bank-process.view')<a href="{{ route('sales-process.bank') }}" class="{{ $link }} {{ request()->routeIs('sales-process.bank') ? $activeLink : $inactiveLink }}">Proses Bank</a>@endcan
-                     @can('ppjb.view')<a href="{{ route('sales-process.ppjb-developer') }}" class="{{ $link }} {{ request()->routeIs('sales-process.ppjb-developer') ? $activeLink : $inactiveLink }}">PPJB Developer</a>@endcan
-                     @can('akad.view')<a href="{{ route('sales-process.akad-bast') }}" class="{{ $link }} {{ request()->routeIs('sales-process.akad-bast') ? $activeLink : $inactiveLink }}">Akad & BAST</a>@endcan
+                <div x-show="open" x-transition.opacity class="mt-1 grid gap-1 pl-3">
+                    <a href="{{ route('sales-process.psjb-utj') }}" class="{{ $panelLink }} {{ request()->routeIs('sales-process.psjb-utj') ? $activePanelLink : $inactivePanelLink }}"><span>Alur kavling</span></a>
+                    <a href="{{ route('sales-process.bi-checking') }}" class="{{ $panelLink }} {{ request()->routeIs('sales-process.bi-checking') ? $activePanelLink : $inactivePanelLink }}"><span>BI Checking</span></a>
+                    @can('filing.view')<a href="{{ route('sales-process.pemberkasan') }}" class="{{ $panelLink }} {{ request()->routeIs('sales-process.pemberkasan') ? $activePanelLink : $inactivePanelLink }}"><span>Pemberkasan</span></a>@endcan
+                    @can('bank-process.view')<a href="{{ route('sales-process.bank') }}" class="{{ $panelLink }} {{ request()->routeIs('sales-process.bank') ? $activePanelLink : $inactivePanelLink }}"><span>Proses bank</span></a>@endcan
+                    @can('ppjb.view')<a href="{{ route('sales-process.ppjb-developer') }}" class="{{ $panelLink }} {{ request()->routeIs('sales-process.ppjb-developer') ? $activePanelLink : $inactivePanelLink }}"><span>PPJB developer</span></a>@endcan
+                    @can('akad.view')<a href="{{ route('sales-process.akad-bast') }}" class="{{ $panelLink }} {{ request()->routeIs('sales-process.akad-bast') ? $activePanelLink : $inactivePanelLink }}"><span>Akad dan BAST</span></a>@endcan
                 </div>
             </div>
         @endcan
 
         @can('warranties.view')
-            <div class="my-5 border-t border-white/10"></div>
-            <a href="{{ route('warranties.index') }}" class="{{ $link }} {{ request()->routeIs('warranties.*') ? $activeLink : $inactiveLink }}">Garansi</a>
+            <a href="{{ route('warranties.index') }}" class="mt-3 {{ $panelLink }} {{ request()->routeIs('warranties.*') ? $activePanelLink : $inactivePanelLink }}">
+                <svg class="size-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m12 3 7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3Z" /><path stroke-linecap="round" stroke-width="1.8" d="m9 12 2 2 4-4" /></svg><span>Garansi</span>
+            </a>
         @endcan
 
         @canany(['branches.view', 'projects.view', 'lots.view', 'audit-logs.view', 'banks.view', 'lead-time.view', 'promotions.view', 'users.view', 'teams.view', 'roles.view'])
-            <div class="my-5 border-t border-white/10"></div>
+            <div class="my-3 border-t border-line"></div>
             <div x-data="{ open: {{ request()->routeIs('admin.*') ? 'true' : 'false' }} }">
-                <button type="button" class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-white" @click="open = ! open">
-                    <span>Pengaturan</span>
-                    <svg class="size-4 transition" :class="open && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 9-7 7-7-7" /></svg>
+                <button type="button" class="flex min-h-[35px] w-full items-center justify-between rounded-xl px-2.5 py-2 text-left text-[11px] font-medium text-[#8b9086] transition hover:bg-canvas hover:text-ink" @click="open = ! open" :aria-expanded="open.toString()">
+                    <span>Pengaturan</span><svg class="size-3.5 transition" :class="open && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m6 9 6 6 6-6" /></svg>
                 </button>
-                <div x-show="open" class="mt-1 grid gap-1 pl-3">
-                    @can('spatial-workspace.view')<a href="{{ route('admin.spatial-workspace') }}" class="{{ $link }} {{ request()->routeIs('admin.spatial-workspace') ? $activeLink : $inactiveLink }}">Spatial Workspace</a>@endcan
-                    @can('branches.view')<a href="{{ route('admin.branches.index') }}" class="{{ $link }} {{ request()->routeIs('admin.branches.*') ? $activeLink : $inactiveLink }}">Cabang</a>@endcan
-                    @can('projects.view')<a href="{{ route('admin.projects.index') }}" class="{{ $link }} {{ request()->routeIs('admin.projects.*') ? $activeLink : $inactiveLink }}">Proyek</a>@endcan
-                    @can('lots.view')<a href="{{ route('admin.lots.index') }}" class="{{ $link }} {{ request()->routeIs('admin.lots.*') ? $activeLink : $inactiveLink }}">Kavling</a>@endcan
-                    @can('audit-logs.view')<a href="{{ route('admin.audit-logs.index') }}" class="{{ $link }} {{ request()->routeIs('admin.audit-logs.*') ? $activeLink : $inactiveLink }}">Audit Log</a>@endcan
-                    @can('banks.view')<a href="{{ route('admin.banks.index') }}" class="{{ $link }} {{ request()->routeIs('admin.banks.*') ? $activeLink : $inactiveLink }}">Bank</a>@endcan
-                    @can('lead-time.view')<a href="{{ route('admin.lead-times.index') }}" class="{{ $link }} {{ request()->routeIs('admin.lead-times.*') ? $activeLink : $inactiveLink }}">Target Lead Time</a>@endcan
-                    @can('promotions.view')<a href="{{ route('admin.promotions.index') }}" class="{{ $link }} {{ request()->routeIs('admin.promotions.*') ? $activeLink : $inactiveLink }}">Promo</a>@endcan
-                    @can('users.view')<a href="{{ route('admin.users.index') }}" class="{{ $link }} {{ request()->routeIs('admin.users.*') ? $activeLink : $inactiveLink }}">Pengguna</a>@endcan
-                    @can('teams.view')<a href="{{ route('admin.teams.index') }}" class="{{ $link }} {{ request()->routeIs('admin.teams.*') ? $activeLink : $inactiveLink }}">Tim</a>@endcan
-                    @can('roles.view')<a href="{{ route('admin.roles.index') }}" class="{{ $link }} {{ request()->routeIs('admin.roles.*') ? $activeLink : $inactiveLink }}">Role & Permission</a>@endcan
+                <div x-show="open" x-transition.opacity class="mt-1 grid gap-1 pl-3">
+                    @can('spatial-workspace.view')<a href="{{ route('admin.spatial-workspace') }}" class="{{ $panelLink }} {{ request()->routeIs('admin.spatial-workspace') ? $activePanelLink : $inactivePanelLink }}"><span>Spatial workspace</span></a>@endcan
+                    @can('branches.view')<a href="{{ route('admin.branches.index') }}" class="{{ $panelLink }} {{ request()->routeIs('admin.branches.*') ? $activePanelLink : $inactivePanelLink }}"><span>Cabang</span></a>@endcan
+                    @can('projects.view')<a href="{{ route('admin.projects.index') }}" class="{{ $panelLink }} {{ request()->routeIs('admin.projects.*') ? $activePanelLink : $inactivePanelLink }}"><span>Proyek</span></a>@endcan
+                    @can('lots.view')<a href="{{ route('admin.lots.index') }}" class="{{ $panelLink }} {{ request()->routeIs('admin.lots.*') ? $activePanelLink : $inactivePanelLink }}"><span>Kavling</span></a>@endcan
+                    @can('audit-logs.view')<a href="{{ route('admin.audit-logs.index') }}" class="{{ $panelLink }} {{ request()->routeIs('admin.audit-logs.*') ? $activePanelLink : $inactivePanelLink }}"><span>Audit log</span></a>@endcan
+                    @can('banks.view')<a href="{{ route('admin.banks.index') }}" class="{{ $panelLink }} {{ request()->routeIs('admin.banks.*') ? $activePanelLink : $inactivePanelLink }}"><span>Bank</span></a>@endcan
+                    @can('lead-time.view')<a href="{{ route('admin.lead-times.index') }}" class="{{ $panelLink }} {{ request()->routeIs('admin.lead-times.*') ? $activePanelLink : $inactivePanelLink }}"><span>Target lead time</span></a>@endcan
+                    @can('promotions.view')<a href="{{ route('admin.promotions.index') }}" class="{{ $panelLink }} {{ request()->routeIs('admin.promotions.*') ? $activePanelLink : $inactivePanelLink }}"><span>Promo</span></a>@endcan
+                    @can('users.view')<a href="{{ route('admin.users.index') }}" class="{{ $panelLink }} {{ request()->routeIs('admin.users.*') ? $activePanelLink : $inactivePanelLink }}"><span>Pengguna</span></a>@endcan
+                    @can('teams.view')<a href="{{ route('admin.teams.index') }}" class="{{ $panelLink }} {{ request()->routeIs('admin.teams.*') ? $activePanelLink : $inactivePanelLink }}"><span>Tim</span></a>@endcan
+                    @can('roles.view')<a href="{{ route('admin.roles.index') }}" class="{{ $panelLink }} {{ request()->routeIs('admin.roles.*') ? $activePanelLink : $inactivePanelLink }}"><span>Role dan permission</span></a>@endcan
                 </div>
             </div>
         @endcanany
     </nav>
 
-    <div class="border-t border-white/10 p-4">
+    <div class="mt-3 pt-3">
         @if ($availableTeams->isNotEmpty())
-            <div class="mb-4" x-data="{ teamsOpen: false }">
-                <button type="button" class="flex w-full items-center justify-between rounded-lg bg-white/5 px-3 py-2 text-left" @click="teamsOpen = ! teamsOpen">
-                    <span class="min-w-0"><span class="block text-[10px] font-bold uppercase tracking-widest text-stone-500">Tim aktif</span><span class="block truncate text-sm font-semibold text-stone-200">{{ $activeTeam?->name ?? 'Pilih tim' }}</span></span>
-                    <svg class="size-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 9-7 7-7-7" /></svg>
+            <div class="mb-3" x-data="{ teamsOpen: false }">
+                <button type="button" class="flex w-full items-center justify-between rounded-2xl bg-[#f4f4f1] px-3 py-2.5 text-left transition hover:bg-lime-soft" @click="teamsOpen = ! teamsOpen" :aria-expanded="teamsOpen.toString()">
+                    <span class="min-w-0"><span class="block text-[10px] font-medium text-muted">Tim aktif</span><span class="block truncate text-xs font-semibold text-ink">{{ $activeTeam?->name ?? 'Pilih tim' }}</span></span>
+                    <svg class="size-4 text-muted transition" :class="teamsOpen && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="1.8" d="m6 9 6 6 6-6" /></svg>
                 </button>
-                <div x-show="teamsOpen" class="mt-2 grid gap-1">
+                <div x-show="teamsOpen" x-transition.opacity class="mt-2 grid gap-1">
                     @foreach ($availableTeams as $team)
-                        <form method="POST" action="{{ route('team-context.update', $team) }}">@csrf<button type="submit" class="w-full rounded-lg px-3 py-2 text-left text-sm {{ $activeTeam?->is($team) ? 'bg-marison-gold-400 font-semibold text-marison-forest-950' : 'text-stone-300 hover:bg-white/10' }}">{{ $team->name }}</button></form>
+                        <form method="POST" action="{{ route('team-context.update', $team) }}">@csrf<button type="submit" class="w-full rounded-xl px-3 py-2 text-left text-xs transition {{ $activeTeam?->is($team) ? 'bg-lime font-semibold text-ink' : 'text-muted hover:bg-canvas hover:text-ink' }}">{{ $team->name }}</button></form>
                     @endforeach
                 </div>
             </div>
         @endif
 
-        <div class="flex items-center gap-3 px-2">
-            <div class="grid size-9 shrink-0 place-items-center rounded-full bg-marison-gold-400 font-bold text-marison-forest-950">{{ str(Auth::user()->name)->substr(0, 1)->upper() }}</div>
-            <div class="min-w-0 flex-1"><div class="truncate text-sm font-semibold">{{ Auth::user()->name }}</div><a href="{{ route('profile.edit') }}" class="text-xs text-gray-400 hover:text-white">Profil</a></div>
-            <form method="POST" action="{{ route('logout') }}">@csrf<button type="submit" class="rounded-md p-2 text-gray-400 hover:bg-white/10 hover:text-white" title="Keluar"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0-4-4m4 4H7m6 4v1a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v1" /></svg></button></form>
+        <div class="flex h-10 items-center gap-2 px-1">
+            <div class="grid size-7 shrink-0 place-items-center rounded-full bg-ink text-xs font-semibold text-lime">{{ str(Auth::user()->name)->substr(0, 1)->upper() }}</div>
+            <div class="min-w-0 flex-1"><div class="truncate text-[11px] font-semibold text-ink">{{ Auth::user()->name }}</div><a href="{{ route('profile.edit') }}" class="text-[10px] text-muted transition hover:text-lime-dark">Profil</a></div>
         </div>
     </div>
 </aside>

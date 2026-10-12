@@ -94,6 +94,40 @@ class PromotionManagementTest extends TestCase
             ->assertSessionHasErrors('end_date');
     }
 
+    public function test_global_promotion_without_dates_is_active_for_every_lot(): void
+    {
+        [$admin, , $project, $lot] = $this->propertyContext();
+        $promotion = Promotion::factory()->create([
+            'is_global' => true,
+            'start_date' => null,
+            'end_date' => null,
+        ]);
+
+        $this->assertTrue($promotion->fresh()->isActive());
+
+        $this->actingAs($admin)
+            ->post(route('consumers.store'), $this->payload($project, $lot, promotionId: $promotion->id))
+            ->assertRedirect();
+    }
+
+    public function test_admin_can_disable_and_reenable_a_promotion(): void
+    {
+        $admin = $this->admin();
+        $promotion = Promotion::factory()->create();
+
+        $this->actingAs($admin)
+            ->patch(route('admin.promotions.toggle-active', $promotion))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('promotions', ['id' => $promotion->id, 'is_active' => false]);
+
+        $this->actingAs($admin)
+            ->patch(route('admin.promotions.toggle-active', $promotion))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('promotions', ['id' => $promotion->id, 'is_active' => true]);
+    }
+
     public function test_promotion_used_by_sales_case_cannot_be_deleted(): void
     {
         [$admin, , $project, $lot] = $this->propertyContext();

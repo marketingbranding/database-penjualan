@@ -29,7 +29,7 @@ class PromotionController extends Controller
             ->when($search !== '', fn ($query) => $query->where(fn ($query) => $query
                 ->where('promo_id', 'like', "%{$search}%")
                 ->orWhere('name', 'like', "%{$search}%")))
-            ->when(in_array($status, ['active', 'upcoming', 'ended'], true), fn ($query) => $query->withStatus($status))
+            ->when(in_array($status, ['active', 'inactive', 'upcoming', 'ended'], true), fn ($query) => $query->withStatus($status))
             ->orderBy('name')
             ->paginate(20)
             ->withQueryString();
@@ -53,7 +53,10 @@ class PromotionController extends Controller
         $promotion = DB::transaction(function () use ($request, $codeGenerator): Promotion {
             $promotion = Promotion::query()->create($request->safe()->only([
                 'name', 'start_date', 'end_date', 'description',
-            ]) + ['promo_id' => $codeGenerator->placeholder()]);
+            ]) + [
+                'promo_id' => $codeGenerator->placeholder(),
+                'is_active' => $request->has('is_active') ? $request->boolean('is_active') : true,
+            ]);
             $promotion->update(['promo_id' => $codeGenerator->promotion($promotion->getKey())]);
             $promotion->targets()->createMany($request->normalizedTargets());
 
@@ -82,9 +85,11 @@ class PromotionController extends Controller
         DB::transaction(function () use ($request, $promotion): void {
             $promotion->update($request->safe()->only([
                 'name', 'start_date', 'end_date', 'description',
-            ]));
+            ]) + ($request->has('is_active') ? ['is_active' => $request->boolean('is_active')] : []));
             $promotion->targets()->delete();
-            $promotion->targets()->createMany($request->normalizedTargets());
+            if ($request->normalizedTargets() !== []) {
+                $promotion->targets()->createMany($request->normalizedTargets());
+            }
         });
 
         return back()->with('status', 'promotion-updated');
@@ -104,6 +109,15 @@ class PromotionController extends Controller
         $promotion->delete();
 
         return redirect()->route('admin.promotions.index')->with('status', 'promotion-deleted');
+    }
+
+    public function toggleActive(Promotion $promotion): RedirectResponse
+    {
+        abort_unless(request()->user()->can('promotions.update'), 403);
+
+        $promotion->update(['is_active' => ! $promotion->is_active]);
+
+        return back()->with('status', 'promotion-toggled');
     }
 
     /** @return array<string, mixed> */

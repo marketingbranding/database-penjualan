@@ -28,10 +28,13 @@ class UpdatePromotionRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'start_date' => ['required', 'date'],
-            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
+            'is_active' => ['sometimes', 'boolean'],
+            'start_date' => ['nullable', 'date'],
+            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'description' => ['nullable', 'string', 'max:2000'],
-            'targets' => ['required', 'array', 'min:1'],
+            'targets' => $this->route('promotion')?->is_global
+                ? ['nullable', 'array']
+                : ['required', 'array', 'min:1'],
             'targets.*.type' => ['required', Rule::in(['branch', 'project', 'block'])],
             'targets.*.target_id' => ['required', 'integer'],
         ];
