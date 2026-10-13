@@ -3,8 +3,12 @@
     "private": true,
     "type": "module",
     "scripts": {
+        "brand:build": "node scripts/build-brand-assets.mjs",
+        "brand:verify": "node scripts/verify-brand-assets.mjs",
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "perf:spatial": "node scripts/perf-spatial.mjs",
+        "test:spatial-layout": "node scripts/test-spatial-layout.mjs"
     },
     "devDependencies": {
         "@tailwindcss/forms": "0.5.2",
@@ -12,7 +16,9 @@
         "alpinejs": "3.15.12",
         "concurrently": "9.0.1",
         "laravel-vite-plugin": "3.1.0",
+        "playwright": "^1.64.0",
         "postcss": "8.5.26",
+        "sharp": "^0.35.5",
         "tailwindcss": "4.3.3",
         "vite": "8.0.16"
     },

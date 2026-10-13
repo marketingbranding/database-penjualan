@@ -8,9 +8,9 @@
         'orange' => 'bg-orange/20 text-ink',
         'yellow' => 'bg-yellow/30 text-ink',
         'ink' => 'bg-ink text-white',
-        'success' => 'bg-emerald-50 text-emerald-800',
-        'warning' => 'bg-amber-50 text-amber-900',
-        'error' => 'bg-red-50 text-red-800',
+        'success' => 'bg-lime-soft text-lime-dark',
+        'warning' => 'bg-orange/20 text-ink',
+        'error' => 'bg-danger/10 text-danger',
         default => 'bg-canvas text-muted',
     };
 @endphp

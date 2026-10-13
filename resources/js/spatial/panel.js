@@ -122,7 +122,7 @@ export const createSpatialPanel = ({ root, workspace, canEdit, updateUrl }) => {
     const setStatus = (message, error = false) => {
         if (status) {
             status.textContent = message;
-            status.classList.toggle('text-red-600', error);
+            status.classList.toggle('text-danger', error);
         }
     };
 

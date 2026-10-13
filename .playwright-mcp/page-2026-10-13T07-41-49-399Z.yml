@@ -1,0 +1,137 @@
+- generic [ref=f9e3]:
+  - banner [ref=f9e4]:
+    - navigation "Breadcrumb" [ref=f9e5]:
+      - generic [ref=f9e6]: Utama
+      - generic [aria-hidden] [ref=f9e7]: ›
+      - generic [ref=f9e8]: Dashboard
+    - generic [ref=f9e9]:
+      - generic [ref=f9e10]:
+        - generic [ref=f9e11]: Cari
+        - generic [aria-hidden] [ref=f9e12]: ⌕
+        - textbox "Cari" [ref=f9e13]:
+          - /placeholder: Cari lead, agenda, konsumen...
+        - generic [ref=f9e14]: Ctrl K
+      - button "Notifikasi" [ref=f9e17]
+      - button "Aktifkan mode terang" [pressed] [ref=f9e20]
+      - generic [ref=f9e23]: SRC-TEAM-BRANCH-08
+      - button "Buka profil" [ref=f9e26]:
+        - generic "Admin" [ref=f9e27]: A
+        - generic [ref=f9e28]: Admin
+  - generic [ref=f9e30]:
+    - paragraph [ref=f9e31]: Workspace operasional
+    - heading "Selamat datang kembali, Admin" [level=1] [ref=f9e32]
+    - paragraph [ref=f9e33]: Pantau Lead, agenda, dan ritme kerja tim dalam satu ruang.
+  - main [ref=f9e34]:
+    - generic [ref=f9e35]:
+      - generic [ref=f9e36]:
+        - article [ref=f9e37]:
+          - paragraph [ref=f9e39]: Lead aktif
+          - paragraph [ref=f9e43]: 4,051
+        - article [ref=f9e44]:
+          - paragraph [ref=f9e46]: Agenda mendatang
+          - paragraph [ref=f9e50]: "0"
+          - paragraph [ref=f9e51]: Agenda terjadwal mulai hari ini.
+        - article [ref=f9e52]:
+          - paragraph [ref=f9e54]: Agenda selesai
+          - paragraph [ref=f9e58]: "0"
+          - paragraph [ref=f9e59]: Selesai sejak awal bulan ini.
+        - article [ref=f9e60]:
+          - paragraph [ref=f9e62]: Konsumen
+          - paragraph [ref=f9e66]: "0"
+          - paragraph [ref=f9e67]: Konsumen dengan proses aktif.
+        - article [ref=f9e68]:
+          - paragraph [ref=f9e70]: Kavling tersedia
+          - paragraph [ref=f9e74]: 2,478
+          - paragraph [ref=f9e75]: Kavling yang masih tersedia.
+        - article [ref=f9e76]:
+          - paragraph [ref=f9e78]: Kavling terjual
+          - paragraph [ref=f9e82]: "0"
+          - paragraph [ref=f9e83]: Kavling dengan status akad.
+      - generic [ref=f9e85]:
+        - generic [ref=f9e87]:
+          - heading "Aksi cepat" [level=2] [ref=f9e88]
+          - paragraph [ref=f9e89]: Buka pekerjaan yang paling sering digunakan.
+        - generic [ref=f9e90]:
+          - link "+ Lead baru" [ref=f9e91] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/leads/create
+            - generic [ref=f9e92]: +
+            - text: Lead baru
+          - link "+ Agenda baru" [ref=f9e93] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/agenda-sales/create
+            - generic [ref=f9e94]: +
+            - text: Agenda baru
+          - link "↗ Mulai SLIK" [ref=f9e95] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/proses-penjualan/bi-checking/create
+            - generic [ref=f9e96]: ↗
+            - text: Mulai SLIK
+          - link "↗ Buat UTJ" [ref=f9e97] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/proses-penjualan/psjb-utj/create
+            - generic [ref=f9e98]: ↗
+            - text: Buat UTJ
+      - generic [ref=f9e99]:
+        - generic [ref=f9e100]:
+          - generic [ref=f9e101]:
+            - generic [ref=f9e102]:
+              - heading "Agenda mendatang" [level=2] [ref=f9e103]
+              - paragraph [ref=f9e104]: Pekerjaan lapangan yang perlu dijaga ritmenya.
+            - link "Agenda baru" [ref=f9e106] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/agenda-sales/create
+          - generic [ref=f9e107]:
+            - paragraph [ref=f9e108]: Belum ada agenda mendatang.
+            - paragraph [ref=f9e109]: Buat agenda agar follow-up Lead tidak terlewat.
+            - link "Buat agenda baru" [ref=f9e110] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/agenda-sales/create
+        - generic [ref=f9e111]:
+          - generic [ref=f9e112]:
+            - generic [ref=f9e113]:
+              - heading "Lead terbaru" [level=2] [ref=f9e114]
+              - paragraph [ref=f9e115]: Lead yang baru masuk ke ruang kerja.
+            - link "Lihat semua" [ref=f9e117] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/leads
+          - link "Olshop Olshop SRC-SL-00003097 · Galih Titis Pamungkas Diskusi" [ref=f9e118] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/leads/3017
+            - generic "Olshop" [ref=f9e119]: O
+            - generic [ref=f9e120]:
+              - generic [ref=f9e121]: Olshop
+              - generic [ref=f9e122]: SRC-SL-00003097 · Galih Titis Pamungkas
+            - generic [ref=f9e123]: Diskusi
+          - link "Niam Niam SRC-SL-00003202 · Donni Bramasta Diskusi" [ref=f9e125] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/leads/3122
+            - generic "Niam" [ref=f9e126]: "N"
+            - generic [ref=f9e127]:
+              - generic [ref=f9e128]: Niam
+              - generic [ref=f9e129]: SRC-SL-00003202 · Donni Bramasta
+            - generic [ref=f9e130]: Diskusi
+          - link "rohimin rohimin SRC-SL-00003068 · Sania Nur Saada No Respon" [ref=f9e132] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/leads/2988
+            - generic "rohimin" [ref=f9e133]: R
+            - generic [ref=f9e134]:
+              - generic [ref=f9e135]: rohimin
+              - generic [ref=f9e136]: SRC-SL-00003068 · Sania Nur Saada
+            - generic [ref=f9e137]: No Respon
+          - link "Denis Denis SRC-SL-00003581 · Usman Nur Wakhid No Respon" [ref=f9e139] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/leads/3473
+            - generic "Denis" [ref=f9e140]: D
+            - generic [ref=f9e141]:
+              - generic [ref=f9e142]: Denis
+              - generic [ref=f9e143]: SRC-SL-00003581 · Usman Nur Wakhid
+            - generic [ref=f9e144]: No Respon
+          - link "Wiwin Wiwin SRC-SL-00004001 · Novenda Yury Agatha Diskusi" [ref=f9e146] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/leads/3879
+            - generic "Wiwin" [ref=f9e147]: W
+            - generic [ref=f9e148]:
+              - generic [ref=f9e149]: Wiwin
+              - generic [ref=f9e150]: SRC-SL-00004001 · Novenda Yury Agatha
+            - generic [ref=f9e151]: Diskusi
+          - link "Adyo Adyo SRC-SL-00004007 · Odi Damara No Respon" [ref=f9e153] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/leads/3885
+            - generic "Adyo" [ref=f9e154]: A
+            - generic [ref=f9e155]:
+              - generic [ref=f9e156]: Adyo
+              - generic [ref=f9e157]: SRC-SL-00004007 · Odi Damara
+            - generic [ref=f9e158]: No Respon
+      - generic [ref=f9e160]:
+        - generic [ref=f9e162]:
+          - heading "Aktivitas terbaru" [level=2] [ref=f9e163]
+          - paragraph [ref=f9e164]: Perubahan terakhir pada Lead dan Agenda.
+        - paragraph [ref=f9e165]: Belum ada aktivitas terbaru.

@@ -7,21 +7,12 @@
     ])
 
     <x-slot name="header">
-        <div class="flex flex-wrap items-center justify-between gap-4">
-            <div>
-                <p class="text-xs font-medium text-orange">Buku saku sales</p>
-                <h1 class="mt-1 text-xl font-semibold tracking-tight text-ink">Detail Lead</h1>
-            </div>
-            <div class="flex w-full gap-2 sm:w-auto">
-                <a href="{{ route('leads.index') }}" class="inline-flex min-h-10 flex-1 items-center justify-center rounded-2xl border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink transition hover:bg-canvas sm:flex-none">Kembali</a>
-                @can('update', $lead)
-                    <a href="{{ route('leads.edit', $lead) }}" class="inline-flex min-h-10 flex-1 items-center justify-center rounded-2xl bg-lime px-4 py-2 text-sm font-semibold text-ink transition hover:bg-lime-dark hover:text-white sm:flex-none">Edit</a>
-                @endcan
-            </div>
-        </div>
+        <x-page-header title="Detail Lead" description="{{ $lead->nama_konsumen }} · {{ $lead->id_lead }}">
+            <x-slot name="actions"><a href="{{ route('leads.index') }}" class="module-button module-button-secondary">Kembali</a>@can('update', $lead)<a href="{{ route('leads.edit', $lead) }}" class="module-button module-button-primary">Edit</a>@endcan</x-slot>
+        </x-page-header>
     </x-slot>
 
-    <div class="space-y-6 px-4 py-8 sm:px-6 lg:px-8">
+    <div class="module-page">
         @if (session('status'))
             <x-ui.toast message="Perubahan Lead berhasil disimpan." />
         @endif

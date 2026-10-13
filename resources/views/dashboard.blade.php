@@ -33,7 +33,7 @@
             <x-ui.card title="Aksi cepat" description="Buka pekerjaan yang paling sering digunakan." padding="p-6">
                 <div class="grid gap-2">
                     @can('create', App\Models\Lead::class)
-                        <a href="{{ route('leads.create') }}" class="flex min-h-11 items-center gap-3 rounded-2xl bg-lime px-4 py-3 text-sm font-semibold text-ink transition hover:bg-lime-dark hover:text-white"><span class="grid size-7 place-items-center rounded-xl bg-white/40">+</span>Lead baru</a>
+                        <a href="{{ route('leads.create') }}" class="flex min-h-11 items-center gap-3 rounded-2xl bg-lime px-4 py-3 text-sm font-semibold text-on-accent transition hover:bg-lime-dark hover:text-white"><span class="grid size-7 place-items-center rounded-xl bg-white/40">+</span>Lead baru</a>
                     @endcan
                     @can('create', App\Models\SalesAgenda::class)
                         <a href="{{ route('sales-agendas.create') }}" class="flex min-h-11 items-center gap-3 rounded-2xl border border-line px-4 py-3 text-sm font-medium text-ink transition hover:bg-lime-soft"><span class="grid size-7 place-items-center rounded-xl bg-orange/20 text-orange">+</span>Agenda baru</a>
@@ -52,7 +52,7 @@
             <x-ui.card title="Agenda mendatang" description="Pekerjaan lapangan yang perlu dijaga ritmenya." padding="p-0">
                 <x-slot:actions>
                     @can('create', App\Models\SalesAgenda::class)
-                        <a href="{{ route('sales-agendas.create') }}" class="rounded-xl bg-lime px-3 py-2 text-xs font-semibold text-ink transition hover:bg-lime-dark hover:text-white">Agenda baru</a>
+                        <a href="{{ route('sales-agendas.create') }}" class="rounded-xl bg-lime px-3 py-2 text-xs font-semibold text-on-accent transition hover:bg-lime-dark hover:text-white">Agenda baru</a>
                     @endcan
                 </x-slot:actions>
                 @forelse ($upcomingAgendas as $agenda)
@@ -66,7 +66,7 @@
                         <p class="text-sm font-semibold text-ink">Belum ada agenda mendatang.</p>
                         <p class="mt-1 text-sm leading-6 text-muted">Buat agenda agar follow-up Lead tidak terlewat.</p>
                         @can('create', App\Models\SalesAgenda::class)
-                            <a href="{{ route('sales-agendas.create') }}" class="mt-4 inline-flex rounded-xl bg-lime px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-lime-dark hover:text-white">Buat agenda baru</a>
+                            <a href="{{ route('sales-agendas.create') }}" class="mt-4 inline-flex rounded-xl bg-lime px-4 py-2.5 text-sm font-semibold text-on-accent transition hover:bg-lime-dark hover:text-white">Buat agenda baru</a>
                         @endcan
                     </div>
                 @endforelse

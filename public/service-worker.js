@@ -15,14 +15,18 @@ const CACHE_PREFIX = 'marison-';
 
 const PRECACHE_URLS = [
     '/offline.html',
+    '/site.webmanifest',
     '/manifest.webmanifest',
-    '/icon-192.png',
-    '/icon-512.png',
-    '/icon-maskable-192.png',
-    '/icon-maskable-512.png',
+    '/android-chrome-192x192.png',
+    '/android-chrome-512x512.png',
+    '/maskable-512x512.png',
     '/apple-touch-icon.png',
     '/favicon.svg',
+    '/favicon-16x16.png',
+    '/favicon-32x32.png',
     '/favicon.ico',
+    '/brand/oasis-next-mark.svg',
+    '/brand/email-mark.png',
 ];
 
 const MAX_BUILD_CACHE_ENTRIES = 80;

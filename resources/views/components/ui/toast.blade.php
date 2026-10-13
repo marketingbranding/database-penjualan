@@ -9,7 +9,7 @@
 @php
     $variantClass = match ($variant) {
         'warning' => 'border-yellow/60 bg-yellow/20 text-ink',
-        'error' => 'border-red-200 bg-red-50 text-red-900',
+        'error' => 'border-danger/40 bg-danger/10 text-danger',
         default => 'border-lime/60 bg-lime-soft text-ink',
     };
 @endphp

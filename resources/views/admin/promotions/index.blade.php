@@ -1,25 +1,53 @@
 <x-app-layout>
-    <x-slot name="header"><div class="flex items-center justify-between gap-4"><div><p class="text-xs font-bold uppercase tracking-widest text-amber-700">Pengaturan</p><h1 class="mt-1 text-xl font-bold">Promo</h1></div>@can('promotions.create')<a href="{{ route('admin.promotions.create') }}" class="rounded-lg bg-gray-950 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800">Tambah promo</a>@endcan</div></x-slot>
-    <div class="py-10"><div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        @if (session('status') === 'promotion-created')<div class="mb-6 rounded-md bg-emerald-50 p-4 text-sm text-emerald-700">Promo berhasil dibuat.</div>@endif
-        @if (session('status') === 'promotion-updated')<div class="mb-6 rounded-md bg-emerald-50 p-4 text-sm text-emerald-700">Promo berhasil diperbarui.</div>@endif
-        @if (session('status') === 'promotion-deleted')<div class="mb-6 rounded-md bg-emerald-50 p-4 text-sm text-emerald-700">Promo berhasil dihapus.</div>@endif
-        @if (session('status') === 'promotion-toggled')<div class="mb-6 rounded-md bg-emerald-50 p-4 text-sm text-emerald-700">Status promo berhasil diperbarui.</div>@endif
+    <x-slot name="header">
+        <x-page-header title="Promo" description="Kelola program promo, periode, target, dan status publikasinya.">
+            <x-slot name="actions">
+                @can('promotions.create')
+                    <a href="{{ route('admin.promotions.create') }}" class="module-button module-button-primary">＋ Tambah promo</a>
+                @endcan
+            </x-slot>
+        </x-page-header>
+    </x-slot>
 
-        <form method="GET" class="mb-6 grid gap-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:grid-cols-3">
-            <div><label class="text-xs font-bold uppercase tracking-wider text-gray-500">Pencarian</label><input name="search" value="{{ $search }}" class="mt-2 block w-full rounded-md border-gray-300" placeholder="ID atau nama promo"></div>
-            <div><label class="text-xs font-bold uppercase tracking-wider text-gray-500">Status</label><select name="status" class="mt-2 block w-full rounded-md border-gray-300"><option value="">Semua status</option><option value="active" @selected($status === 'active')>Aktif</option><option value="inactive" @selected($status === 'inactive')>Nonaktif</option><option value="upcoming" @selected($status === 'upcoming')>Akan datang</option><option value="ended" @selected($status === 'ended')>Berakhir</option></select></div>
-            <div class="flex items-end gap-2"><button class="rounded-md bg-gray-950 px-4 py-2 text-sm font-semibold text-white">Filter</button><a href="{{ route('admin.promotions.index') }}" class="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold">Reset</a></div>
-        </form>
+    @php
+        $statusOptions = ['' => 'Semua status', 'active' => 'Aktif', 'inactive' => 'Nonaktif', 'upcoming' => 'Akan datang', 'ended' => 'Berakhir'];
+        $hasActiveFilters = filled($search) || filled($status);
+    @endphp
 
-        <div class="overflow-hidden border border-gray-200 bg-white shadow-sm sm:rounded-xl"><div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 text-sm"><thead class="bg-gray-50 text-left text-xs font-bold uppercase tracking-wider text-gray-500"><tr><th class="px-6 py-3">ID Promo</th><th class="px-6 py-3">Nama</th><th class="px-6 py-3">Periode</th><th class="px-6 py-3">Status</th><th class="px-6 py-3">Target</th><th class="px-6 py-3"></th></tr></thead><tbody class="divide-y divide-gray-100">
-                @forelse($promotions as $promotion)
-                    <tr class="align-top"><td class="px-6 py-4 font-semibold text-gray-950">{{ $promotion->promo_id }}</td><td class="px-6 py-4"><div class="font-semibold text-gray-900">{{ $promotion->name }}</div>@if($promotion->description)<div class="text-xs text-gray-500">{{ $promotion->description }}</div>@endif</td><td class="px-6 py-4 text-gray-600">{{ $promotion->start_date?->translatedFormat('d M Y') ?? 'Tanpa batas' }} — {{ $promotion->end_date?->translatedFormat('d M Y') ?? 'Tanpa batas' }}</td><td class="px-6 py-4"><span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ match($promotion->status()) { 'active' => 'bg-emerald-100 text-emerald-800', 'upcoming' => 'bg-blue-100 text-blue-800', 'ended' => 'bg-gray-100 text-gray-600', 'inactive' => 'bg-gray-100 text-gray-600' } }}">{{ $promotion->statusLabel() }}</span></td><td class="px-6 py-4 text-gray-600"><ul class="grid gap-1">@if($promotion->is_global)<li>Lintas cabang</li>@else @foreach($promotion->targets as $target)<li>{{ $target->targetLabel() }}</li>@endforeach @endif</ul></td><td class="px-6 py-4 text-right"><div class="grid justify-items-end gap-2">@can('promotions.update')<a href="{{ route('admin.promotions.edit', $promotion) }}" class="font-semibold text-amber-700 hover:text-amber-900">Edit</a><form method="POST" action="{{ route('admin.promotions.toggle-active', $promotion) }}">@csrf @method('PATCH')<button class="text-xs font-semibold text-gray-600 hover:text-gray-900">{{ $promotion->is_active ? 'Nonaktifkan' : 'Aktifkan' }}</button></form>@endcan</div></td></tr>
-                @empty
-                    <tr><td colspan="6" class="px-6 py-12 text-center text-gray-500">Belum ada promo.</td></tr>
-                @endforelse
-            </tbody></table>
-        </div></div><div class="mt-6">{{ $promotions->links() }}</div>
-    </div></div>
+    <div class="module-page">
+        @if (session('status') === 'promotion-created')<x-ui.toast message="Promo berhasil dibuat." />@endif
+        @if (session('status') === 'promotion-updated')<x-ui.toast message="Promo berhasil diperbarui." />@endif
+        @if (session('status') === 'promotion-deleted')<x-ui.toast message="Promo berhasil dihapus." />@endif
+        @if (session('status') === 'promotion-toggled')<x-ui.toast message="Status promo berhasil diperbarui." />@endif
+
+        <x-table-card title="Daftar promo" :count="number_format($promotions->total()).' promo'" class="min-h-0">
+            <x-slot name="toolbar">
+                <x-toolbar action="{{ route('admin.promotions.index') }}" :result-count="$promotions->total()" result-label="promo" :has-active-filters="$hasActiveFilters" reset-href="{{ route('admin.promotions.index') }}">
+                    <x-slot name="search"><x-search-input name="search" :value="$search" placeholder="Cari ID atau nama promo" /></x-slot>
+                    <x-slot name="filters"><x-filter-pill label="Status" name="status" :options="$statusOptions" :selected="$status" :active="filled($status)" /></x-slot>
+                </x-toolbar>
+            </x-slot>
+
+            <x-data-table caption="Daftar promo">
+                <x-slot name="header"><tr><th>ID promo</th><th>Nama</th><th>Periode</th><th>Status</th><th>Target</th><th class="text-right">Aksi</th></tr></x-slot>
+                <x-slot name="body">
+                    @forelse ($promotions as $promotion)
+                        @php($promotionTone = match ($promotion->status()) { 'active' => 'success', 'upcoming' => 'warning', default => 'neutral' })
+                        <tr>
+                            <td class="whitespace-nowrap font-semibold">{{ $promotion->promo_id }}</td>
+                            <td class="max-w-[230px]" title="{{ $promotion->name }}"><div class="truncate font-semibold">{{ $promotion->name }}</div>@if($promotion->description)<div class="line-clamp-2 text-[11px] text-muted">{{ $promotion->description }}</div>@endif</td>
+                            <td class="whitespace-nowrap text-muted">{{ $promotion->start_date?->translatedFormat('d M Y') ?? 'Tanpa batas' }} – {{ $promotion->end_date?->translatedFormat('d M Y') ?? 'Tanpa batas' }}</td>
+                            <td><x-status-badge :status="$promotion->statusLabel()" :tone="$promotionTone" /></td>
+                            <td class="max-w-[190px]" title="{{ $promotion->is_global ? 'Lintas cabang' : $promotion->targets->map(fn ($target) => $target->targetLabel())->join(', ') }}"><div class="line-clamp-2 text-muted">@if($promotion->is_global)Lintas cabang@else{{ $promotion->targets->map(fn ($target) => $target->targetLabel())->join(', ') ?: '-' }}@endif</div></td>
+                            <td><x-row-actions><x-slot name="primary">@can('promotions.update')<a href="{{ route('admin.promotions.edit', $promotion) }}" class="module-row-primary">Edit</a>@endcan</x-slot><x-slot name="menu">@can('promotions.update')<form method="POST" action="{{ route('admin.promotions.toggle-active', $promotion) }}">@csrf @method('PATCH')<button type="submit" class="module-menu-link">{{ $promotion->is_active ? 'Nonaktifkan' : 'Aktifkan' }}</button></form>@endcan</x-slot></x-row-actions></td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="6"><x-empty-state title="Belum ada promo sesuai filter" :reset-href="$hasActiveFilters ? route('admin.promotions.index') : null" action-label="Tambah promo" action-href="{{ ! $hasActiveFilters && Auth::user()->can('promotions.create') ? route('admin.promotions.create') : null }}" /></td></tr>
+                    @endforelse
+                </x-slot>
+            </x-data-table>
+
+            <x-slot name="footer"><x-pagination :paginator="$promotions" /></x-slot>
+        </x-table-card>
+    </div>
 </x-app-layout>

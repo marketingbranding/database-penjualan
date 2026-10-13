@@ -1,17 +1,42 @@
 <x-app-layout>
-    <x-slot name="header"><div><p class="text-xs font-bold uppercase tracking-widest text-amber-700">Pengaturan</p><h1 class="mt-1 text-xl font-bold">Bank & KC/Unit</h1></div></x-slot>
-    <div class="py-10"><div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        @if(session('status'))<div class="mb-6 rounded-md bg-emerald-50 p-4 text-sm text-emerald-700">Data bank berhasil diperbarui.</div>@endif
-        @if($errors->any())<div class="mb-6 rounded-md bg-red-50 p-4 text-sm text-red-700"><ul class="list-disc pl-5">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
+    <x-slot name="header"><x-page-header title="Bank & KC/Unit" description="Kelola bank, kantor cabang, dan unit yang digunakan dalam proses penjualan." /></x-slot>
+
+    <div class="module-page">
+        @if (session('status'))<x-ui.toast message="Data bank berhasil diperbarui." />@endif
+        @if ($errors->any())<x-ui.toast variant="error" :message="$errors->first()" />@endif
 
         @can('banks.create')
-            <section class="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm"><h2 class="text-lg font-bold">Tambah Bank</h2><form method="POST" action="{{ route('admin.banks.store') }}" class="mt-4 flex flex-col gap-3 sm:flex-row">@csrf<x-text-input name="name" class="block w-full sm:max-w-sm" placeholder="Nama bank" required/><x-primary-button>Simpan bank</x-primary-button></form></section>
+            <x-form-section title="Tambah bank" class="module-form-section-compact" id="tambah-bank">
+                <form method="POST" action="{{ route('admin.banks.store') }}" class="module-inline-form">@csrf<x-text-input name="name" class="module-form-control" placeholder="Nama bank" required/><x-primary-button>Simpan bank</x-primary-button></form>
+            </x-form-section>
         @endcan
 
-        <div class="grid gap-5">@forelse($banks as $bank)<section class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-            <div class="flex flex-wrap items-start justify-between gap-4"><form method="POST" action="{{ route('admin.banks.update', $bank) }}" class="flex flex-1 flex-wrap items-center gap-3">@csrf @method('PATCH')<input name="name" value="{{ $bank->name }}" class="rounded-md border-gray-300 font-bold text-gray-950" required>@can('banks.update')<label class="inline-flex items-center gap-2 text-sm text-gray-600"><input type="hidden" name="is_active" value="0"><input type="checkbox" name="is_active" value="1" @checked($bank->is_active) class="rounded border-gray-300 text-amber-600">Aktif</label><button class="text-sm font-semibold text-amber-700">Simpan</button>@else<span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $bank->is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-600' }}">{{ $bank->is_active ? 'Aktif' : 'Nonaktif' }}</span>@endcan</form>@can('banks.delete')<form method="POST" action="{{ route('admin.banks.destroy', $bank) }}" onsubmit="return confirm('Hapus bank ini?')">@csrf @method('DELETE')<button class="text-sm font-semibold text-red-700">Hapus</button></form>@endcan</div>
-            <div class="mt-5 overflow-hidden rounded-lg border border-gray-200"><table class="min-w-full divide-y divide-gray-200 text-sm"><thead class="bg-gray-50 text-left text-xs font-bold uppercase tracking-wider text-gray-500"><tr><th class="px-4 py-3">KC/Unit</th><th class="px-4 py-3">Status</th><th class="px-4 py-3"></th></tr></thead><tbody class="divide-y divide-gray-100">@forelse($bank->units as $unit)<tr><td class="px-4 py-3"><form method="POST" action="{{ route('admin.bank-units.update', $unit) }}" class="flex flex-wrap items-center gap-3">@csrf @method('PATCH')<input name="name" value="{{ $unit->name }}" class="rounded-md border-gray-300 text-sm" required>@can('banks.update')<label class="inline-flex items-center gap-2 text-xs text-gray-600"><input type="hidden" name="is_active" value="0"><input type="checkbox" name="is_active" value="1" @checked($unit->is_active) class="rounded border-gray-300 text-amber-600">Aktif</label><button class="text-xs font-semibold text-amber-700">Simpan</button>@else<span class="text-xs text-gray-500">{{ $unit->is_active ? 'Aktif' : 'Nonaktif' }}</span>@endcan</form></td><td class="px-4 py-3"><span class="rounded-full px-2 py-1 text-xs font-semibold {{ $unit->is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-600' }}">{{ $unit->is_active ? 'Aktif' : 'Nonaktif' }}</span></td><td class="px-4 py-3 text-right">@can('banks.delete')<form method="POST" action="{{ route('admin.bank-units.destroy', $unit) }}" onsubmit="return confirm('Hapus KC/unit ini?')">@csrf @method('DELETE')<button class="text-xs font-semibold text-red-700">Hapus</button></form>@endcan</td></tr>@empty<tr><td colspan="3" class="px-4 py-6 text-center text-sm text-gray-500">Belum ada KC/unit.</td></tr>@endforelse</tbody></table></div>
-            @can('banks.create')<form method="POST" action="{{ route('admin.banks.units.store', $bank) }}" class="mt-4 flex flex-col gap-3 sm:flex-row">@csrf<x-text-input name="name" class="block w-full sm:max-w-sm" placeholder="Nama KC/unit baru" required/><x-secondary-button>Tambah KC/unit</x-secondary-button></form>@endcan
-        </section>@empty<div class="rounded-xl border border-dashed border-gray-300 bg-white p-12 text-center text-gray-500">Belum ada data bank.</div>@endforelse</div>
-    </div></div>
+        @forelse ($banks as $bank)
+            <x-table-card :title="$bank->name" :count="$bank->units->count().' unit'" class="module-bank-card">
+                <x-slot name="toolbar">
+                    <div class="module-bank-header-form">
+                        <form method="POST" action="{{ route('admin.banks.update', $bank) }}" class="module-inline-form">@csrf @method('PATCH')<input name="name" value="{{ $bank->name }}" class="module-form-control font-semibold" required>@can('banks.update')<label class="module-inline-check"><input type="hidden" name="is_active" value="0"><input type="checkbox" name="is_active" value="1" @checked($bank->is_active)>Aktif</label><button class="module-menu-link">Simpan</button>@else<x-status-badge :status="$bank->is_active ? 'Aktif' : 'Nonaktif'" :tone="$bank->is_active ? 'success' : 'neutral'" />@endcan</form>
+                        @can('banks.delete')<form method="POST" action="{{ route('admin.banks.destroy', $bank) }}" onsubmit="return confirm('Hapus bank ini?')">@csrf @method('DELETE')<button type="submit" class="module-menu-link is-danger">Hapus</button></form>@endcan
+                    </div>
+                </x-slot>
+                <x-data-table caption="Unit {{ $bank->name }}" compact>
+                    <x-slot name="header"><tr><th>KC/Unit</th><th>Status</th><th class="text-right">Aksi</th></tr></x-slot>
+                    <x-slot name="body">
+                        @forelse ($bank->units as $unit)
+                            <tr>
+                                <td><form id="unit-{{ $unit->id }}" method="POST" action="{{ route('admin.bank-units.update', $unit) }}">@csrf @method('PATCH')</form><input form="unit-{{ $unit->id }}" name="name" value="{{ $unit->name }}" class="module-form-control text-xs" required></td>
+                                <td>@can('banks.update')<label class="module-inline-check"><input form="unit-{{ $unit->id }}" type="hidden" name="is_active" value="0"><input form="unit-{{ $unit->id }}" type="checkbox" name="is_active" value="1" @checked($unit->is_active)>Aktif</label>@else<x-status-badge :status="$unit->is_active ? 'Aktif' : 'Nonaktif'" :tone="$unit->is_active ? 'success' : 'neutral'" />@endcan</td>
+                                <td><x-row-actions><x-slot name="primary">@can('banks.update')<button form="unit-{{ $unit->id }}" class="module-row-primary">Simpan</button>@endcan</x-slot><x-slot name="menu">@can('banks.delete')<form method="POST" action="{{ route('admin.bank-units.destroy', $unit) }}" onsubmit="return confirm('Hapus KC/unit ini?')">@csrf @method('DELETE')<button type="submit" class="module-menu-link is-danger">Hapus</button></form>@endcan</x-slot></x-row-actions></td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="3"><x-empty-state title="Belum ada KC/unit" /></td></tr>
+                        @endforelse
+                    </x-slot>
+                </x-data-table>
+                @can('banks.create')<form method="POST" action="{{ route('admin.banks.units.store', $bank) }}" class="module-inline-form module-bank-add-unit">@csrf<x-text-input name="name" class="module-form-control" placeholder="Nama KC/unit baru" required/><x-secondary-button>Tambah KC/unit</x-secondary-button></form>@endcan
+            </x-table-card>
+        @empty
+            <x-empty-state title="Belum ada data bank" action-label="Tambah bank" action-href="{{ Auth::user()->can('banks.create') ? '#tambah-bank' : null }}" />
+        @endforelse
+    </div>
 </x-app-layout>

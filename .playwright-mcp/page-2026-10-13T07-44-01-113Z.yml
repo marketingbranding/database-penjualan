@@ -1,0 +1,154 @@
+- generic [ref=f12e2]:
+  - complementary "Navigasi utama" [ref=f12e3]:
+    - link "Oasis Next, buka dashboard" [ref=f12e4] [cursor=pointer]:
+      - /url: http://127.0.0.1:8000/dashboard
+    - navigation [ref=f12e15]:
+      - link "Dashboard" [ref=f12e16] [cursor=pointer]:
+        - /url: http://127.0.0.1:8000/dashboard
+      - link "Data konsumen" [ref=f12e19] [cursor=pointer]:
+        - /url: http://127.0.0.1:8000/data-konsumen
+      - link "Agenda sales" [ref=f12e22] [cursor=pointer]:
+        - /url: http://127.0.0.1:8000/agenda-sales
+      - link "Leads" [ref=f12e26] [cursor=pointer]:
+        - /url: http://127.0.0.1:8000/leads
+    - link "Pengaturan" [ref=f12e30] [cursor=pointer]:
+      - /url: http://127.0.0.1:8000/admin/spatial-workspace
+  - complementary "Panel navigasi" [ref=f12e34]:
+    - link "Oasis Next Workspace operasional" [ref=f12e36] [cursor=pointer]:
+      - /url: http://127.0.0.1:8000/dashboard
+      - generic [ref=f12e48]:
+        - generic [ref=f12e49]: Oasis Next
+        - generic [ref=f12e50]: Workspace operasional
+    - navigation "Menu workspace" [ref=f12e51]:
+      - generic [ref=f12e52]:
+        - link "Dashboard" [ref=f12e53] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/dashboard
+        - link "Data konsumen" [ref=f12e57] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/data-konsumen
+      - paragraph [ref=f12e62]: Buku Saku Sales
+      - generic [ref=f12e63]:
+        - link "Agenda sales" [ref=f12e64] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/agenda-sales
+        - link "Leads" [ref=f12e69] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/leads
+        - link "Monitoring leads" [ref=f12e73] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/leads/monitoring
+      - button "Proses penjualan" [ref=f12e79]
+      - link "Garansi" [ref=f12e83] [cursor=pointer]:
+        - /url: http://127.0.0.1:8000/garansi
+      - generic [ref=f12e89]:
+        - button "Pengaturan" [expanded] [ref=f12e90]
+        - generic [ref=f12e94]:
+          - link "Spatial workspace" [ref=f12e95] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/spatial-workspace
+          - link "Cabang" [ref=f12e97] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/branches
+          - link "Proyek" [ref=f12e99] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/projects
+          - link "Kavling" [ref=f12e101] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/lots
+          - link "Audit log" [ref=f12e103] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/audit-logs
+          - link "Bank" [ref=f12e105] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/banks
+          - link "Target lead time" [ref=f12e107] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/lead-times
+          - link "Promo" [ref=f12e109] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/promotions
+          - link "Pengguna" [ref=f12e111] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/users
+          - link "Tim" [ref=f12e113] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/teams
+          - link "Role dan permission" [ref=f12e115] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/roles
+    - button "Tim aktif Migrasi Tim KC BANDUNG" [ref=f12e119]:
+      - generic [ref=f12e120]:
+        - generic [ref=f12e121]: Tim aktif
+        - generic [ref=f12e122]: Migrasi Tim KC BANDUNG
+  - generic [ref=f12e125]:
+    - banner [ref=f12e126]:
+      - navigation "Breadcrumb" [ref=f12e127]:
+        - generic [ref=f12e128]: Pengaturan
+      - generic [ref=f12e129]:
+        - generic [ref=f12e130]:
+          - generic [ref=f12e131]: Cari
+          - generic [aria-hidden] [ref=f12e132]: ⌕
+          - textbox "Cari" [ref=f12e133]:
+            - /placeholder: Cari lead, agenda, konsumen...
+          - generic [ref=f12e134]: Ctrl K
+        - button "Notifikasi" [ref=f12e137]
+        - button "Aktifkan mode terang" [pressed] [ref=f12e140]
+        - generic [ref=f12e143]: SRC-TEAM-BRANCH-08
+        - button "Buka profil" [ref=f12e146]:
+          - generic "Admin" [ref=f12e147]: A
+          - generic [ref=f12e148]: Admin
+    - generic [ref=f12e150]:
+      - heading "Spatial Workspace Spatial workspace" [level=1] [ref=f12e151]:
+        - text: Spatial Workspace
+        - generic [ref=f12e152]: Spatial workspace
+      - paragraph [ref=f12e153]: Atur cabang, tim, dan akses dalam scene organisasi 3D.
+    - main [ref=f12e154]:
+      - generic [ref=f12e157]:
+        - img "Peta 3D organisasi cabang dan tim" [ref=f12e158]
+        - generic [ref=f12e159]:
+          - button "Mode edit" [ref=f12e160] [cursor=pointer]
+          - button "Mode lihat" [pressed] [ref=f12e161] [cursor=pointer]
+        - generic [ref=f12e162]:
+          - button "Peta organisasi Cabang, tim, dan role dalam scene 3D Legenda" [ref=f12e163] [cursor=pointer]:
+            - generic [ref=f12e164]:
+              - generic [ref=f12e165]: Peta organisasi
+              - generic [ref=f12e166]: Cabang, tim, dan role dalam scene 3D
+            - generic [ref=f12e167]: Legenda
+          - generic:
+            - generic: Cabang
+            - generic: Tim
+            - generic: User
+            - generic:
+              - generic: sas
+              - generic: sales
+              - generic: koordinator_sales
+              - generic: spv
+              - generic: super_admin
+              - generic: pusat
+              - generic: bm
+        - generic "Alat scene" [ref=f12e168]:
+          - button "Pilih" [ref=f12e169] [cursor=pointer]
+          - button "Geser kanvas" [ref=f12e172] [cursor=pointer]
+          - button "Hubungkan" [ref=f12e175] [cursor=pointer]
+          - button "Undo" [ref=f12e178] [cursor=pointer]: ↶
+        - generic [ref=f12e179]:
+          - generic [ref=f12e180]:
+            - paragraph [ref=f12e181]: Belum ditugaskan
+            - generic [ref=f12e182]: 16 user
+          - generic [ref=f12e183]:
+            - generic [ref=f12e184]:
+              - generic [ref=f12e185]: A
+              - generic [ref=f12e186]: Admin Bandung
+            - generic [ref=f12e187]:
+              - generic [ref=f12e188]: A
+              - generic [ref=f12e189]: Admin Pekalongan
+            - generic [ref=f12e190]:
+              - generic [ref=f12e191]: A
+              - generic [ref=f12e192]: Agung Budi Prasetyo
+            - generic [ref=f12e193]: "+13"
+        - generic "Kontrol kamera" [ref=f12e194]:
+          - button "Perkecil tampilan" [ref=f12e195] [cursor=pointer]: −
+          - generic [ref=f12e196]: 100%
+          - button "Perbesar tampilan" [ref=f12e197] [cursor=pointer]: +
+          - button "Reset tampilan" [ref=f12e198] [cursor=pointer]: Reset
+          - button "Putar kamera 90 derajat" [ref=f12e199] [cursor=pointer]: ↷
+        - generic [aria-hidden]:
+          - generic: KC BANDUNG
+          - generic [ref=f12e200] [cursor=pointer]: Tim KC BANDUNG
+          - generic: KC BATANG
+          - generic [ref=f12e203] [cursor=pointer]: Tim KC BATANG
+          - generic: KC JEPARA
+          - generic [ref=f12e206] [cursor=pointer]:
+            - generic [ref=f12e208]: Tim KC JEPARA
+            - generic [ref=f12e209]: "+5"
+          - generic: KC MADIUN
+          - generic: KC MAGELANG
+          - generic: KC MALANG
+          - generic: KC PURWOREJO
+          - generic: KC SOLO
+          - generic: Kantor Pusat

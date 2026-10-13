@@ -65,7 +65,7 @@
             @input="display = $event.target.value; sync($event.target.value)"
             @blur="sync($event.target.value)"
             @disabled($disabled)
-            {{ $visibleAttributes->merge(['class' => 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm w-full']) }}
+            {{ $visibleAttributes->merge(['class' => 'workspace-input w-full']) }}
         >
         <input
             x-ref="value"
@@ -75,8 +75,8 @@
             @if ($attributes->has('x-model')) x-model="{{ $attributes->get('x-model') }}" @endif
         >
         <input x-ref="picker" type="date" value="{{ $inputValue }}" class="sr-only" tabindex="-1" aria-hidden="true" @change="select($event.target.value)">
-        <button type="button" class="absolute right-2 rounded p-1 text-gray-500 hover:bg-gray-100" aria-label="Pilih tanggal" @click="openPicker()"><svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M8 3v3M16 3v3M3 9h18M8 13h.01M12 13h.01M16 13h.01M8 17h.01M12 17h.01" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button type="button" class="absolute right-2 rounded p-1 text-muted transition hover:bg-canvas hover:text-ink" aria-label="Pilih tanggal" @click="openPicker()"><svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M8 3v3M16 3v3M3 9h18M8 13h.01M12 13h.01M16 13h.01M8 17h.01M12 17h.01" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     </div>
 @else
-    <input @disabled($disabled) {{ $attributes->merge(['class' => 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm']) }}>
+    <input @disabled($disabled) {{ $attributes->merge(['class' => 'workspace-input']) }}>
 @endif

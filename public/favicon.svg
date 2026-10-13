@@ -1,4 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Marison">
-    <rect width="64" height="64" fill="#000000"/>
-    <rect x="16" y="16" width="32" height="32" fill="#fcc20f" transform="rotate(45 32 32)"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><rect width="120" height="120" rx="34" fill="#9ccc4e"/><circle cx="60" cy="60" r="16" fill="#fff6dc"/><circle cx="60" cy="58" r="9" fill="#f4a65c"/><circle cx="60" cy="60" r="25" fill="none" stroke="#1d2219" stroke-width="16"/></svg>

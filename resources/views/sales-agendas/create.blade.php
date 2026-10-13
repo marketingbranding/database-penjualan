@@ -1,19 +1,17 @@
 <x-app-layout>
     <x-slot name="header">
-        <div>
-            <p class="text-xs font-medium text-orange">Buku saku sales</p>
-            <h1 class="mt-1 text-xl font-semibold tracking-tight text-ink">{{ $agenda ? 'Edit agenda' : 'Agenda baru' }}</h1>
-        </div>
+        <x-page-header :title="$agenda ? 'Edit agenda' : 'Agenda baru'" description="Jadwalkan follow-up lapangan dan tautkan ke Lead atau transaksi." />
     </x-slot>
 
-    <div class="space-y-6 px-4 py-8 sm:px-6 lg:px-8">
+    <div class="module-page">
         <form method="POST" enctype="multipart/form-data" action="{{ $agenda ? route('sales-agendas.update', $agenda) : route('sales-agendas.store') }}" class="mx-auto w-full max-w-5xl">
             @csrf
             @if ($agenda)
                 @method('PUT')
             @endif
 
-            <div class="workspace-card grid gap-5 p-6 md:grid-cols-2">
+            <x-form-section :title="$agenda ? 'Perbarui agenda' : 'Detail agenda'" description="Field bertanda * wajib diisi.">
+            <div class="grid gap-5 md:grid-cols-2">
                 <div>
                     <x-input-label for="agenda_date" value="Tanggal Agenda *" />
                     <x-text-input id="agenda_date" name="agenda_date" type="date" class="mt-1 block w-full" required value="{{ old('agenda_date', $agenda?->agenda_date?->format('Y-m-d') ?? today()->toDateString()) }}" />
@@ -79,9 +77,10 @@
                     <x-input-error :messages="$errors->get('activity_result')" class="mt-2" />
                 </div>
             </div>
+            </x-form-section>
 
             @if ($agenda?->evidence?->isNotEmpty())
-                <div class="workspace-card mt-5 p-5">
+                <div class="module-table-card mt-3 p-5">
                     <p class="text-sm font-semibold text-ink">Bukti foto tersimpan</p>
                     <div class="mt-3 flex flex-wrap gap-3">
                         @foreach ($agenda->evidence as $evidence)

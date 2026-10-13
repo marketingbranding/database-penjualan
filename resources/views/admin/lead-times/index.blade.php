@@ -1,1 +1,25 @@
-<x-app-layout><x-slot name="header"><div><p class="text-xs font-bold uppercase tracking-widest text-amber-700">Pengaturan</p><h1 class="mt-1 text-xl font-bold">Target Lead Time</h1></div></x-slot><div class="py-10"><div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">@if(session('status') === 'lead-time-updated')<div class="mb-6 rounded-md bg-emerald-50 p-4 text-sm text-emerald-700">Target lead time berhasil diperbarui.</div>@endif<div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"><div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-200 text-sm"><thead class="bg-gray-50 text-left text-xs font-bold uppercase tracking-wider text-gray-500"><tr><th class="px-6 py-3">Proses</th><th class="px-6 py-3">Target proses</th><th class="px-6 py-3">Target hari kalender</th><th class="px-6 py-3">Status</th><th class="px-6 py-3"></th></tr></thead><tbody class="divide-y divide-gray-100">@foreach($targets as $target)<tr><td class="px-6 py-4 font-semibold">{{ str($target->process)->replace('_', ' ')->title() }}</td><td class="px-6 py-4 text-gray-600">{{ $target->target_description }}</td><td class="px-6 py-4"><form method="POST" action="{{ route('admin.lead-times.update', $target) }}" class="flex items-center gap-2">@csrf @method('PATCH')<input type="number" name="target_days" value="{{ $target->target_days }}" min="0" max="3650" class="w-28 rounded-md border-gray-300 text-sm" placeholder="Manual"><span class="text-xs text-gray-500">hari</span></td><td class="px-6 py-4"><label class="inline-flex items-center gap-2 text-sm"><input type="hidden" name="is_active" value="0"><input type="checkbox" name="is_active" value="1" @checked($target->is_active) class="rounded border-gray-300 text-amber-600">Aktif</label></td><td class="px-6 py-4 text-right"><button class="font-semibold text-amber-700">Simpan</button></form></td></tr>@endforeach</tbody></table></div></div><p class="mt-4 text-sm text-gray-500">Target dihitung dalam hari kalender. Target PSJB/BI Checking sengaja dapat dikosongkan karena proses berjalan paralel.</p></div></div></x-app-layout>
+<x-app-layout>
+    <x-slot name="header"><x-page-header title="Target lead time" description="Atur target waktu proses dalam hari kalender untuk memantau SLA penjualan." /></x-slot>
+
+    <div class="module-page">
+        @if (session('status') === 'lead-time-updated')<x-ui.toast message="Target lead time berhasil diperbarui." />@endif
+        <x-table-card title="Target proses" :count="$targets->count().' target'" class="min-h-0">
+            <x-data-table caption="Target lead time" compact>
+                <x-slot name="header"><tr><th>Proses</th><th>Target proses</th><th>Target hari kalender</th><th>Status</th><th class="text-right">Aksi</th></tr></x-slot>
+                <x-slot name="body">
+                    @foreach ($targets as $target)
+                        @php($formId = 'lead-time-'.$target->id)
+                        <tr>
+                            <td><form id="{{ $formId }}" method="POST" action="{{ route('admin.lead-times.update', $target) }}">@csrf @method('PATCH')</form><span class="font-semibold">{{ str($target->process)->replace('_', ' ')->title() }}</span></td>
+                            <td class="max-w-[260px] truncate text-muted" title="{{ $target->target_description }}">{{ $target->target_description }}</td>
+                            <td><div class="module-inline-form"><input form="{{ $formId }}" type="number" name="target_days" value="{{ $target->target_days }}" min="0" max="3650" class="module-form-control w-24 text-xs" placeholder="Manual"><span class="text-[11px] text-muted">hari</span></div></td>
+                            <td><label class="module-inline-check"><input form="{{ $formId }}" type="hidden" name="is_active" value="0"><input form="{{ $formId }}" type="checkbox" name="is_active" value="1" @checked($target->is_active)>Aktif</label></td>
+                            <td><x-row-actions><x-slot name="primary"><button form="{{ $formId }}" class="module-row-primary">Simpan</button></x-slot></x-row-actions></td>
+                        </tr>
+                    @endforeach
+                </x-slot>
+            </x-data-table>
+            <x-slot name="footer"><p class="text-xs text-muted">Target dihitung dalam hari kalender. Tarif manual dapat disesuaikan sesuai kebijakan operasional.</p></x-slot>
+        </x-table-card>
+    </div>
+</x-app-layout>

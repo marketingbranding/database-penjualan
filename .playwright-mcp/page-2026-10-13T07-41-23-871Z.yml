@@ -1,0 +1,19 @@
+- generic [ref=f6e2]:
+  - link "Oasis Next Workspace operasional" [ref=f6e3] [cursor=pointer]:
+    - /url: /
+    - img "Oasis Next" [ref=f6e4]
+    - generic [ref=f6e16]: Workspace operasional
+  - generic [ref=f6e18]:
+    - generic [ref=f6e19]:
+      - generic [ref=f6e20]: Email
+      - textbox "Email" [active] [ref=f6e21]
+    - generic [ref=f6e22]:
+      - generic [ref=f6e23]: Password
+      - textbox "Password" [ref=f6e24]
+    - generic [ref=f6e26]:
+      - checkbox "Remember me" [ref=f6e27]
+      - generic [ref=f6e28]: Remember me
+    - generic [ref=f6e29]:
+      - link "Forgot your password?" [ref=f6e30] [cursor=pointer]:
+        - /url: http://127.0.0.1:8000/forgot-password
+      - button "Log in" [ref=f6e31]

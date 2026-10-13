@@ -1,0 +1,91 @@
+- generic [ref=f10e3]:
+  - banner [ref=f10e4]:
+    - navigation "Breadcrumb" [ref=f10e5]:
+      - generic [ref=f10e6]: Pengaturan
+    - generic [ref=f10e7]:
+      - generic [ref=f10e8]:
+        - generic [ref=f10e9]: Cari
+        - generic [aria-hidden] [ref=f10e10]: ⌕
+        - textbox "Cari" [ref=f10e11]:
+          - /placeholder: Cari lead, agenda, konsumen...
+        - generic [ref=f10e12]: Ctrl K
+      - button "Notifikasi" [ref=f10e15]
+      - button "Aktifkan mode terang" [pressed] [ref=f10e18]
+      - generic [ref=f10e21]: SRC-TEAM-BRANCH-08
+      - button "Buka profil" [ref=f10e24]:
+        - generic "Admin" [ref=f10e25]: A
+        - generic [ref=f10e26]: Admin
+  - generic [ref=f10e28]:
+    - heading "Spatial Workspace Spatial workspace" [level=1] [ref=f10e29]:
+      - text: Spatial Workspace
+      - generic [ref=f10e30]: Spatial workspace
+    - paragraph [ref=f10e31]: Atur cabang, tim, dan akses dalam scene organisasi 3D.
+  - main [ref=f10e32]:
+    - generic [ref=f10e35]:
+      - img "Peta 3D organisasi cabang dan tim" [ref=f10e36]
+      - generic [ref=f10e37]:
+        - button "Mode edit" [ref=f10e38] [cursor=pointer]
+        - button "Mode lihat" [pressed] [ref=f10e39] [cursor=pointer]
+      - generic [ref=f10e40]:
+        - button "Peta organisasi Cabang, tim, dan role dalam scene 3D Legenda" [ref=f10e41] [cursor=pointer]:
+          - generic [ref=f10e42]:
+            - generic [ref=f10e43]: Peta organisasi
+            - generic [ref=f10e44]: Cabang, tim, dan role dalam scene 3D
+          - generic [ref=f10e45]: Legenda
+        - generic:
+          - generic: Cabang
+          - generic: Tim
+          - generic: User
+          - generic:
+            - generic: sas
+            - generic: sales
+            - generic: koordinator_sales
+            - generic: spv
+            - generic: super_admin
+            - generic: pusat
+            - generic: bm
+      - generic "Alat scene" [ref=f10e46]:
+        - button "Pilih" [ref=f10e47] [cursor=pointer]
+        - button "Geser kanvas" [ref=f10e50] [cursor=pointer]
+        - button "Hubungkan" [ref=f10e53] [cursor=pointer]
+        - button "Undo" [ref=f10e56] [cursor=pointer]: ↶
+      - generic [ref=f10e57]:
+        - generic [ref=f10e58]:
+          - paragraph [ref=f10e59]: Belum ditugaskan
+          - generic [ref=f10e60]: 16 user
+        - generic [ref=f10e61]:
+          - generic [ref=f10e62]:
+            - generic [ref=f10e63]: A
+            - generic [ref=f10e64]: Admin Bandung
+          - generic [ref=f10e65]:
+            - generic [ref=f10e66]: A
+            - generic [ref=f10e67]: Admin Pekalongan
+          - generic [ref=f10e68]:
+            - generic [ref=f10e69]: A
+            - generic [ref=f10e70]: Agung Budi Prasetyo
+          - generic [ref=f10e71]: "+13"
+      - generic "Kontrol kamera" [ref=f10e72]:
+        - button "Perkecil tampilan" [ref=f10e73] [cursor=pointer]: −
+        - generic [ref=f10e74]: 100%
+        - button "Perbesar tampilan" [ref=f10e75] [cursor=pointer]: +
+        - button "Reset tampilan" [ref=f10e76] [cursor=pointer]: Reset
+        - button "Putar kamera 90 derajat" [ref=f10e77] [cursor=pointer]: ↷
+      - complementary [aria-hidden]:
+        - generic:
+          - generic:
+            - paragraph: Detail pilihan
+            - heading [level=2]: Scene organisasi
+          - button: ×
+        - generic:
+          - paragraph: Pilih pion user untuk melihat detail, role, dan struktur pelaporannya.
+      - generic [aria-hidden]:
+        - generic: KC BANDUNG
+        - generic [ref=f10e78] [cursor=pointer]: Tim KC BANDUNG
+        - generic: KC BATANG
+        - generic: KC JEPARA
+        - generic: KC MADIUN
+        - generic: KC MAGELANG
+        - generic: KC MALANG
+        - generic: KC PURWOREJO
+        - generic: KC SOLO
+        - generic: Kantor Pusat

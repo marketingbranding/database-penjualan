@@ -11,7 +11,7 @@ const easeInOut = (value) => value * value * (3 - 2 * value);
 const isTypingTarget = (target) => target instanceof HTMLElement
     && ['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'].includes(target.tagName);
 
-export const createSpatialControls = ({ camera, canvas, render }) => {
+export const createSpatialControls = ({ camera, canvas, render, setInteractionQuality = () => {}, target = null }) => {
     const controls = new OrbitControls(camera, canvas);
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
@@ -30,7 +30,7 @@ export const createSpatialControls = ({ camera, canvas, render }) => {
     controls.mouseButtons.RIGHT = THREE.MOUSE.PAN;
     controls.touches.ONE = THREE.TOUCH.ROTATE;
     controls.touches.TWO = THREE.TOUCH.DOLLY_PAN;
-    controls.target.set(0, 0.25, 0);
+    controls.target.set(target?.x ?? 0, 0.25, target?.z ?? 0);
     controls.update();
     controls.saveState();
 
@@ -41,6 +41,7 @@ export const createSpatialControls = ({ camera, canvas, render }) => {
     let animationFrame = null;
     let animation = null;
     let animationTimer = null;
+    let renderRequested = false;
 
     const updateZoomLabel = () => {
         const label = document.querySelector('[data-spatial-zoom-value]');
@@ -57,6 +58,8 @@ export const createSpatialControls = ({ camera, canvas, render }) => {
 
     const tick = () => {
         animationFrame = null;
+        const requestedBeforeUpdate = renderRequested;
+        renderRequested = false;
         const changed = controls.update();
 
         if (animation) {
@@ -78,9 +81,12 @@ export const createSpatialControls = ({ camera, canvas, render }) => {
             }
         }
 
-        if (changed) {
+        if (requestedBeforeUpdate || changed) {
             render();
             updateZoomLabel();
+        }
+
+        if (renderRequested || changed) {
             requestFrame();
         }
     };
@@ -96,6 +102,7 @@ export const createSpatialControls = ({ camera, canvas, render }) => {
         camera.updateProjectionMatrix();
         animation = null;
         controls.enabled = true;
+        setInteractionQuality(false);
         controls.update();
         render();
         updateZoomLabel();
@@ -127,6 +134,7 @@ export const createSpatialControls = ({ camera, canvas, render }) => {
         const currentAnimation = animation;
         animationTimer = window.setTimeout(() => finishAnimation(currentAnimation), ANIMATION_DURATION + 80);
         controls.enabled = false;
+        setInteractionQuality(true);
         requestFrame();
     };
 
@@ -137,6 +145,7 @@ export const createSpatialControls = ({ camera, canvas, render }) => {
         animateTo({ position: controls.target.clone().add(offset), target: controls.target.clone(), zoom: camera.zoom });
     };
     const zoomBy = (amount) => {
+        setInteractionQuality(true);
         camera.zoom = THREE.MathUtils.clamp(camera.zoom + amount, MIN_ZOOM, MAX_ZOOM);
         camera.updateProjectionMatrix();
         controls.update();
@@ -155,7 +164,7 @@ export const createSpatialControls = ({ camera, canvas, render }) => {
         });
     };
     const onControlChange = () => {
-        render();
+        renderRequested = true;
         updateZoomLabel();
         requestFrame();
     };
@@ -172,7 +181,11 @@ export const createSpatialControls = ({ camera, canvas, render }) => {
         }
     };
 
+    const onControlStart = () => setInteractionQuality(true);
+    const onControlEnd = () => setInteractionQuality(false);
     controls.addEventListener('change', onControlChange);
+    controls.addEventListener('start', onControlStart);
+    controls.addEventListener('end', onControlEnd);
     document.addEventListener('keydown', onKeyDown);
     document.querySelector('[data-spatial-reset]')?.addEventListener('click', reset);
     document.querySelector('[data-spatial-rotate-left]')?.addEventListener('click', () => rotateBy(Math.PI / 2));
@@ -194,7 +207,10 @@ export const createSpatialControls = ({ camera, canvas, render }) => {
             if (animationTimer !== null) {
                 window.clearTimeout(animationTimer);
             }
+            renderRequested = false;
             controls.removeEventListener('change', onControlChange);
+            controls.removeEventListener('start', onControlStart);
+            controls.removeEventListener('end', onControlEnd);
             document.removeEventListener('keydown', onKeyDown);
             controls.dispose();
         },

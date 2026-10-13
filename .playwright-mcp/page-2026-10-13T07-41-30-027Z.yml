@@ -1,0 +1,21 @@
+- generic [ref=f7e2]:
+  - link "Oasis Next Workspace operasional" [ref=f7e3] [cursor=pointer]:
+    - /url: /
+    - img "Oasis Next" [ref=f7e4]
+    - generic [ref=f7e16]: Workspace operasional
+  - generic [ref=f7e18]:
+    - generic [ref=f7e19]:
+      - generic [ref=f7e20]: Email
+      - textbox "Email" [active] [ref=f7e21]: admin@example.com
+      - list [ref=f7e22]:
+        - listitem [ref=f7e23]: These credentials do not match our records.
+    - generic [ref=f7e24]:
+      - generic [ref=f7e25]: Password
+      - textbox "Password" [ref=f7e26]
+    - generic [ref=f7e28]:
+      - checkbox "Remember me" [ref=f7e29]
+      - generic [ref=f7e30]: Remember me
+    - generic [ref=f7e31]:
+      - link "Forgot your password?" [ref=f7e32] [cursor=pointer]:
+        - /url: http://127.0.0.1:8000/forgot-password
+      - button "Log in" [ref=f7e33]

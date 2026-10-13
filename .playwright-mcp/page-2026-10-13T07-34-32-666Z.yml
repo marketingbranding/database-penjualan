@@ -1,0 +1,8 @@
+- generic [active] [ref=f3e1]:
+  - link "Oasis Next Oasis Next" [ref=f3e2] [cursor=pointer]:
+    - /url: http://localhost:8000
+    - img "Oasis Next" [ref=f3e3]
+    - generic [ref=f3e4]: Oasis Next
+  - heading "Oasis Next" [level=1] [ref=f3e5]
+  - paragraph [ref=f3e6]: Workspace operasional email preview.
+  - text: © 2026 Oasis Next

@@ -1,0 +1,56 @@
+export const SCENE_THEMES = Object.freeze({
+    light: Object.freeze({
+        islandTop: 0xf4f6ee,
+        islandSide: 0xd6dbc6,
+        islandShadowSide: 0xc3c9b0,
+        branchTop: 0xf4a65c,
+        branchSide: 0xd3802d,
+        teamTop: 0x9ccc4e,
+        teamSide: 0x6fa030,
+        road: 0xe6e4d8,
+        roadLine: 0xffffff,
+        gridLine: 0xe3e6d8,
+        treeTrunk: 0x8f6a3e,
+        treeDark: 0x6fa030,
+        treeLight: 0x9ccc4e,
+        selection: 0x6b9f32,
+        hierarchy: 0x6b9f32,
+        teamHighlight: 0x6b9f32,
+        unassignedTop: 0xece6d3,
+        unassignedSide: 0xd8d2bd,
+        pawnEye: 0x1d2219,
+        labelDots: Object.freeze({ branch: '#f4a65c', team: '#9ccc4e', user: '#ffffff', unassigned: '#9a9a9a' }),
+        roleColors: Object.freeze([0x1d2219, 0xf4a65c, 0x9ccc4e, 0xf3e35f, 0x5f9a2a, 0xc9e58f, 0xd3d6cd]),
+        lighting: Object.freeze({ sky: 0xffffff, ground: 0xdfe6cf, hemisphere: 0.9, directional: 1.1 }),
+    }),
+    dark: Object.freeze({
+        islandTop: 0x1f251c,
+        islandSide: 0x161b14,
+        islandShadowSide: 0x0f130d,
+        branchTop: 0xf4a65c,
+        branchSide: 0xa9602b,
+        teamTop: 0x9ccc4e,
+        teamSide: 0x5f9a2a,
+        road: 0x151a13,
+        roadLine: 0x7f8a78,
+        gridLine: 0x2d3528,
+        treeTrunk: 0x6e502f,
+        treeDark: 0x4f7f29,
+        treeLight: 0x8fbe48,
+        selection: 0xb6dd78,
+        hierarchy: 0x8fbe48,
+        teamHighlight: 0xb6dd78,
+        unassignedTop: 0x2a2f22,
+        unassignedSide: 0x1a1e16,
+        pawnEye: 0x10150d,
+        labelDots: Object.freeze({ branch: '#f4a65c', team: '#9ccc4e', user: '#b6dd78', unassigned: '#9a9a9a' }),
+        roleColors: Object.freeze([0xecefe6, 0xf4a65c, 0x9ccc4e, 0xf3e35f, 0x8fbe48, 0xc9e58f, 0xd3d6cd]),
+        lighting: Object.freeze({ sky: 0xdbe5d1, ground: 0x283025, hemisphere: 0.72, directional: 0.85 }),
+    }),
+});
+
+export const getSceneTheme = (themeName = document.documentElement.dataset.theme) => (
+    SCENE_THEMES[themeName] ?? SCENE_THEMES.light
+);
+
+export const colorToCss = (color) => `#${color.toString(16).padStart(6, '0')}`;

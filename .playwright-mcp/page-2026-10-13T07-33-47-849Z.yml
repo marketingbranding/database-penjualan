@@ -1,0 +1,8 @@
+- main [ref=f2e2]:
+  - generic [ref=f2e3]:
+    - img "Oasis Next" [ref=f2e4]
+    - generic [ref=f2e14]: "404"
+    - heading "Not Found" [level=1] [ref=f2e15]
+    - paragraph [ref=f2e16]: Oasis Next · Workspace operasional
+    - link "Kembali ke beranda" [ref=f2e17] [cursor=pointer]:
+      - /url: http://127.0.0.1:8000

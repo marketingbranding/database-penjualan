@@ -1,7 +1,7 @@
 <div class="grid gap-6">
     <div>
         <x-input-label value="Kode cabang" />
-        <p class="mt-1 rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-600">{{ $branch?->code ?? 'Dibuat otomatis saat disimpan' }}</p>
+        <p class="workspace-readonly-control">{{ $branch?->code ?? 'Dibuat otomatis saat disimpan' }}</p>
     </div>
     <div>
         <x-input-label for="name" value="Nama cabang" />
@@ -10,7 +10,7 @@
     </div>
     <label class="flex items-center gap-3">
         <input type="hidden" name="is_active" value="0">
-        <input type="checkbox" name="is_active" value="1" class="rounded border-gray-300 text-amber-600 focus:ring-amber-500" @checked(old('is_active', $branch?->is_active ?? true))>
-        <span class="text-sm text-gray-700">Cabang aktif</span>
+        <input type="checkbox" name="is_active" value="1" class="module-checkbox" @checked(old('is_active', $branch?->is_active ?? true))>
+        <span class="text-sm text-ink">Cabang aktif</span>
     </label>
 </div>

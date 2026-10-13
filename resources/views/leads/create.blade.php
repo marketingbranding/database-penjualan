@@ -1,13 +1,11 @@
 <x-app-layout>
     <x-slot name="header">
-        <div>
-            <p class="text-xs font-bold uppercase tracking-widest text-amber-700">Buku Saku Sales</p>
-            <h1 class="mt-1 text-xl font-bold">{{ $lead ? 'Edit Lead' : 'Lead Baru' }}</h1>
-        </div>
+        <x-page-header :title="$lead ? 'Edit Lead' : 'Lead Baru'" description="Lengkapi data akuisisi dan penugasan Sales untuk Lead ini." />
     </x-slot>
 
-    <div class="py-10">
-        <form method="POST" action="{{ $lead ? route('leads.update', $lead) : route('leads.store') }}" class="mx-auto max-w-6xl space-y-6 px-4 sm:px-6 lg:px-8">
+    <div class="module-page">
+        <x-form-section :title="$lead ? 'Perbarui data Lead' : 'Data Lead baru'" description="Field bertanda * wajib diisi.">
+        <form method="POST" action="{{ $lead ? route('leads.update', $lead) : route('leads.store') }}" class="module-process-form col-span-2">
             @csrf
             @if ($lead)
                 @method('PUT')
@@ -17,7 +15,7 @@
                 <div class="rounded-2xl border border-orange/40 bg-orange/10 px-4 py-3 text-sm text-ink">Lead ini dibuat dari agenda <a href="{{ route('sales-agendas.edit', $originAgenda) }}" class="font-bold underline">{{ $originAgenda->title }}</a> — isian sudah diisi otomatis, periksa kembali sebelum menyimpan.</div>
             @endif
 
-            <div class="grid gap-5 rounded-xl border border-gray-200 bg-white p-6 shadow-sm md:grid-cols-2">
+            <div class="grid gap-5 md:grid-cols-2">
                 <div>
                     <x-input-label for="tanggal_lead" value="Tanggal Lead *" />
                     <x-text-input id="tanggal_lead" name="tanggal_lead" type="date" class="mt-1 block w-full" required value="{{ old('tanggal_lead', $prefill['tanggal_lead'] ?? $lead?->tanggal_lead?->format('Y-m-d') ?? today()->toDateString()) }}" />
@@ -106,10 +104,11 @@
                 </div>
             </div>
 
-            <div class="flex justify-end gap-3">
+            <div class="mt-5 flex justify-end gap-3">
                 <a href="{{ $lead ? route('leads.show', $lead) : route('leads.index') }}" class="rounded-md px-4 py-2 text-sm text-gray-600 hover:bg-gray-100">Batal</a>
                 <x-primary-button>{{ $lead ? 'Perbarui lead' : 'Simpan lead' }}</x-primary-button>
             </div>
         </form>
+        </x-form-section>
     </div>
 </x-app-layout>

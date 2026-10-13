@@ -1,18 +1,11 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-wrap items-center justify-between gap-4">
-            <div>
-                <p class="text-xs font-medium text-orange">Database penjualan</p>
-                <h1 class="mt-1 text-xl font-semibold tracking-tight text-ink">{{ $salesCase->consumer->nama_konsumen }}</h1>
-                <p class="mt-1 text-sm text-muted">Detail konsumen, reservasi, dan progres proses penjualan.</p>
-            </div>
-            @can('update', $salesCase)
-                <a href="{{ route('consumers.edit', $salesCase) }}" class="inline-flex min-h-10 items-center rounded-2xl bg-lime px-4 py-2 text-sm font-semibold text-ink transition hover:bg-lime-dark hover:text-white">Edit data</a>
-            @endcan
-        </div>
+        <x-page-header title="{{ $salesCase->consumer->nama_konsumen }}" description="Detail konsumen, reservasi, dan progres proses penjualan.">
+            <x-slot name="actions">@can('update', $salesCase)<a href="{{ route('consumers.edit', $salesCase) }}" class="module-button module-button-primary">Edit data</a>@endcan</x-slot>
+        </x-page-header>
     </x-slot>
 
-    <div class="space-y-6 px-4 py-8 sm:px-6 lg:px-8">
+    <div class="module-page">
         @if (session('status'))
             <x-ui.toast message="Reservasi berhasil dibatalkan dan kavling kembali tersedia." />
         @endif

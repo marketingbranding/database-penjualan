@@ -1,12 +1,71 @@
+@php
+    $moduleBreadcrumbs = match (true) {
+        request()->routeIs('dashboard') => ['Utama', 'Dashboard'],
+        request()->routeIs('consumers.*') => ['Utama', 'Data konsumen'],
+        request()->routeIs('admin.users.*') => ['Pengaturan', 'Pengguna'],
+        request()->routeIs('admin.promotions.*') => ['Pengaturan', 'Promo'],
+        request()->routeIs('admin.branches.*') => ['Pengaturan', 'Cabang'],
+        request()->routeIs('admin.projects.*') => ['Pengaturan', 'Proyek'],
+        request()->routeIs('admin.lots.*') => ['Pengaturan', 'Kavling'],
+        request()->routeIs('admin.audit-logs.*') => ['Pengaturan', 'Audit log'],
+        request()->routeIs('admin.banks.*') => ['Pengaturan', 'Bank'],
+        request()->routeIs('admin.lead-times.*') => ['Pengaturan', 'Target lead time'],
+        request()->routeIs('admin.teams.*') => ['Pengaturan', 'Tim'],
+        request()->routeIs('admin.roles.*') => ['Pengaturan', 'Role & permission'],
+        request()->routeIs('admin.*') => ['Pengaturan'],
+        request()->routeIs('leads.monitoring') => ['Buku Saku Sales', 'Monitoring Lead'],
+        request()->routeIs('leads.*') => ['Buku Saku Sales', 'Leads'],
+        request()->routeIs('sales-agendas.*') => ['Buku Saku Sales', 'Agenda sales'],
+        request()->routeIs('sales-fee-reports.*') => ['Buku Saku Sales', 'Laporan performa'],
+        request()->routeIs('warranties.*') => ['Layanan', 'Garansi'],
+        request()->routeIs('sales-process.psjb-utj*') => ['Buku Saku Sales', 'PSJB / UTJ'],
+        request()->routeIs('sales-process.bi-checking') => ['Buku Saku Sales', 'BI Checking'],
+        request()->routeIs('sales-process.pemberkasan') => ['Buku Saku Sales', 'Pemberkasan'],
+        request()->routeIs('sales-process.bank') => ['Buku Saku Sales', 'Proses Bank'],
+        request()->routeIs('sales-process.ppjb-developer') => ['Buku Saku Sales', 'PPJB Developer'],
+        request()->routeIs('sales-process.akad-bast') => ['Buku Saku Sales', 'Akad & BAST'],
+        request()->routeIs('notifications.*') => ['Aktivitas', 'Notifikasi'],
+        request()->routeIs('profile.*') => ['Akun', 'Profile'],
+        default => ['Utama'],
+    };
+    $pageTitle = last($moduleBreadcrumbs) ?: config('app.name', 'Oasis Next');
+    $brandVersion = file_exists(public_path('brand/oasis-next-mark.svg')) ? filemtime(public_path('brand/oasis-next-mark.svg')) : 1;
+@endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
-        <meta name="theme-color" content="#1d2219">
+        <meta name="color-scheme" content="light dark">
+        <meta name="theme-color" content="#ecece9" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#0f130d" media="(prefers-color-scheme: dark)">
+        <link rel="icon" href="{{ asset('favicon.svg') }}?v={{ $brandVersion }}" type="image/svg+xml">
+        <link rel="icon" href="{{ asset('favicon.ico') }}?v={{ $brandVersion }}" sizes="any">
+        <link rel="icon" href="{{ asset('favicon-32x32.png') }}?v={{ $brandVersion }}" type="image/png" sizes="32x32">
+        <link rel="icon" href="{{ asset('favicon-16x16.png') }}?v={{ $brandVersion }}" type="image/png" sizes="16x16">
+        <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}?v={{ $brandVersion }}" sizes="180x180">
+        <link rel="manifest" href="{{ asset('site.webmanifest') }}?v={{ $brandVersion }}">
+        <meta name="description" content="Workspace operasional">
+        <meta property="og:title" content="{{ $pageTitle }} · {{ config('app.name', 'Oasis Next') }}">
+        <meta property="og:description" content="Workspace operasional">
+        <meta property="og:image" content="{{ url('og-image.png') }}?v={{ $brandVersion }}">
+        <meta property="og:type" content="website">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="{{ $pageTitle }} · {{ config('app.name', 'Oasis Next') }}">
+        <meta name="twitter:description" content="Workspace operasional">
+        <meta name="twitter:image" content="{{ url('og-image.png') }}?v={{ $brandVersion }}">
 
-        <title>{{ config('app.name', 'Laravel') }}</title>
+        <script>
+            (() => {
+                const preference = ['light', 'dark', 'system'].includes(localStorage.getItem('theme')) ? localStorage.getItem('theme') : 'system';
+                const theme = preference === 'system' ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : preference;
+                document.documentElement.dataset.theme = theme;
+                document.documentElement.style.colorScheme = theme;
+            })();
+        </script>
+
+        <title>{{ $pageTitle }} · {{ config('app.name', 'Oasis Next') }}</title>
 
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=poppins:400,500,600,700&display=swap" rel="stylesheet" />
@@ -19,92 +78,43 @@
 
             <div class="flex h-full min-h-0 min-w-0 flex-1 flex-col lg:ml-[80px] xl:ml-[310px]">
                 @if (session('impersonator_id'))
-                    <div class="flex flex-wrap items-center justify-between gap-3 bg-ink px-4 py-3 text-sm font-semibold text-white sm:px-6 lg:px-8">
+                    <div class="flex flex-wrap items-center justify-between gap-3 bg-inverse px-4 py-3 text-sm font-semibold text-inverse-text sm:px-6 lg:px-8">
                         <span>Anda sedang login sebagai {{ Auth::user()->name }}. Super Admin: {{ session('impersonator_name') }}.</span>
-                        <form method="POST" action="{{ route('impersonation.stop') }}">@csrf<button class="rounded-xl bg-lime px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-lime-dark">Kembali ke Super Admin</button></form>
+                        <form method="POST" action="{{ route('impersonation.stop') }}">@csrf<button class="rounded-xl bg-lime px-3 py-1.5 text-xs font-semibold text-on-accent transition hover:bg-lime-dark">Kembali ke Super Admin</button></form>
                     </div>
                 @endif
-                <header class="workspace-topbar z-20 flex min-h-[52px] shrink-0 flex-wrap items-center gap-3 overflow-x-clip px-1 py-1 sm:gap-4 lg:flex-nowrap">
-                    <button type="button" class="grid size-10 shrink-0 place-items-center rounded-xl text-ink transition hover:bg-lime-soft lg:hidden" @click="sidebarOpen = true" aria-label="Buka menu">
-                        <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
-                    </button>
+                <x-global-bar
+                    class="workspace-topbar z-20 shrink-0"
+                    :breadcrumbs="$moduleBreadcrumbs"
+                    :search-action="route('search')"
+                    :search-value="request()->routeIs('search') ? request('q') : null"
+                    :team-code="$activeTeam?->code"
+                    :user="Auth::user()"
+                    :unread-count="$unreadNotificationsCount"
+                >
+                    <x-slot name="notifications">
+                        <x-dropdown align="right" width="80">
+                            <x-slot name="trigger">
+                                <button type="button" class="relative module-icon-button" aria-label="Notifikasi">
+                                    <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0 1 18 14.158V11a6.002 6.002 0 0 0-4-5.659V5a2 2 0 1 0-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 1 1-6 0v-1m6 0H9" /></svg>
+                                    @if ($unreadNotificationsCount > 0)<span class="absolute right-1 top-1 grid min-h-4 min-w-4 place-items-center rounded-full bg-orange px-1 text-[10px] font-semibold text-ink">{{ min($unreadNotificationsCount, 99) }}</span>@endif
+                                </button>
+                            </x-slot>
+                            <x-slot name="content">
+                                <div class="flex items-center justify-between border-b border-line px-4 py-3"><span class="text-sm font-semibold text-ink">Notifikasi</span><a href="{{ route('notifications.index') }}" class="text-xs font-semibold text-lime-dark">Lihat semua</a></div>
+                                @forelse ($recentNotifications as $notification)
+                                     <form method="POST" action="{{ route('notifications.read', $notification->id) }}">@csrf @method('PATCH')<button class="block w-full border-b border-line px-4 py-3 text-left transition hover:bg-canvas"><span class="block text-sm font-semibold {{ $notification->read_at ? 'text-muted' : 'text-ink' }}">{{ $notification->data['title'] ?? 'Notifikasi' }}</span><span class="mt-1 block text-xs leading-5 text-muted">{{ $notification->data['message'] ?? '' }}</span></button></form>
+                                @empty
+                                    <p class="px-4 py-8 text-center text-sm text-muted">Belum ada notifikasi.</p>
+                                @endforelse
+                            </x-slot>
+                        </x-dropdown>
+                    </x-slot>
+                </x-global-bar>
 
-                    <a href="{{ route('dashboard') }}" class="flex min-w-0 items-center gap-2 lg:hidden" aria-label="Buka dashboard">
-                        <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-ink text-lime"><span class="text-lg font-bold">O</span></span>
-                        <span class="workspace-mobile-brand-name truncate text-sm font-semibold text-ink">Oasis Next</span>
-                    </a>
-                    <a href="{{ route('search') }}" class="grid size-10 shrink-0 place-items-center rounded-xl text-ink transition hover:bg-lime-soft lg:hidden" aria-label="Buka pencarian" title="Cari">
-                        <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6" stroke-width="1.8" /><path stroke-linecap="round" stroke-width="1.8" d="m16 16 4 4" /></svg>
-                    </a>
-
-                    <div class="workspace-page-heading order-last w-full max-w-full min-w-0 shrink-0 py-4 lg:order-none lg:w-auto lg:flex-1 lg:max-w-[38%] lg:py-3">
-                        @isset($header)
-                            {{ $header }}
-                        @else
-                            <h1 class="truncate text-lg font-semibold text-ink">{{ config('app.name') }}</h1>
-                        @endisset
-                    </div>
-
-                    <form method="GET" action="{{ route('search') }}" class="hidden min-w-0 max-w-[420px] flex-1 lg:block">
-                        <label for="global-search" class="sr-only">Cari</label>
-                        <div class="relative"><input id="global-search" name="q" value="{{ request()->routeIs('search') ? request('q') : '' }}" placeholder="Cari lead, agenda, konsumen..." class="workspace-control w-full bg-white py-3 pl-10 pr-16 text-[13px] text-ink placeholder:text-muted focus:border-lime-dark focus:ring-lime/30"><span class="pointer-events-none absolute left-3 top-3 text-muted">⌕</span><span class="pointer-events-none absolute right-3 top-2.5 rounded-lg bg-canvas px-1.5 py-1 text-[10px] font-semibold text-muted">Ctrl K</span></div>
-                    </form>
-
-                    @isset($branches)
-                        @if (Auth::user()->canAccessAllBranches())
-                            <form method="GET" action="{{ url()->current() }}" class="hidden xl:block">
-                                <label for="topbar-branch" class="sr-only">Filter cabang</label>
-                                <select id="topbar-branch" name="branch_id" onchange="this.form.submit()" class="workspace-control max-w-[150px] bg-surface py-2.5 pl-3 pr-8 text-xs font-medium text-ink">
-                                    <option value="">Semua cabang</option>
-                                    @foreach ($branches as $branch)
-                                        <option value="{{ $branch->id }}" @selected((int) ($branchId ?? request('branch_id')) === $branch->id)>{{ $branch->name }}</option>
-                                    @endforeach
-                                </select>
-                            </form>
-                        @elseif (Auth::user()->branch)
-                            <span class="hidden rounded-xl bg-lime-soft px-3 py-2 text-xs font-medium text-lime-dark xl:inline">{{ Auth::user()->branch->name }}</span>
-                        @endif
-                    @endisset
-
-                    <div class="workspace-notifications">
-                    <x-dropdown align="right" width="80">
-                        <x-slot name="trigger">
-                            <button type="button" class="relative grid size-10 place-items-center rounded-2xl bg-white text-muted transition hover:bg-lime-soft hover:text-ink" aria-label="Notifikasi">
-                                <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0 1 18 14.158V11a6.002 6.002 0 0 0-4-5.659V5a2 2 0 1 0-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 1 1-6 0v-1m6 0H9" /></svg>
-                                @if ($unreadNotificationsCount > 0)
-                                    <span class="absolute right-1 top-1 grid min-h-4 min-w-4 place-items-center rounded-full bg-orange px-1 text-[10px] font-semibold text-ink">{{ min($unreadNotificationsCount, 99) }}</span>
-                                @endif
-                            </button>
-                        </x-slot>
-                        <x-slot name="content">
-                            <div class="flex items-center justify-between border-b border-line px-4 py-3"><span class="text-sm font-semibold text-ink">Notifikasi</span><a href="{{ route('notifications.index') }}" class="text-xs font-semibold text-lime-dark">Lihat semua</a></div>
-                            @forelse ($recentNotifications as $notification)
-                                <form method="POST" action="{{ route('notifications.read', $notification->id) }}">@csrf @method('PATCH')<button class="block w-full border-b border-gray-100 px-4 py-3 text-left hover:bg-gray-50"><span class="block text-sm font-semibold {{ $notification->read_at ? 'text-gray-600' : 'text-gray-950' }}">{{ $notification->data['title'] ?? 'Notifikasi' }}</span><span class="mt-1 block text-xs leading-5 text-gray-500">{{ $notification->data['message'] ?? '' }}</span></button></form>
-                            @empty
-                                <p class="px-4 py-8 text-center text-sm text-muted">Belum ada notifikasi.</p>
-                            @endforelse
-                        </x-slot>
-                    </x-dropdown>
-                    </div>
-
-                    @if ($activeTeam)
-                        <span class="hidden rounded-xl bg-lime-soft px-3 py-2 text-xs font-medium text-lime-dark sm:inline">{{ $activeTeam->code }}</span>
-                    @endif
-                    <div class="workspace-profile">
-                    <x-dropdown align="right" width="48">
-                        <x-slot name="trigger">
-                            <button type="button" class="flex items-center gap-2 rounded-2xl bg-white px-2.5 py-1.5 text-left transition hover:bg-lime-soft" aria-label="Buka profil">
-                                <span class="grid size-8 place-items-center rounded-full bg-ink text-xs font-semibold text-lime">{{ str(Auth::user()->name)->substr(0, 1)->upper() }}</span><span class="hidden min-w-0 sm:block"><span class="block max-w-[105px] truncate text-[11px] font-semibold text-ink">{{ Auth::user()->name }}</span><span class="block text-[10px] text-muted">Profil</span></span>
-                            </button>
-                        </x-slot>
-                        <x-slot name="content">
-                            <div class="border-b border-line px-4 py-3"><p class="truncate text-sm font-semibold text-ink">{{ Auth::user()->name }}</p><p class="truncate text-xs text-muted">{{ Auth::user()->email }}</p></div>
-                            <x-dropdown-link :href="route('profile.edit')">Profil</x-dropdown-link>
-                            <form method="POST" action="{{ route('logout') }}">@csrf<button type="submit" class="block w-full px-4 py-2 text-left text-sm text-muted transition hover:bg-canvas hover:text-ink">Keluar</button></form>
-                        </x-slot>
-                    </x-dropdown>
-                    </div>
-                </header>
+                @isset($header)
+                    <div class="module-layout-page-header">{{ $header }}</div>
+                @endisset
 
                 <main class="{{ request()->routeIs('admin.spatial-workspace') ? 'spatial-main min-h-0 flex-1 overflow-hidden' : 'min-h-0 flex-1 overflow-y-auto thin-scrollbar' }}">
                     {{ $slot }}

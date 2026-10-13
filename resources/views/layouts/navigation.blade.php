@@ -2,8 +2,8 @@
     $panelLink = 'group flex h-[35px] min-h-0 items-center gap-2.5 rounded-xl px-2.5 py-1.5 text-[13px] font-medium transition duration-150';
     $activePanelLink = 'bg-lime-soft text-ink';
     $inactivePanelLink = 'text-muted hover:bg-canvas hover:text-ink';
-    $railLink = 'group relative grid size-[42px] place-items-center rounded-[14px] text-[#9aa293] transition duration-150 hover:bg-[#2b3325] hover:text-lime';
-    $activeRailLink = 'bg-white/10 text-lime';
+    $railLink = 'group relative grid size-[42px] place-items-center rounded-[14px] text-muted transition duration-150 hover:bg-surface-2 hover:text-lime';
+    $activeRailLink = 'bg-surface-2 text-lime';
     $settingsRoute = Auth::user()->can('spatial-workspace.view')
         ? 'admin.spatial-workspace'
         : (Auth::user()->can('users.view')
@@ -13,11 +13,11 @@
                 : (Auth::user()->can('projects.view') ? 'admin.projects.index' : 'admin.audit-logs.index')));
 @endphp
 
-<div x-cloak x-show="sidebarOpen" x-transition.opacity class="fixed inset-0 z-40 bg-ink/60 lg:hidden" @click="sidebarOpen = false"></div>
+<div x-cloak x-show="sidebarOpen" x-transition.opacity class="fixed inset-0 z-40 bg-rail/60 lg:hidden" @click="sidebarOpen = false"></div>
 
-<aside class="fixed inset-y-3.5 left-3.5 z-50 hidden w-[66px] flex-col items-center gap-2.5 rounded-3xl bg-ink py-4 text-white lg:flex" aria-label="Navigasi utama">
-    <a href="{{ route('dashboard') }}" class="mb-2.5 grid size-10 place-items-center rounded-[13px] bg-lime text-ink" aria-label="Dashboard" title="Dashboard">
-        <span class="text-lg font-bold">O</span>
+<aside class="fixed inset-y-3.5 left-3.5 z-50 hidden w-[66px] flex-col items-center gap-2.5 rounded-3xl bg-rail py-4 text-rail-text lg:flex" aria-label="Navigasi utama">
+    <a href="{{ route('dashboard') }}" class="brand-rail-mark mb-2.5 grid size-10 place-items-center rounded-[13px] transition-transform duration-150 hover:scale-[1.06] motion-reduce:transition-none motion-reduce:hover:scale-100" aria-label="Oasis Next, buka dashboard" title="Oasis Next, buka dashboard">
+        <x-brand.logo variant="mark" size="md" aria-hidden="true" class="size-10" />
     </a>
 
     <nav class="flex flex-col items-center gap-2.5">
@@ -46,7 +46,7 @@
     <div class="mt-auto flex flex-col items-center gap-2">
         @canany(['branches.view', 'projects.view', 'lots.view', 'audit-logs.view', 'banks.view', 'lead-time.view', 'promotions.view', 'users.view', 'teams.view', 'roles.view'])
             <a href="{{ route($settingsRoute) }}" class="{{ $railLink }} {{ request()->routeIs('admin.*') ? $activeRailLink : '' }}" aria-label="Pengaturan" title="Pengaturan">
-                <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 15.25A3.25 3.25 0 1 0 12 8.75a3.25 3.25 0 0 0 0 6.5Zm0-12.25v2m0 14v2m9-9h-2m-16 0H1m17.36-6.36-1.42 1.42M7.05 16.95l-1.41 1.41m12.72 0-1.41-1.41M7.05 7.05 5.64 5.64" /></svg>
+                <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9.75 3.5h4.5l.55 2.05a7.7 7.7 0 0 1 1.7.98l2.03-.65 2.25 3.9-1.48 1.5a7.7 7.7 0 0 1 0 1.96l1.48 1.5-2.25 3.9-2.03-.65a7.7 7.7 0 0 1-1.7.98l-.55 2.05h-4.5l-.55-2.05a7.7 7.7 0 0 1-1.7-.98l-2.03.65-2.25-3.9 1.48-1.5a7.7 7.7 0 0 1 0-1.96l-1.48-1.5 2.25-3.9 2.03.65a7.7 7.7 0 0 1 1.7-.98l.55-2.05Z" /><circle cx="12" cy="12" r="2.75" stroke-width="1.8" /></svg>
             </a>
         @endcanany
         <button type="button" class="{{ $railLink }} lg:hidden" @click="sidebarOpen = true" aria-label="Buka navigasi" title="Buka navigasi">
@@ -55,11 +55,19 @@
     </div>
 </aside>
 
-<aside class="fixed inset-y-3.5 left-[94px] z-50 flex w-[216px] -translate-x-full flex-col rounded-3xl bg-white p-3.5 text-ink transition-transform duration-200 xl:translate-x-0" :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full xl:translate-x-0'" aria-label="Panel navigasi">
+<aside class="fixed inset-y-3.5 left-[94px] z-50 flex w-[216px] -translate-x-full flex-col rounded-3xl bg-surface p-3.5 text-ink transition-transform duration-200 xl:translate-x-0" :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full xl:translate-x-0'" aria-label="Panel navigasi">
     <div class="flex items-center justify-between pb-3.5">
         <a href="{{ route('dashboard') }}" class="min-w-0">
-            <span class="block truncate text-[15px] font-bold leading-5 text-ink">Oasis Next</span>
-            <span class="block truncate text-[10px] leading-4 text-muted">Workspace operasional</span>
+            <span class="md:hidden">
+                <x-brand.logo variant="lockup" size="sm" aria-hidden="true" />
+            </span>
+            <span class="hidden items-center gap-2 md:flex">
+                <x-brand.logo variant="mark" size="sm" aria-hidden="true" class="size-8 shrink-0" />
+                <span class="min-w-0">
+                    <span class="block truncate text-[15px] font-bold leading-5 text-ink">Oasis Next</span>
+                    <span class="block truncate text-[10px] leading-4 text-muted">Workspace operasional</span>
+                </span>
+            </span>
         </a>
         <button type="button" class="grid size-9 place-items-center rounded-xl text-muted transition hover:bg-canvas hover:text-ink lg:hidden" @click="sidebarOpen = false" aria-label="Tutup navigasi">
             <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M6 6l12 12M18 6 6 18" /></svg>
@@ -82,7 +90,7 @@
 
         @canany(['sales.view-own', 'sales.view-team', 'sales.view-all', 'leads.view-own', 'leads.view-team', 'leads.view-branch', 'leads.view-all', 'leads.monitor'])
             <div class="my-3 border-t border-line"></div>
-            <p class="mb-1.5 px-2.5 pt-3.5 text-[11px] font-medium text-[#8b9086]">Buku Saku Sales</p>
+            <p class="mb-1.5 px-2.5 pt-3.5 text-[11px] font-medium text-muted">Buku Saku Sales</p>
             <div class="grid gap-1">
                 @canany(['sales.view-own', 'sales.view-team', 'sales.view-all'])
                     <a href="{{ route('sales-agendas.index') }}" class="{{ $panelLink }} {{ request()->routeIs('sales-agendas.*') ? $activePanelLink : $inactivePanelLink }}">
@@ -105,7 +113,7 @@
         @can('sales-process.view')
             <div class="my-3 border-t border-line"></div>
             <div x-data="{ open: {{ request()->routeIs('sales-process.*') ? 'true' : 'false' }} }">
-                <button type="button" class="flex min-h-[35px] w-full items-center justify-between rounded-xl px-2.5 py-2 text-left text-[11px] font-medium text-[#8b9086] transition hover:bg-canvas hover:text-ink" @click="open = ! open" :aria-expanded="open.toString()">
+                <button type="button" class="flex min-h-[35px] w-full items-center justify-between rounded-xl px-2.5 py-2 text-left text-[11px] font-medium text-muted transition hover:bg-canvas hover:text-ink" @click="open = ! open" :aria-expanded="open.toString()">
                     <span>Proses penjualan</span><svg class="size-3.5 transition" :class="open && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m6 9 6 6 6-6" /></svg>
                 </button>
                 <div x-show="open" x-transition.opacity class="mt-1 grid gap-1 pl-3">
@@ -128,7 +136,7 @@
         @canany(['branches.view', 'projects.view', 'lots.view', 'audit-logs.view', 'banks.view', 'lead-time.view', 'promotions.view', 'users.view', 'teams.view', 'roles.view'])
             <div class="my-3 border-t border-line"></div>
             <div x-data="{ open: {{ request()->routeIs('admin.*') ? 'true' : 'false' }} }">
-                <button type="button" class="flex min-h-[35px] w-full items-center justify-between rounded-xl px-2.5 py-2 text-left text-[11px] font-medium text-[#8b9086] transition hover:bg-canvas hover:text-ink" @click="open = ! open" :aria-expanded="open.toString()">
+                <button type="button" class="flex min-h-[35px] w-full items-center justify-between rounded-xl px-2.5 py-2 text-left text-[11px] font-medium text-muted transition hover:bg-canvas hover:text-ink" @click="open = ! open" :aria-expanded="open.toString()">
                     <span>Pengaturan</span><svg class="size-3.5 transition" :class="open && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m6 9 6 6 6-6" /></svg>
                 </button>
                 <div x-show="open" x-transition.opacity class="mt-1 grid gap-1 pl-3">
@@ -151,21 +159,17 @@
     <div class="mt-3 pt-3">
         @if ($availableTeams->isNotEmpty())
             <div class="mb-3" x-data="{ teamsOpen: false }">
-                <button type="button" class="flex w-full items-center justify-between rounded-2xl bg-[#f4f4f1] px-3 py-2.5 text-left transition hover:bg-lime-soft" @click="teamsOpen = ! teamsOpen" :aria-expanded="teamsOpen.toString()">
+                <button type="button" class="flex w-full items-center justify-between rounded-2xl bg-surface-2 px-3 py-2.5 text-left transition hover:bg-lime-soft" @click="teamsOpen = ! teamsOpen" :aria-expanded="teamsOpen.toString()">
                     <span class="min-w-0"><span class="block text-[10px] font-medium text-muted">Tim aktif</span><span class="block truncate text-xs font-semibold text-ink">{{ $activeTeam?->name ?? 'Pilih tim' }}</span></span>
                     <svg class="size-4 text-muted transition" :class="teamsOpen && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="1.8" d="m6 9 6 6 6-6" /></svg>
                 </button>
                 <div x-show="teamsOpen" x-transition.opacity class="mt-2 grid gap-1">
                     @foreach ($availableTeams as $team)
-                        <form method="POST" action="{{ route('team-context.update', $team) }}">@csrf<button type="submit" class="w-full rounded-xl px-3 py-2 text-left text-xs transition {{ $activeTeam?->is($team) ? 'bg-lime font-semibold text-ink' : 'text-muted hover:bg-canvas hover:text-ink' }}">{{ $team->name }}</button></form>
+                        <form method="POST" action="{{ route('team-context.update', $team) }}">@csrf<button type="submit" class="w-full rounded-xl px-3 py-2 text-left text-xs transition {{ $activeTeam?->is($team) ? 'bg-lime font-semibold text-on-accent' : 'text-muted hover:bg-canvas hover:text-ink' }}">{{ $team->name }}</button></form>
                     @endforeach
                 </div>
             </div>
         @endif
 
-        <div class="flex h-10 items-center gap-2 px-1">
-            <div class="grid size-7 shrink-0 place-items-center rounded-full bg-ink text-xs font-semibold text-lime">{{ str(Auth::user()->name)->substr(0, 1)->upper() }}</div>
-            <div class="min-w-0 flex-1"><div class="truncate text-[11px] font-semibold text-ink">{{ Auth::user()->name }}</div><a href="{{ route('profile.edit') }}" class="text-[10px] text-muted transition hover:text-lime-dark">Profil</a></div>
-        </div>
     </div>
 </aside>

@@ -1,20 +1,7 @@
 import * as THREE from 'three';
+import { SCENE_THEMES, colorToCss } from './themes.js';
 
-export const SPATIAL_COLORS = {
-    islandTop: 0xf4f6ee,
-    islandSide: 0xd6dbc6,
-    islandShadowSide: 0xc3c9b0,
-    branchTop: 0xf4a65c,
-    branchSide: 0xd3802d,
-    teamTop: 0x9ccc4e,
-    teamSide: 0x6fa030,
-    road: 0xe6e4d8,
-    roadLine: 0xffffff,
-    gridLine: 0xe3e6d8,
-    treeTrunk: 0x8f6a3e,
-    treeDark: 0x6fa030,
-    treeLight: 0x9ccc4e,
-};
+export const SPATIAL_COLORS = SCENE_THEMES.light;
 
 const canvasTexture = (draw, size = 256) => {
     const canvas = document.createElement('canvas');
@@ -24,16 +11,16 @@ const canvasTexture = (draw, size = 256) => {
 
     const texture = new THREE.CanvasTexture(canvas);
     texture.colorSpace = THREE.SRGBColorSpace;
-    texture.anisotropy = 8;
+    texture.anisotropy = 4;
     texture.needsUpdate = true;
 
     return texture;
 };
 
-export const createGridTexture = () => canvasTexture((context, size) => {
-    context.fillStyle = '#f4f6ee';
+export const createGridTexture = (theme) => canvasTexture((context, size) => {
+    context.fillStyle = colorToCss(theme.islandTop);
     context.fillRect(0, 0, size, size);
-    context.strokeStyle = '#e3e6d8';
+    context.strokeStyle = colorToCss(theme.gridLine);
     context.lineWidth = 1;
 
     for (let index = 0; index <= size; index += size / 8) {
@@ -48,10 +35,11 @@ export const createGridTexture = () => canvasTexture((context, size) => {
     }
 });
 
-export const createStripeTexture = (baseColor) => canvasTexture((context, size) => {
-    context.fillStyle = baseColor;
+export const createStripeTexture = (baseColor, stripeColor = '#ffffff') => canvasTexture((context, size) => {
+    context.fillStyle = colorToCss(baseColor);
     context.fillRect(0, 0, size, size);
-    context.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+    context.strokeStyle = stripeColor;
+    context.globalAlpha = 0.28;
     context.lineWidth = 5;
 
     for (let offset = -size; offset < size * 2; offset += 22) {
@@ -62,15 +50,50 @@ export const createStripeTexture = (baseColor) => canvasTexture((context, size) 
     }
 });
 
-export const createMaterials = () => ({
-    islandSide: new THREE.MeshStandardMaterial({ color: SPATIAL_COLORS.islandSide, roughness: 0.85 }),
-    islandTop: new THREE.MeshStandardMaterial({ map: createGridTexture(), roughness: 0.9 }),
-    branchSide: new THREE.MeshStandardMaterial({ color: SPATIAL_COLORS.branchSide, roughness: 0.85 }),
-    branchTop: new THREE.MeshStandardMaterial({ map: createStripeTexture('#f4a65c'), roughness: 0.85 }),
-    teamSide: new THREE.MeshStandardMaterial({ color: SPATIAL_COLORS.teamSide, roughness: 0.85 }),
-    teamTop: new THREE.MeshStandardMaterial({ map: createStripeTexture('#9ccc4e'), roughness: 0.85 }),
-    road: new THREE.MeshStandardMaterial({ color: SPATIAL_COLORS.road, roughness: 0.9 }),
-    treeTrunk: new THREE.MeshStandardMaterial({ color: SPATIAL_COLORS.treeTrunk, roughness: 0.95 }),
-    treeDark: new THREE.MeshStandardMaterial({ color: SPATIAL_COLORS.treeDark, roughness: 0.85 }),
-    treeLight: new THREE.MeshStandardMaterial({ color: SPATIAL_COLORS.treeLight, roughness: 0.85 }),
-});
+const replaceTexture = (material, texture) => {
+    material.map?.dispose();
+    material.map = texture;
+    material.needsUpdate = true;
+};
+
+export const createMaterials = (themeName = 'light') => {
+    const materials = {
+        islandSide: new THREE.MeshBasicMaterial(),
+        islandTop: new THREE.MeshBasicMaterial(),
+        branchSide: new THREE.MeshBasicMaterial(),
+        branchTop: new THREE.MeshBasicMaterial(),
+        teamSide: new THREE.MeshBasicMaterial(),
+        teamTop: new THREE.MeshBasicMaterial(),
+        unassignedSide: new THREE.MeshBasicMaterial(),
+        unassignedTop: new THREE.MeshBasicMaterial(),
+        road: new THREE.MeshBasicMaterial({ polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
+        roadLine: new THREE.LineBasicMaterial({ transparent: true, opacity: 0.85 }),
+        treeTrunk: new THREE.MeshBasicMaterial(),
+        treeDark: new THREE.MeshBasicMaterial(),
+        treeLight: new THREE.MeshBasicMaterial(),
+        themeName,
+    };
+
+    materials.applyTheme = (nextThemeName) => {
+        const theme = SCENE_THEMES[nextThemeName] ?? SCENE_THEMES.light;
+        materials.themeName = SCENE_THEMES[nextThemeName] ? nextThemeName : 'light';
+        materials.islandSide.color.setHex(theme.islandSide);
+        materials.branchSide.color.setHex(theme.branchSide);
+        materials.teamSide.color.setHex(theme.teamSide);
+        materials.unassignedSide.color.setHex(theme.unassignedSide);
+        materials.unassignedTop.color.setHex(theme.unassignedTop);
+        materials.road.color.setHex(theme.road);
+        materials.roadLine.color.setHex(theme.roadLine);
+        materials.treeTrunk.color.setHex(theme.treeTrunk);
+        materials.treeDark.color.setHex(theme.treeDark);
+        materials.treeLight.color.setHex(theme.treeLight);
+        replaceTexture(materials.islandTop, createGridTexture(theme));
+        replaceTexture(materials.branchTop, createStripeTexture(theme.branchTop));
+        replaceTexture(materials.teamTop, createStripeTexture(theme.teamTop));
+        replaceTexture(materials.unassignedTop, createStripeTexture(theme.unassignedTop, 'rgba(0,0,0,0.12)'));
+    };
+
+    materials.applyTheme(themeName);
+
+    return materials;
+};

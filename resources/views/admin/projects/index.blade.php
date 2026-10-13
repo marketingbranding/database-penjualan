@@ -1,56 +1,40 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-wrap items-center justify-between gap-4">
-            <div>
-                <p class="text-xs font-medium text-orange">Pengaturan aset</p>
-                <h1 class="mt-1 text-xl font-semibold tracking-tight text-ink">Proyek</h1>
-                <p class="mt-1 text-sm text-muted">Kelola proyek, blok, dan jumlah kavling dalam setiap cabang.</p>
-            </div>
-            @can('projects.create')
-                <a href="{{ route('admin.projects.create') }}" class="inline-flex min-h-10 items-center rounded-2xl bg-lime px-4 py-2 text-sm font-semibold text-ink transition hover:bg-lime-dark hover:text-white">Tambah proyek</a>
-            @endcan
-        </div>
+        <x-page-header title="Proyek" description="Kelola proyek, blok, dan jumlah kavling dalam setiap cabang.">
+            <x-slot name="actions">@can('projects.create')<a href="{{ route('admin.projects.create') }}" class="module-button module-button-primary">＋ Tambah proyek</a>@endcan</x-slot>
+        </x-page-header>
     </x-slot>
 
-    <div class="space-y-6 px-4 py-8 sm:px-6 lg:px-8">
-        <x-ui.card title="Filter proyek" description="Pilih cabang untuk memfokuskan daftar proyek." padding="p-5">
-            <form method="GET" action="{{ route('admin.projects.index') }}" class="flex flex-wrap items-end gap-3">
-                <div class="min-w-56 flex-1 sm:max-w-sm">
-                    <label for="branch_id" class="text-sm font-medium text-ink">Cabang</label>
-                    <select id="branch_id" name="branch_id" onchange="this.form.submit()" class="workspace-control mt-2 block w-full py-2.5 text-sm">
-                        <option value="">Semua cabang</option>
-                        @foreach ($branches as $branch)
-                            <option value="{{ $branch->id }}" @selected($branchId === $branch->id)>{{ $branch->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <a href="{{ route('admin.projects.index') }}" class="inline-flex min-h-11 items-center rounded-2xl border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-canvas">Reset filter</a>
-            </form>
-        </x-ui.card>
+    @php
+        $projectBranchOptions = ['' => 'Semua cabang'] + $branches->mapWithKeys(fn ($branch): array => [$branch->id => $branch->name])->all();
+        $hasActiveFilters = filled($branchId);
+    @endphp
 
-        <x-ui.card title="Daftar proyek" description="{{ number_format($projects->total()) }} proyek sesuai filter." padding="p-0">
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-line text-sm">
-                    <thead class="bg-ink text-left text-xs font-medium text-white">
-                        <tr><th class="px-6 py-4">Proyek</th><th class="px-6 py-4">Cabang</th><th class="px-6 py-4">Blok</th><th class="px-6 py-4">Kavling</th><th class="px-6 py-4">Status</th><th class="px-6 py-4"></th></tr>
-                    </thead>
-                    <tbody class="divide-y divide-line">
-                        @forelse ($projects as $project)
-                            <tr class="transition hover:bg-lime-soft/30">
-                                <td class="px-6 py-4"><div class="font-semibold text-ink">{{ $project->name }}</div><div class="text-xs text-muted">{{ $project->code }}</div></td>
-                                <td class="px-6 py-4 text-muted">{{ $project->branch->name }}</td>
-                                <td class="px-6 py-4 text-muted">{{ $project->blocks_count }}</td>
-                                <td class="px-6 py-4 text-muted">{{ $project->lots_count }}</td>
-                                <td class="px-6 py-4"><x-ui.pill :tone="$project->is_active ? 'success' : 'neutral'">{{ $project->is_active ? 'Aktif' : 'Nonaktif' }}</x-ui.pill></td>
-                                <td class="px-6 py-4 text-right">@can('projects.update')<a href="{{ route('admin.projects.edit', $project) }}" class="font-semibold text-lime-dark hover:underline">Edit</a>@endcan</td>
-                            </tr>
-                        @empty
-                            <tr><td colspan="6" class="px-6 py-14 text-center text-sm text-muted">Belum ada proyek.</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-            @if ($projects->hasPages())<div class="border-t border-line px-6 py-4">{{ $projects->links() }}</div>@endif
-        </x-ui.card>
+    <div class="module-page">
+        <x-table-card title="Daftar proyek" :count="number_format($projects->total()).' proyek'" class="min-h-0">
+            <x-slot name="toolbar">
+                <x-toolbar action="{{ route('admin.projects.index') }}" :result-count="$projects->total()" result-label="proyek" :has-active-filters="$hasActiveFilters" reset-href="{{ route('admin.projects.index') }}">
+                    <x-slot name="filters"><x-filter-pill label="Cabang" name="branch_id" :options="$projectBranchOptions" :selected="$branchId" :active="filled($branchId)" /></x-slot>
+                </x-toolbar>
+            </x-slot>
+            <x-data-table caption="Daftar proyek">
+                <x-slot name="header"><tr><th>Proyek</th><th>Cabang</th><th>Blok</th><th>Kavling</th><th>Status</th><th class="text-right">Aksi</th></tr></x-slot>
+                <x-slot name="body">
+                    @forelse ($projects as $project)
+                        <tr>
+                            <td><div class="font-semibold text-ink">{{ $project->name }}</div><div class="text-[11px] text-muted">{{ $project->code }}</div></td>
+                            <td class="max-w-[180px] truncate text-muted" title="{{ $project->branch->name }}">{{ $project->branch->name }}</td>
+                            <td class="whitespace-nowrap text-right text-muted">{{ $project->blocks_count }}</td>
+                            <td class="whitespace-nowrap text-right text-muted">{{ $project->lots_count }}</td>
+                            <td><x-status-badge :status="$project->is_active ? 'Aktif' : 'Nonaktif'" :tone="$project->is_active ? 'success' : 'neutral'" /></td>
+                            <td><x-row-actions><x-slot name="primary">@can('projects.update')<a href="{{ route('admin.projects.edit', $project) }}" class="module-row-primary">Edit</a>@endcan</x-slot></x-row-actions></td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="6"><x-empty-state title="Belum ada proyek sesuai filter" :reset-href="$hasActiveFilters ? route('admin.projects.index') : null" action-label="Tambah proyek" action-href="{{ ! $hasActiveFilters && Auth::user()->can('projects.create') ? route('admin.projects.create') : null }}" /></td></tr>
+                    @endforelse
+                </x-slot>
+            </x-data-table>
+            <x-slot name="footer"><x-pagination :paginator="$projects" /></x-slot>
+        </x-table-card>
     </div>
 </x-app-layout>
