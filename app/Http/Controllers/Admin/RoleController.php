@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateRoleRequest;
 use App\Models\Role;
 use App\Models\Team;
 use App\Support\AuditLogger;
+use App\Support\PermissionCatalog;
 use App\Support\Rbac;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -38,9 +39,11 @@ class RoleController extends Controller
      */
     public function create(): View
     {
+        $permissions = Permission::query()->orderBy('name')->get();
+
         return view('admin.roles.create', [
             'teams' => Team::query()->where('is_active', true)->orderBy('name')->get(),
-            'permissions' => Permission::query()->orderBy('name')->get(),
+            'permissionGroups' => PermissionCatalog::groups($permissions),
         ]);
     }
 
@@ -67,9 +70,11 @@ class RoleController extends Controller
      */
     public function edit(Role $role): View
     {
+        $permissions = Permission::query()->orderBy('name')->get();
+
         return view('admin.roles.edit', [
             'role' => $role->load(['team', 'permissions']),
-            'permissions' => Permission::query()->orderBy('name')->get(),
+            'permissionGroups' => PermissionCatalog::groups($permissions),
         ]);
     }
 

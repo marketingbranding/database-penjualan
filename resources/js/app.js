@@ -37,8 +37,23 @@ const loadSpatialWorkspace = () => {
     }
 };
 
+const loadAuthFeatures = () => {
+    const guestGrid = document.querySelector('[data-auth-kavling-grid]');
+    const welcomeOverlay = document.querySelector('[data-auth-welcome]');
+
+    if (guestGrid) {
+        import('./auth/kavling-grid').then(({ initGuestAuth }) => initGuestAuth());
+    }
+
+    if (welcomeOverlay) {
+        import('./auth/welcome-overlay').then(({ initWelcomeOverlay }) => initWelcomeOverlay());
+    }
+};
+
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', loadSpatialWorkspace, { once: true });
+    document.addEventListener('DOMContentLoaded', loadAuthFeatures, { once: true });
 } else {
     loadSpatialWorkspace();
+    loadAuthFeatures();
 }

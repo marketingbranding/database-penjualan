@@ -8,6 +8,7 @@
         "build": "vite build",
         "dev": "vite",
         "perf:spatial": "node scripts/perf-spatial.mjs",
+        "test:auth-kavling": "node scripts/test-auth-kavling.mjs",
         "test:spatial-layout": "node scripts/test-spatial-layout.mjs"
     },
     "devDependencies": {

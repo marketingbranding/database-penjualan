@@ -559,6 +559,444 @@ select:-webkit-autofill:focus {
     color: rgb(var(--c-text));
 }
 
+/* Kavling auth experience. The guest layout stays useful with JavaScript disabled; the canvas is opt-in. */
+.guest-shell {
+    position: relative;
+    width: min(100%, 1320px);
+    min-height: 100dvh;
+    margin: 0 auto;
+    padding: clamp(1.25rem, 4vw, 3.5rem);
+    background:
+        radial-gradient(circle at 75% 40%, rgb(var(--c-accent) / 10%), transparent 34rem),
+        rgb(var(--c-canvas));
+}
+
+.guest-shell.has-grid {
+    display: grid;
+    grid-template-columns: minmax(360px, 420px) minmax(0, 1fr);
+    align-items: center;
+    gap: clamp(2rem, 6vw, 7rem);
+}
+
+.guest-auth-column {
+    display: flex;
+    min-height: calc(100dvh - 7rem);
+    flex-direction: column;
+    justify-content: center;
+}
+
+.guest-card {
+    width: 100%;
+    border-radius: 28px;
+    padding: 34px;
+    box-shadow: 0 18px 50px rgb(29 34 25 / 11%);
+}
+
+.guest-brand {
+    display: inline-flex;
+    justify-content: flex-start;
+    margin-bottom: 2.5rem;
+}
+
+.guest-brand .brand-logo-lockup {
+    width: auto;
+    height: 43px;
+}
+
+.guest-intro {
+    margin-bottom: 1.65rem;
+}
+
+.guest-intro h1 {
+    margin: 0;
+    color: rgb(var(--c-text));
+    font-size: 1.625rem;
+    font-weight: 700;
+    letter-spacing: -0.7px;
+    line-height: 1.15;
+}
+
+.guest-intro p,
+.guest-help,
+.guest-grid-meta p {
+    color: rgb(var(--c-muted));
+    font-size: 0.8rem;
+    line-height: 1.6;
+}
+
+.guest-intro p {
+    margin: 0.65rem 0 0;
+}
+
+.guest-card form {
+    gap: 1rem;
+}
+
+.guest-field {
+    display: grid;
+    gap: 0.45rem;
+}
+
+.guest-field .mt-1,
+.guest-field .mt-2 {
+    margin-top: 0;
+}
+
+.guest-card .workspace-input {
+    min-height: 46px;
+    border: 1px solid rgb(var(--c-input-border));
+    border-radius: 14px;
+    padding: 0.65rem 0.9rem;
+    color: rgb(var(--c-text));
+    font-size: 0.875rem;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.guest-card .workspace-input:focus {
+    border-color: rgb(var(--c-accent));
+    box-shadow: 0 0 0 4px rgb(var(--c-accent) / 20%);
+    outline: none;
+}
+
+.guest-password-field {
+    position: relative;
+}
+
+.guest-password-field .workspace-input {
+    padding-right: 3rem;
+}
+
+.guest-password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 0.65rem;
+    display: grid;
+    width: 44px;
+    height: 44px;
+    transform: translateY(-50%);
+    place-items: center;
+    border-radius: 12px;
+    color: rgb(var(--c-muted));
+}
+
+.guest-password-toggle:hover {
+    background: rgb(var(--c-canvas));
+    color: rgb(var(--c-text));
+}
+
+.guest-password-toggle svg {
+    width: 19px;
+    height: 19px;
+}
+
+.guest-form-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    color: rgb(var(--c-muted));
+    font-size: 0.8rem;
+}
+
+.guest-form-row label {
+    min-height: 44px;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.guest-form-row .guest-link {
+    color: rgb(var(--c-accent-text));
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.guest-submit {
+    width: 100%;
+    min-height: 48px;
+    justify-content: center;
+    border-radius: 14px;
+    font-size: 0.9rem;
+}
+
+.guest-submit:disabled {
+    cursor: wait;
+    opacity: 0.78;
+}
+
+.guest-help {
+    margin: 0;
+    text-align: center;
+}
+
+.guest-status {
+    margin: -0.65rem 0 1rem;
+}
+
+.guest-footer {
+    margin-top: auto;
+    padding-top: 1.5rem;
+    color: rgb(var(--c-muted));
+    font-size: 0.72rem;
+}
+
+.guest-grid-panel {
+    display: none;
+    min-width: 0;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.guest-grid-panel.is-ready {
+    display: flex;
+}
+
+.guest-grid-stage {
+    width: 100%;
+    height: min(62vh, 560px);
+    min-height: 360px;
+}
+
+.guest-grid-stage canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    cursor: crosshair;
+}
+
+.guest-grid-meta {
+    display: grid;
+    justify-items: center;
+    gap: 0.75rem;
+    text-align: center;
+}
+
+.guest-grid-count {
+    border-radius: 999px;
+    background: rgb(var(--c-surface));
+    padding: 0.6rem 0.9rem;
+    color: rgb(var(--c-text));
+    font-size: 0.78rem;
+    font-weight: 700;
+    box-shadow: 0 8px 20px rgb(var(--c-inverse) / 8%);
+}
+
+.guest-grid-meta p {
+    max-width: 32rem;
+    margin: 0;
+}
+
+.guest-spinner {
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid rgb(var(--c-on-accent) / 30%);
+    border-top-color: rgb(var(--c-on-accent));
+    border-radius: 999px;
+    animation: guest-spin 650ms linear infinite;
+}
+
+.guest-card.is-error {
+    animation: guest-shake 300ms ease both;
+}
+
+.welcome-overlay {
+    position: fixed;
+    z-index: 100;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: rgb(var(--c-canvas) / 92%);
+    backdrop-filter: blur(10px);
+}
+
+.welcome-overlay-card {
+    display: grid;
+    width: min(92vw, 410px);
+    justify-items: start;
+    gap: 0.8rem;
+    border: 1px solid rgb(var(--c-line));
+    border-radius: 24px;
+    background: rgb(var(--c-surface));
+    padding: 1.5rem;
+    box-shadow: 0 18px 50px rgb(var(--c-inverse) / 12%);
+}
+
+.welcome-check {
+    display: grid;
+    width: 54px;
+    height: 54px;
+    place-items: center;
+    border-radius: 50%;
+    background: rgb(var(--c-accent));
+    color: rgb(var(--c-on-accent));
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+.welcome-overlay-card h2,
+.welcome-overlay-card p {
+    margin: 0;
+}
+
+.welcome-overlay-card h2 {
+    font-size: 1.25rem;
+    letter-spacing: -0.3px;
+}
+
+.welcome-overlay-card p {
+    color: rgb(var(--c-muted));
+    font-size: 0.8rem;
+}
+
+.welcome-progress {
+    width: 100%;
+    height: 8px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgb(var(--c-line));
+}
+
+.welcome-progress span {
+    display: block;
+    width: var(--welcome-progress, 0%);
+    height: 100%;
+    border-radius: inherit;
+    background: rgb(var(--c-accent));
+}
+
+.welcome-grid {
+    width: 100%;
+    height: 180px;
+}
+
+.welcome-skip {
+    min-height: 44px;
+    color: rgb(var(--c-accent-text));
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+@keyframes guest-spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes guest-shake {
+    20% { transform: translateX(-4px); }
+    40% { transform: translateX(4px); }
+    60% { transform: translateX(-3px); }
+    80% { transform: translateX(3px); }
+}
+
+@media (max-width: 1023px) {
+    .guest-shell.has-grid {
+        grid-template-columns: minmax(0, 820px);
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .guest-grid-panel {
+        order: -1;
+        opacity: 0.7;
+    }
+
+    .guest-grid-stage {
+        min-height: 300px;
+        height: min(38vh, 400px);
+    }
+
+    .guest-auth-column {
+        min-height: 0;
+    }
+
+    .guest-card {
+        justify-self: center;
+    }
+}
+
+@media (max-width: 767px) {
+    .guest-shell,
+    .guest-shell.has-grid {
+        display: flex;
+        width: 100%;
+        min-height: 100dvh;
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: flex-start;
+        gap: 0;
+        padding: 1rem;
+    }
+
+    .guest-grid-panel {
+        width: 100%;
+        order: -1;
+        opacity: 1;
+    }
+
+    .guest-grid-stage {
+        height: 180px;
+        min-height: 180px;
+    }
+
+    .guest-grid-stage canvas {
+        cursor: default;
+    }
+
+    .guest-grid-meta {
+        gap: 0.45rem;
+    }
+
+    .guest-grid-meta p {
+        font-size: 0.72rem;
+    }
+
+    .guest-auth-column {
+        width: 100%;
+        min-height: 0;
+    }
+
+    .guest-card {
+        padding: 1.5rem;
+    }
+
+    .guest-brand {
+        margin-bottom: 1.75rem;
+    }
+
+    .guest-footer {
+        margin-top: 1rem;
+        padding-top: 0;
+    }
+}
+
+@media (hover: none) {
+    .guest-grid-stage canvas {
+        pointer-events: none;
+    }
+}
+
+[data-theme='dark'] .guest-shell {
+    background:
+        radial-gradient(circle at 75% 40%, rgb(var(--c-accent) / 12%), transparent 34rem),
+        rgb(var(--c-canvas));
+}
+
+[data-theme='dark'] .guest-card,
+[data-theme='dark'] .welcome-overlay-card {
+    border-color: rgb(var(--c-line-strong));
+    box-shadow: 0 18px 50px rgb(0 0 0 / 55%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .guest-spinner,
+    .guest-card.is-error {
+        animation: none;
+    }
+
+    .guest-card .workspace-input {
+        transition: none;
+    }
+}
+
 .profile-page-grid {
     display: grid;
     width: min(100%, 64rem);

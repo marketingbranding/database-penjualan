@@ -1,4 +1,5 @@
 @php
+    $guestErrors = $errors ?? session('errors', new \Illuminate\Support\ViewErrorBag());
     $guestPageTitles = [
         'login' => 'Masuk',
         'register' => 'Daftar',
@@ -9,6 +10,7 @@
     ];
     $guestPageTitle = $guestPageTitles[request()->route()?->getName()] ?? 'Workspace';
     $brandVersion = file_exists(public_path('brand/oasis-next-mark.svg')) ? filemtime(public_path('brand/oasis-next-mark.svg')) : 1;
+    $guestFocus = $guestErrors->has('email') ? 'email' : ($guestErrors->has('password') ? 'password' : '');
 @endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
@@ -54,15 +56,35 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="guest-body bg-canvas font-sans text-ink antialiased">
-        <div class="guest-shell">
-            <a href="/" class="guest-brand">
-                <x-brand.logo variant="lockup" size="md" />
-                <small>Workspace operasional</small>
-            </a>
+        <div class="guest-shell" data-auth-shell>
+            <section class="guest-auth-column">
+                <div class="guest-card" data-auth-card>
+                    <a href="/" class="guest-brand" aria-label="Oasis Next">
+                        <x-brand.logo variant="lockup" size="md" />
+                    </a>
 
-            <div class="guest-card">
-                {{ $slot }}
-            </div>
+                    {{ $slot }}
+                </div>
+                <footer class="guest-footer">© {{ now()->year }} Oasis Next</footer>
+            </section>
+
+            <section
+                class="guest-grid-panel"
+                data-auth-kavling-grid
+                data-focus="{{ $guestFocus }}"
+                data-has-errors="{{ $guestErrors->any() ? 'true' : 'false' }}"
+                data-lit="0"
+                data-total="49"
+                aria-label="Kavling yang dibangun saat mengisi form"
+            >
+                <div class="guest-grid-stage" data-kavling-stage>
+                    <canvas aria-hidden="true"></canvas>
+                </div>
+                <div class="guest-grid-meta">
+                    <span class="guest-grid-count" data-kavling-count>0 / 49 kavling</span>
+                    <p data-kavling-hint>Gerakkan kursor di atas kavling. Setiap huruf yang kamu ketik akan membangun satu kavling.</p>
+                </div>
+            </section>
         </div>
     </body>
 </html>

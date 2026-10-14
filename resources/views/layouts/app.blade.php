@@ -73,6 +73,16 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="h-dvh overflow-hidden bg-canvas font-sans text-ink antialiased">
+        <div class="welcome-overlay" data-auth-welcome hidden aria-hidden="true">
+            <div class="welcome-overlay-card" role="dialog" aria-label="Selamat datang">
+                <div class="welcome-check" aria-hidden="true">✓</div>
+                <h2>Selamat datang, {{ Auth::user()->name }}</h2>
+                <p>Menyiapkan workspace operasional…</p>
+                <div class="welcome-progress" data-welcome-progress><span></span></div>
+                <canvas class="welcome-grid" aria-hidden="true"></canvas>
+                <button type="button" class="welcome-skip" data-welcome-skip>Lewati</button>
+            </div>
+        </div>
         <div x-data="{ sidebarOpen: false }" class="flex h-dvh gap-3.5 overflow-hidden bg-canvas p-3.5">
             @include('layouts.navigation')
 

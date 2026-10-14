@@ -55,6 +55,16 @@ Logo horizontal dipakai di header panel mobile dan halaman auth; panel desktop m
 
 Kemunculan `Marison` yang sengaja dipertahankan bukan merek UI: nama paket/deskripsi/keyword di `composer.json`, namespace cache service worker `marison-*` untuk kompatibilitas cache, komentar nama database di `.env`, fixture/seeder dan nilai project/lokasi pada test, serta catatan historis audit di dokumen ini. Domain email dan data database juga tetap tidak disentuh bila muncul di lingkungan deployment. Semua teks merek yang tampil di UI, head, email, offline page, manifest, dan aset sudah memakai `Oasis Next`.
 
+## Halaman auth
+
+Halaman login dan halaman auth lain yang memakai `x-guest-layout` menggunakan konsep “kavling yang dibangun saat mengisi form”. Layout guest menempatkan kartu form selebar 420px di kiri dan papan 7×7 Canvas 2D di kanan pada desktop; tablet menumpuk papan redup di atas kartu dan mobile memakai strip papan 5×5 yang ringkas. Jika JavaScript atau Canvas tidak tersedia, papan disembunyikan tanpa mengganggu form HTML biasa.
+
+Grid memakai proyeksi isometrik datar dan token tema yang sama dengan Spatial Workspace. Jumlah blok menyala adalah `min(49, panjang email + panjang kata sandi)`; hanya panjang nilai yang dipakai, bukan isi, dan tidak ada isi form yang disimpan, dikirim, atau dicatat oleh animasi. Event `input`, `change`, `blur`, serta pemeriksaan autofill tertunda memperbarui state. Hover desktop hanya mengangkat blok sekitar kursor dan tidak mengubah jumlah blok.
+
+Submit login tetap berjalan ke route Laravel biasa. Progressive enhancement hanya menambahkan indikator “Memeriksa…” dan menulis flag sekali pakai `sessionStorage['oasis:welcome']`. Layout aplikasi membaca flag tersebut untuk menampilkan overlay sambutan singkat setelah redirect; flag langsung dihapus, overlay bisa dilewati, dan seluruh animasi dimatikan ketika `prefers-reduced-motion: reduce` aktif.
+
+Input auth tetap memakai label, CSRF, autocomplete, validasi server, pesan error, throttle, serta redirect yang sudah ada. Tombol password hanya mengubah visibilitas di sisi browser, memakai `aria-pressed`, dan tidak mengubah nama field. Grid `aria-hidden` serta tidak menjadi target fokus; fokus awal tetap menuju field auth yang relevan.
+
 ## Token warna dan radius
 
 | Token | Nilai | Peran |
