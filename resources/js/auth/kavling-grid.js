@@ -1,3 +1,5 @@
+import { initLoginSound } from './login-sound.js';
+
 export const GRID_SIZE = 7;
 export const TOTAL_PLOTS = GRID_SIZE * GRID_SIZE;
 
@@ -195,13 +197,16 @@ class KavlingGridController {
             theme: readTheme(),
             compact: false,
         };
+        this.sound = null;
     }
 
     mount() {
         if (!this.context || !this.canvas) {
+            this.sound = initLoginSound(document);
             return;
         }
 
+        this.sound = initLoginSound(document);
         this.panel.classList.add('is-ready');
         this.shell?.classList.add('has-grid');
         this.bind();
@@ -267,10 +272,11 @@ class KavlingGridController {
         const hint = this.panel.querySelector('[data-kavling-hint]');
         if (count) count.textContent = `${next} / ${TOTAL_PLOTS} kavling`;
         if (hint) hint.textContent = next > 0
-            ? `${lengths.email} huruf email + ${lengths.password} karakter kata sandi = ${next} kavling menyala.`
+            ? `${next} kavling menyala`
             : 'Gerakkan kursor di atas kavling. Setiap huruf yang kamu ketik akan membangun satu kavling.';
 
         this.state.lit = next;
+        this.sound?.handleCountChange(previous, next);
         if (animate && previous !== next && !this.isReducedMotion()) {
             this.state.animation = { type: 'transition', from: previous, to: next, started: performance.now() };
             this.schedule();
@@ -283,6 +289,7 @@ class KavlingGridController {
     showErrorState() {
         this.state.errorFlash = true;
         this.state.animation = null;
+        this.sound?.playError();
         this.panel.closest('.guest-card')?.classList.add('is-error');
         this.render();
         window.setTimeout(() => {
@@ -308,6 +315,7 @@ class KavlingGridController {
         }
 
         this.form.dataset.submitting = 'true';
+        this.sound?.playSubmit();
         if (this.form.dataset.loginForm === 'true') {
             try {
                 window.sessionStorage.setItem('oasis:welcome', '1');
@@ -357,6 +365,7 @@ class KavlingGridController {
         if (event.pointerType !== 'touch') return;
         const index = this.pointerIndex(event);
         if (index < 0) return;
+        this.sound?.playTap();
         this.state.hoveredIndex = index;
         const gridSize = this.state.compact ? 5 : GRID_SIZE;
         this.state.hoveredX = index % gridSize;

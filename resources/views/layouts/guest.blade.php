@@ -62,6 +62,10 @@
                     <a href="/" class="guest-brand" aria-label="Oasis Next">
                         <x-brand.logo variant="lockup" size="md" />
                     </a>
+                    <button type="button" class="guest-sound-toggle" data-login-sound-toggle aria-pressed="true" aria-label="Matikan suara" title="Matikan suara">
+                        <svg class="guest-sound-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 10v4h4l5 4V6L8 10H4Z"/><path stroke-linecap="round" d="M16 9.5a4 4 0 0 1 0 5M18.5 7a7.5 7.5 0 0 1 0 10"/></svg>
+                        <svg class="guest-sound-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 10v4h4l5 4V6L8 10H4Z"/><path stroke-linecap="round" d="m17 9 4 6m0-6-4 6"/></svg>
+                    </button>
 
                     {{ $slot }}
                 </div>

@@ -1,4 +1,5 @@
-import { TOTAL_PLOTS, drawKavlingScene } from './kavling-grid';
+import { TOTAL_PLOTS, drawKavlingScene } from './kavling-grid.js';
+import { getLoginSound } from './login-sound.js';
 
 export function initWelcomeOverlay(root = document) {
     const overlay = root.querySelector('[data-auth-welcome]');
@@ -61,6 +62,7 @@ export function initWelcomeOverlay(root = document) {
 
     overlay.hidden = false;
     overlay.setAttribute('aria-hidden', 'false');
+    getLoginSound()?.playWelcome();
     overlay.addEventListener('click', close);
     window.addEventListener('keydown', close, { once: true });
     window.addEventListener('resize', resize);
