@@ -27,7 +27,7 @@ class Rbac
             'leads.view-own', 'leads.view-team', 'leads.view-branch', 'leads.view-all',
             'leads.create', 'leads.update-own', 'leads.update-team', 'leads.delete', 'leads.monitor',
             'sales-fee-reports.view', 'sales-fee-reports.print', 'sales-fee-reports.export',
-            'reports.view', 'reports.export',
+            'reports.view', 'reports.export', 'reports.team-performance',
         ],
         'bm' => [
             'dashboard.view', 'spatial-workspace.view',
@@ -37,7 +37,7 @@ class Rbac
             'sales.view-all',
             'leads.view-branch', 'leads.monitor',
             'sales-fee-reports.view', 'sales-fee-reports.print', 'sales-fee-reports.export',
-            'reports.view', 'reports.export',
+            'reports.view', 'reports.export', 'reports.team-performance',
         ],
         'spv' => [
             'dashboard.view', 'spatial-workspace.view',
@@ -47,7 +47,7 @@ class Rbac
             'sales.view-team', 'sales.create', 'sales.update',
             'leads.view-branch', 'leads.monitor',
             'sales-fee-reports.view', 'sales-fee-reports.print', 'sales-fee-reports.export',
-            'reports.view',
+            'reports.view', 'reports.team-performance',
         ],
         'sas' => [
             'dashboard.view', 'spatial-workspace.view',
@@ -56,7 +56,7 @@ class Rbac
             'promotions.view',
             'sales.view-team', 'sales.create', 'sales.update',
             'leads.view-branch', 'leads.monitor',
-            'sales-fee-reports.view', 'sales-fee-reports.print', 'sales-fee-reports.export',
+            'sales-fee-reports.view', 'sales-fee-reports.print', 'sales-fee-reports.export', 'reports.team-performance',
         ],
         'pusat' => [
             'dashboard.view', 'spatial-workspace.view',
@@ -75,14 +75,14 @@ class Rbac
             'sales.view-all',
             'leads.view-all', 'leads.monitor',
             'sales-fee-reports.view', 'sales-fee-reports.print', 'sales-fee-reports.export',
-            'reports.view', 'reports.export',
+            'reports.view', 'reports.export', 'reports.team-performance',
         ],
         'sap' => [
             'dashboard.view',
             'sales-process.view',
             'filing.view', 'filing.create', 'filing.update',
             'leads.view-branch', 'leads.monitor',
-            'sales-fee-reports.view', 'sales-fee-reports.print', 'sales-fee-reports.export',
+            'sales-fee-reports.view', 'sales-fee-reports.print', 'sales-fee-reports.export', 'reports.team-performance',
         ],
     ];
 

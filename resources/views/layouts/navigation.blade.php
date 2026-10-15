@@ -107,6 +107,11 @@
                         <svg class="size-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="1.8" d="M4 18h16M6 15V9m4 6V5m4 10v-3m4 3V7" /></svg><span>Monitoring leads</span>
                     </a>
                 @endcanany
+                @can('reports.team-performance')
+                    <a href="{{ route('team-performance.index') }}" class="{{ $panelLink }} {{ request()->routeIs('team-performance.*') ? $activePanelLink : $inactivePanelLink }}">
+                        <svg class="size-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 19V5m0 14h16M8 16v-4m4 4V8m4 8v-7m4 7V4" /></svg><span>Performa tim</span>
+                    </a>
+                @endcan
             </div>
         @endcanany
 

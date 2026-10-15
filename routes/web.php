@@ -28,6 +28,7 @@ use App\Http\Controllers\SalesCaseStatusController;
 use App\Http\Controllers\SalesFeeReportController;
 use App\Http\Controllers\SalesProcessController;
 use App\Http\Controllers\TeamContextController;
+use App\Http\Controllers\TeamPerformanceController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -64,6 +65,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/sales-fee-reports/{salesUser}/pdf', [SalesFeeReportController::class, 'detailPdf'])->name('sales-fee-reports.detail-pdf');
     Route::get('/sales-fee-reports/{salesUser}/{project}/pdf', [SalesFeeReportController::class, 'detailPdf'])->name('sales-fee-reports.detail-pdf.project');
     Route::get('/sales-fee-reports/{salesUser}/{project?}', [SalesFeeReportController::class, 'show'])->name('sales-fee-reports.show');
+    Route::get('/team-performance', [TeamPerformanceController::class, 'index'])->name('team-performance.index');
+    Route::get('/team-performance/export', [TeamPerformanceController::class, 'export'])->name('team-performance.export');
 
     Route::prefix('proses-penjualan')->name('sales-process.')->middleware('permission:sales-process.view')->group(function () {
         Route::get('/psjb-utj', [PsjbUtjController::class, 'index'])->middleware('permission:psjb-utj.view')->name('psjb-utj');

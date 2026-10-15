@@ -42,6 +42,7 @@ class SalesAgendaController extends Controller
         $category = in_array($request->string('activity_category')->toString(), SalesAgenda::CATEGORIES, true)
             ? $request->string('activity_category')->toString()
             : null;
+        $ownerId = $request->integer('owner_id') ?: null;
         $view = $request->string('view')->toString() === 'redirected' ? 'redirected' : 'active';
 
         $agendas = SalesAgenda::query()
@@ -68,6 +69,7 @@ class SalesAgendaController extends Controller
             })
             ->when($status, fn ($query) => $query->where('status', $status))
             ->when($category, fn ($query) => $query->where('activity_category', $category))
+            ->when($ownerId, fn ($query, int $ownerId) => $query->where('owner_id', $ownerId))
             ->when($request->filled('date_from'), fn ($query) => $query->whereDate('agenda_date', '>=', $request->date('date_from')))
             ->when($request->filled('date_to'), fn ($query) => $query->whereDate('agenda_date', '<=', $request->date('date_to')))
             ->orderByDesc('agenda_date')
@@ -83,6 +85,7 @@ class SalesAgendaController extends Controller
             'branchId' => $branchId,
             'status' => $status,
             'category' => $category,
+            'ownerId' => $ownerId,
             'view' => $view,
             'categories' => SalesAgenda::CATEGORIES,
             'statuses' => SalesAgenda::STATUSES,

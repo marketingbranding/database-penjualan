@@ -112,6 +112,7 @@ final class PermissionCatalog
             'Laporan & Pengaturan' => [
                 'reports.view' => 'Lihat laporan',
                 'reports.export' => 'Export laporan',
+                'reports.team-performance' => 'Lihat performa tim',
                 'audit-logs.view' => 'Lihat audit log',
                 'settings.view' => 'Lihat pengaturan',
             ],
