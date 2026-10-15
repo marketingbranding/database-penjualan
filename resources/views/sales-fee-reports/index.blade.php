@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <x-page-header title="Laporan performa sales" description="Rekap aktivitas Sales berdasarkan periode, Lead, dan Agenda.">
-            <x-slot name="actions">@can('sales-fee-reports.export')<a href="{{ route('sales-fee-reports.export', array_filter($filters, fn ($value) => $value !== null && $value !== '')) }}" class="module-button module-button-primary">↓ Export Excel</a>@endcan</x-slot>
+            <x-slot name="actions">@can('sales-fee-reports.export')<a href="{{ route('sales-fee-reports.pdf', array_filter($filters, fn ($value) => $value !== null && $value !== '')) }}" class="module-button module-button-secondary">↓ Unduh PDF</a><a href="{{ route('sales-fee-reports.export', array_filter($filters, fn ($value) => $value !== null && $value !== '')) }}" class="module-button module-button-primary">↓ Export Excel</a>@endcan</x-slot>
         </x-page-header>
     </x-slot>
 

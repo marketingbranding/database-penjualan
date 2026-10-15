@@ -7,9 +7,12 @@ use App\Models\Project;
 use App\Models\Team;
 use App\Models\User;
 use App\SalesFeeReportService;
+use App\Support\AuditLogger;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -55,6 +58,38 @@ class SalesFeeReportController extends Controller
             'report' => $this->reportService->build($request->user(), $filters),
             'filters' => $filters,
         ]);
+    }
+
+    public function pdf(Request $request): StreamedResponse
+    {
+        abort_unless($request->user()->can('sales-fee-reports.export'), 403);
+        $filters = $this->filters($request, $request->user());
+        $report = $this->reportService->build($request->user(), $filters);
+
+        return $this->downloadPdf($request, 'sales-fee-reports.pdf-summary', [
+            'report' => $report,
+            'filters' => $filters,
+            'branchName' => $this->branchName($filters['branch_id']),
+            'logoDataUri' => $this->logoDataUri(),
+        ], 'summary', $this->summaryFilename($filters), 'landscape');
+    }
+
+    public function detailPdf(Request $request, User $salesUser, ?Project $project = null): StreamedResponse
+    {
+        abort_unless($request->user()->can('sales-fee-reports.export'), 403);
+        $filters = $this->filters($request, $request->user());
+        $filters['sales_pic_id'] = $salesUser->getKey();
+        $filters['project_id'] = $project?->getKey();
+        $report = $this->reportService->build($request->user(), $filters);
+
+        return $this->downloadPdf($request, 'sales-fee-reports.pdf-detail', [
+            'report' => $report,
+            'filters' => $filters,
+            'salesUser' => $salesUser,
+            'project' => $project,
+            'branchName' => $this->branchName($filters['branch_id']),
+            'logoDataUri' => $this->logoDataUri(),
+        ], 'detail', $this->detailFilename($salesUser, $project, $filters), 'portrait');
     }
 
     public function export(Request $request): StreamedResponse
@@ -177,6 +212,112 @@ class SalesFeeReportController extends Controller
                 || $user->can('leads.view-team')
                 || $user->can('leads.view-all'),
             403,
+        );
+    }
+
+    /** @param array<string, mixed> $data */
+    private function downloadPdf(Request $request, string $view, array $data, string $reportType, string $filename, string $orientation): StreamedResponse
+    {
+        $recordCount = $reportType === 'detail'
+            ? count($data['report']['leads']) + count($data['report']['agendas'])
+            : count($data['report']['rows']);
+        $estimatedMemory = memory_get_usage(true)
+            + config('sales-fee.pdf.memory_reserve_bytes')
+            + ($recordCount * config('sales-fee.pdf.estimated_bytes_per_record'));
+        $memoryLimit = $this->memoryLimitBytes(ini_get('memory_limit'));
+
+        if ($reportType === 'detail' && $recordCount > config('sales-fee.pdf.max_detail_records')) {
+            $this->auditPdfRejection($request, 'row_limit', $reportType, $data['filters'], $recordCount, $memoryLimit, $estimatedMemory);
+            abort(422, 'Periode terlalu panjang untuk PDF. Persempit periode atau gunakan Export Excel.');
+        }
+
+        if ($memoryLimit > 0 && $estimatedMemory >= (int) ($memoryLimit * .9)) {
+            $this->auditPdfRejection($request, 'memory_limit', $reportType, $data['filters'], $recordCount, $memoryLimit, $estimatedMemory);
+            abort(422, 'Laporan terlalu besar untuk PDF pada batas memori server. Persempit periode atau gunakan Export Excel.');
+        }
+
+        $startedAt = microtime(true);
+        $pdf = Pdf::loadView($view, $data)->setPaper('a4', $orientation);
+        $contents = $pdf->output();
+        $durationMs = (int) round((microtime(true) - $startedAt) * 1000);
+
+        AuditLogger::record(
+            $request->user(),
+            'sales_fee_report_pdf_downloaded',
+            newValues: [
+                'report_type' => $reportType,
+                'filters' => $data['filters'],
+                'duration_ms' => $durationMs,
+                'peak_memory_bytes' => memory_get_peak_usage(true),
+            ],
+            description: 'PDF laporan performa sales diunduh',
+        );
+
+        return response()->streamDownload(
+            static function () use ($contents): void {
+                echo $contents;
+            },
+            $filename,
+            ['Content-Type' => 'application/pdf'],
+        );
+    }
+
+    private function branchName(?int $branchId): string
+    {
+        return $branchId === null ? 'Semua cabang' : (Branch::query()->whereKey($branchId)->value('name') ?? 'Cabang');
+    }
+
+    private function logoDataUri(): string
+    {
+        $path = public_path('brand/oasis-next-logo.svg');
+
+        return 'data:image/svg+xml;base64,'.base64_encode((string) file_get_contents($path));
+    }
+
+    /** @param array<string, mixed> $filters */
+    private function summaryFilename(array $filters): string
+    {
+        return 'laporan-fee-sales_'.Str::slug($this->branchName($filters['branch_id'])).'_'.$filters['date_from'].'_'.$filters['date_to'].'.pdf';
+    }
+
+    /** @param array<string, mixed> $filters */
+    private function detailFilename(User $salesUser, ?Project $project, array $filters): string
+    {
+        return 'laporan-fee-sales_'.Str::slug($salesUser->name).'_'.Str::slug($project?->name ?? 'semua-proyek').'_'.$filters['date_from'].'_'.$filters['date_to'].'.pdf';
+    }
+
+    private function memoryLimitBytes(string|false $memoryLimit): int
+    {
+        if ($memoryLimit === false || $memoryLimit === '-1') {
+            return 0;
+        }
+
+        $value = (float) $memoryLimit;
+        $unit = strtolower(substr($memoryLimit, -1));
+
+        return (int) match ($unit) {
+            'g' => $value * 1024 * 1024 * 1024,
+            'm' => $value * 1024 * 1024,
+            'k' => $value * 1024,
+            default => $value,
+        };
+    }
+
+    /** @param array<string, mixed> $filters */
+    private function auditPdfRejection(Request $request, string $reason, string $reportType, array $filters, int $recordCount, int $memoryLimit, int $estimatedMemory): void
+    {
+        AuditLogger::record(
+            $request->user(),
+            'sales_fee_report_pdf_rejected',
+            newValues: [
+                'reason' => $reason,
+                'report_type' => $reportType,
+                'filters' => $filters,
+                'record_count' => $recordCount,
+                'memory_limit_bytes' => $memoryLimit,
+                'estimated_memory_bytes' => $estimatedMemory,
+            ],
+            description: 'PDF laporan performa sales ditolak karena batas performa',
         );
     }
 }

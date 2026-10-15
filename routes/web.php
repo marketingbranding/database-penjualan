@@ -58,8 +58,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/lead-handoffs/{leadHandoff}', [LeadController::class, 'reviewHandoff'])->name('lead-handoffs.review');
     Route::resource('leads', LeadController::class)->only(['index', 'create', 'store', 'show', 'edit', 'update']);
     Route::get('/sales-fee-reports/print', [SalesFeeReportController::class, 'print'])->name('sales-fee-reports.print');
+    Route::get('/sales-fee-reports/pdf', [SalesFeeReportController::class, 'pdf'])->name('sales-fee-reports.pdf');
     Route::get('/sales-fee-reports/export', [SalesFeeReportController::class, 'export'])->name('sales-fee-reports.export');
     Route::get('/sales-fee-reports', [SalesFeeReportController::class, 'index'])->name('sales-fee-reports.index');
+    Route::get('/sales-fee-reports/{salesUser}/pdf', [SalesFeeReportController::class, 'detailPdf'])->name('sales-fee-reports.detail-pdf');
+    Route::get('/sales-fee-reports/{salesUser}/{project}/pdf', [SalesFeeReportController::class, 'detailPdf'])->name('sales-fee-reports.detail-pdf.project');
     Route::get('/sales-fee-reports/{salesUser}/{project?}', [SalesFeeReportController::class, 'show'])->name('sales-fee-reports.show');
 
     Route::prefix('proses-penjualan')->name('sales-process.')->middleware('permission:sales-process.view')->group(function () {

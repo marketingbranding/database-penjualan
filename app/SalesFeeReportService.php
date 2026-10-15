@@ -38,8 +38,8 @@ class SalesFeeReportService
             ->when($filters['branch_id'], fn ($query, int $branchId) => $query->where('branch_id', $branchId))
             ->when($filters['sales_pic_id'], fn ($query, int $salesPicId) => $query->where('owner_id', $salesPicId))
             ->when($filters['coordinator_id'], fn ($query, int $coordinatorId) => $query->whereHas('team', fn ($team) => $team->where('coordinator_id', $coordinatorId)))
-            ->when(! $viewer->canAccessAllBranches() && $viewer->can('sales.view-team'), fn ($query) => $query->whereIn('team_id', $viewer->teams()->pluck('teams.id')->all()))
-            ->when(! $viewer->canAccessAllBranches() && ! $viewer->can('sales.view-team') && ! $viewer->can('sales.view-all'), fn ($query) => $query->where('owner_id', $viewer->getKey()))
+            ->when(! $viewer->canAccessAllBranches() && $viewer->can('sales.view-team') && ! $viewer->can('leads.view-branch') && ! $viewer->can('leads.monitor'), fn ($query) => $query->whereIn('team_id', $viewer->teams()->pluck('teams.id')->all()))
+            ->when(! $viewer->canAccessAllBranches() && ! $viewer->can('sales.view-team') && ! $viewer->can('sales.view-all') && ! $viewer->can('leads.view-branch') && ! $viewer->can('leads.monitor'), fn ($query) => $query->where('owner_id', $viewer->getKey()))
             ->get()
             ->filter(fn (SalesAgenda $agenda): bool => $this->matchesProject($this->projectForAgenda($agenda), $filters['project_id'] ?? null))
             ->values();
