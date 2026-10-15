@@ -16,6 +16,7 @@ use App\Models\Project;
 use App\Models\SalesAgenda;
 use App\Models\Team;
 use App\Models\User;
+use App\Support\BusinessTime;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -78,9 +79,9 @@ class LeadController extends Controller
             ->when($request->filled('date_from'), fn ($query) => $query->whereDate('tanggal_lead', '>=', $request->date('date_from')))
             ->when($request->filled('date_to'), fn ($query) => $query->whereDate('tanggal_lead', '<=', $request->date('date_to')))
             ->when($request->filled('project_id'), fn ($query) => $query->where('project_id', $request->integer('project_id')))
-            ->when($followUp === 'today', fn ($query) => $query->whereDate('next_follow_up_at', today()))
-            ->when($followUp === 'overdue', fn ($query) => $query->whereNotNull('next_follow_up_at')->where('next_follow_up_at', '<', now()))
-            ->when($followUp === 'upcoming', fn ($query) => $query->where('next_follow_up_at', '>', now()))
+            ->when($followUp === 'today', fn ($query) => $query->whereBetween('next_follow_up_at', [BusinessTime::utcStartOfDay(BusinessTime::now()->toDateString()), BusinessTime::utcEndOfDay(BusinessTime::now()->toDateString())]))
+            ->when($followUp === 'overdue', fn ($query) => $query->whereNotNull('next_follow_up_at')->where('next_follow_up_at', '<', BusinessTime::now()->utc()))
+            ->when($followUp === 'upcoming', fn ($query) => $query->where('next_follow_up_at', '>', BusinessTime::now()->utc()))
             ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search): void {
                 $query->where('id_lead', 'like', "%{$search}%")
                     ->orWhere('nama_konsumen', 'like', "%{$search}%")
@@ -210,6 +211,7 @@ class LeadController extends Controller
                 'activity_type' => 'Lead Baru',
                 'description' => 'Lead dibuat.',
                 'status_to' => $lead->status_lead,
+                'happened_at_source' => 'system',
                 'happened_at' => now(),
             ]);
 
@@ -242,6 +244,7 @@ class LeadController extends Controller
                     'user_id' => $request->user()->getKey(),
                     'activity_type' => 'Follow Up',
                     'description' => 'Follow-up berikutnya dijadwalkan'.($followUpNote ? ': '.$followUpNote : '.'),
+                    'happened_at_source' => 'system',
                     'happened_at' => now(),
                 ]);
             }
@@ -266,6 +269,7 @@ class LeadController extends Controller
                 'activity_type' => 'Status Update',
                 'description' => 'Kualifikasi Buku Saku diubah menjadi '.str($data['qualification_status'])->replace('_', ' ')->title().'.',
                 'status_to' => $lead->status_lead,
+                'happened_at_source' => 'system',
                 'happened_at' => now(),
             ]);
         });
@@ -337,6 +341,7 @@ class LeadController extends Controller
                     'description' => 'Status lead diubah dari '.$statusFrom.' menjadi '.$lead->status_lead.'.',
                     'status_from' => $statusFrom,
                     'status_to' => $lead->status_lead,
+                    'happened_at_source' => 'system',
                     'happened_at' => now(),
                 ]);
             }
@@ -362,6 +367,7 @@ class LeadController extends Controller
                 'description' => $data['description'],
                 'status_from' => $statusTo !== null && $statusTo !== $statusFrom ? $statusFrom : null,
                 'status_to' => $statusTo !== null && $statusTo !== $statusFrom ? $statusTo : null,
+                'happened_at_source' => 'user',
                 'happened_at' => $data['happened_at'],
             ]);
         });

@@ -94,7 +94,7 @@
                     @foreach ($activityFeed as $activity)
                         <a href="{{ $activity['url'] }}" class="flex gap-3 rounded-2xl border border-line p-4 transition hover:border-lime hover:bg-lime-soft/30">
                             <span class="mt-1.5 size-2.5 shrink-0 rounded-full {{ $activity['accent'] === 'terracotta' ? 'bg-orange' : 'bg-lime' }}"></span>
-                            <span class="min-w-0"><span class="block truncate text-sm font-semibold text-ink">{{ $activity['label'] }}</span><span class="mt-1 block text-xs leading-5 text-muted">{{ $activity['description'] }}</span><time class="mt-2 block text-[11px] text-muted" datetime="{{ $activity['date']->toIso8601String() }}">{{ $activity['date']->diffForHumans() }}</time></span>
+                            <span class="min-w-0"><span class="block truncate text-sm font-semibold text-ink">{{ $activity['label'] }}</span><span class="mt-1 block text-xs leading-5 text-muted">{{ $activity['description'] }}</span><time class="mt-2 block text-[11px] text-muted" datetime="{{ $activity['date']->toIso8601String() }}">{{ \App\Support\BusinessTime::format($activity['date']) }} · {{ $activity['date']->setTimezone(config('app.business_timezone'))->diffForHumans() }}</time></span>
                         </a>
                     @endforeach
                 </div>

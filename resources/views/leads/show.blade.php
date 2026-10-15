@@ -53,7 +53,7 @@
                     @csrf @method('PATCH')
                     <h2 class="text-lg font-semibold tracking-tight text-ink">Follow-up berikutnya</h2>
                     <p class="mt-1 text-sm leading-6 text-muted">Jadwalkan pekerjaan berikutnya tanpa mengikat Lead ke proses penjualan.</p>
-                    <div class="mt-4"><x-input-label for="next_follow_up_at" value="Tanggal & waktu" /><x-text-input id="next_follow_up_at" name="next_follow_up_at" type="datetime-local" class="workspace-control mt-2 block w-full py-2.5 text-sm" :value="old('next_follow_up_at', $lead->next_follow_up_at?->format('Y-m-d\TH:i'))" /></div>
+                    <div class="mt-4"><x-input-label for="next_follow_up_at" value="Tanggal & waktu" /><x-text-input id="next_follow_up_at" name="next_follow_up_at" type="datetime-local" class="workspace-control mt-2 block w-full py-2.5 text-sm" :value="old('next_follow_up_at', \App\Support\BusinessTime::forInput($lead->next_follow_up_at))" /></div>
                     <div class="mt-4"><x-input-label for="next_follow_up_note" value="Catatan" /><textarea id="next_follow_up_note" name="next_follow_up_note" rows="3" class="workspace-control mt-2 block w-full p-3 text-sm text-ink">{{ old('next_follow_up_note', $lead->next_follow_up_note) }}</textarea></div>
                     <button class="mt-4 inline-flex min-h-10 w-full items-center justify-center rounded-2xl bg-ink px-4 py-2 text-sm font-semibold text-white transition hover:bg-lime-dark sm:w-auto">Simpan jadwal</button>
                 </form>
@@ -77,7 +77,7 @@
                 <div class="mt-4 grid gap-4 md:grid-cols-2">
                     <div><x-input-label for="activity_type" value="Jenis aktivitas *" /><select id="activity_type" name="activity_type" class="workspace-control mt-2 block w-full py-2.5 text-sm" required>@foreach (App\Models\Lead::ACTIVITY_TYPES as $type)<option value="{{ $type }}">{{ $type }}</option>@endforeach</select></div>
                     <div><x-input-label for="status_lead" value="Perbarui status Lead" /><select id="status_lead" name="status_lead" class="workspace-control mt-2 block w-full py-2.5 text-sm"><option value="">Tidak mengubah status</option>@foreach (App\Models\Lead::STATUSES as $status)<option value="{{ $status }}">{{ $status }}</option>@endforeach</select></div>
-                    <div><x-input-label for="happened_at" value="Waktu aktivitas *" /><x-text-input id="happened_at" name="happened_at" type="datetime-local" class="workspace-control mt-2 block w-full py-2.5 text-sm" required value="{{ now()->format('Y-m-d\TH:i') }}" /></div>
+                    <div><x-input-label for="happened_at" value="Waktu aktivitas *" /><x-text-input id="happened_at" name="happened_at" type="datetime-local" class="workspace-control mt-2 block w-full py-2.5 text-sm" required value="{{ \App\Support\BusinessTime::now()->format('Y-m-d\TH:i') }}" /></div>
                     <div class="md:col-span-2"><x-input-label for="description" value="Catatan aktivitas *" /><textarea id="description" name="description" rows="3" class="workspace-control mt-2 block w-full p-3 text-sm text-ink" required></textarea></div>
                 </div>
                 <div class="mt-4 flex justify-stretch sm:justify-end"><x-primary-button>Simpan aktivitas</x-primary-button></div>
@@ -90,7 +90,7 @@
                 <div class="mt-5 space-y-5">
                     @forelse ($lead->activities as $activity)
                         <div class="border-l-2 border-lime pl-4">
-                            <div class="flex flex-wrap justify-between gap-2"><p class="font-semibold text-ink">{{ $activity->activity_type }}</p><time class="text-xs text-muted">{{ $activity->happened_at->format('d/m/Y H:i') }}</time></div>
+                            <div class="flex flex-wrap justify-between gap-2"><p class="font-semibold text-ink">{{ $activity->activity_type }}</p><time class="text-xs text-muted">{{ \App\Support\BusinessTime::format($activity->happened_at) }}</time></div>
                             <p class="mt-1 whitespace-pre-line text-sm leading-6 text-muted">{{ $activity->description }}</p>
                             @if ($activity->status_to)<p class="mt-1 text-xs font-medium text-lime-dark">{{ $activity->status_from ?: 'Awal' }} &rarr; {{ $activity->status_to }}</p>@endif
                             <p class="mt-1 text-xs text-muted">{{ $activity->user?->name ?: 'Sistem' }}</p>

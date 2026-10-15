@@ -6,6 +6,7 @@ use App\Models\Lead;
 use App\Models\Project;
 use App\Models\SalesAgenda;
 use App\Models\User;
+use App\Support\BusinessTime;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
@@ -17,8 +18,8 @@ class SalesFeeReportService
      */
     public function build(User $viewer, array $filters): array
     {
-        $from = CarbonImmutable::parse($filters['date_from'])->startOfDay();
-        $to = CarbonImmutable::parse($filters['date_to'])->endOfDay();
+        $from = BusinessTime::utcStartOfDay($filters['date_from']);
+        $to = BusinessTime::utcEndOfDay($filters['date_to']);
 
         $leads = Lead::query()
             ->with(['project', 'salesPic', 'team.coordinator', 'activities'])

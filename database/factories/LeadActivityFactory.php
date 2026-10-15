@@ -26,6 +26,7 @@ class LeadActivityFactory extends Factory
             'description' => 'Follow up dengan calon konsumen.',
             'status_from' => 'No Respon',
             'status_to' => 'Diskusi',
+            'happened_at_source' => 'user',
             'happened_at' => now(),
         ];
     }

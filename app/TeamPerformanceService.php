@@ -169,7 +169,7 @@ class TeamPerformanceService
             ->join('leads', 'leads.id', '=', 'lead_activities.lead_id')
             ->where('lead_activities.activity_type', 'Status Update')
             ->whereIn('lead_activities.status_to', ['UTJ', 'Akad'])
-            ->whereBetween('lead_activities.happened_at', [BusinessTime::startOfDay($filters['date_from'])->format('Y-m-d H:i:s'), BusinessTime::endOfDay($filters['date_to'])->format('Y-m-d H:i:s')])
+            ->whereBetween('lead_activities.happened_at', [BusinessTime::utcStartOfDay($filters['date_from']), BusinessTime::utcEndOfDay($filters['date_to'])])
             ->when(! $viewer->canAccessAllBranches(), fn ($query) => $query->where('leads.branch_id', $viewer->branch_id))
             ->when($filters['branch_id'] ?? null, fn ($query, int $branchId) => $query->where('leads.branch_id', $branchId))
             ->when($filters['project_id'] ?? null, fn ($query, int $projectId) => $query->where('leads.project_id', $projectId))
@@ -184,7 +184,7 @@ class TeamPerformanceService
     private function overdueRows(Builder $query): Collection
     {
         return $query->whereNotNull('next_follow_up_at')
-            ->where('next_follow_up_at', '<', BusinessTime::now()->format('Y-m-d H:i:s'))
+            ->where('next_follow_up_at', '<', BusinessTime::now()->utc())
             ->whereNotIn('status_lead', ['Akad', 'Tidak Lolos BI Checking'])
             ->select('team_id', 'sales_pic_id')
             ->selectRaw('COUNT(*) as total')

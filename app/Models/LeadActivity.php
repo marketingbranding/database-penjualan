@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['lead_id', 'user_id', 'activity_type', 'description', 'status_from', 'status_to', 'happened_at'])]
+#[Fillable(['lead_id', 'user_id', 'activity_type', 'description', 'status_from', 'status_to', 'happened_at', 'happened_at_source'])]
 class LeadActivity extends Model
 {
     /** @use HasFactory<LeadActivityFactory> */

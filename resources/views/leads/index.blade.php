@@ -39,7 +39,7 @@
                             <td class="max-w-[180px] truncate text-muted" title="{{ $lead->project?->name }}">{{ $lead->project?->name ?? '-' }}</td>
                             <td class="text-muted">{{ $lead->sumber_lead }}</td>
                             <td><x-status-badge :status="$lead->status_lead" tone="lime" /><div class="mt-1 text-[11px] text-muted">{{ $qualificationLabels[$lead->qualification_status] ?? $lead->qualification_status }}</div></td>
-                            <td class="whitespace-nowrap text-muted">{{ $lead->next_follow_up_at?->format('d/m/Y H:i') ?? 'Belum dijadwalkan' }}</td>
+                            <td class="whitespace-nowrap text-muted">{{ \App\Support\BusinessTime::format($lead->next_follow_up_at) ?? 'Belum dijadwalkan' }}</td>
                             <td><x-row-actions primary-label="Detail" primary-href="{{ route('leads.show', $lead) }}" /></td>
                         </tr>
                     @empty

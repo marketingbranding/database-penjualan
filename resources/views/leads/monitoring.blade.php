@@ -41,7 +41,7 @@
                             <td><div class="font-semibold">{{ $lead->nama_konsumen }}</div><div class="text-[11px] text-muted">{{ $lead->no_hp }}</div></td>
                             <td class="text-muted">{{ $lead->salesPic->name }}</td><td class="text-muted">{{ $lead->team?->coordinator?->name ?? '-' }}</td><td class="text-muted">{{ $lead->project?->name ?? '-' }}</td><td class="text-muted">{{ $lead->sumber_lead }}</td><td class="text-muted">{{ $lead->kanal_masuk }} / {{ $lead->aktivitas_lead }}</td>
                             <td><x-status-badge :status="$lead->status_lead" tone="lime" /></td>
-                            <td class="text-[11px] text-muted">@if ($lead->latestActivity)<div class="font-semibold text-ink">{{ $lead->latestActivity->activity_type }}</div><div>{{ $lead->latestActivity->happened_at->format('d/m/Y H:i') }}</div>@else-@endif</td>
+                            <td class="text-[11px] text-muted">@if ($lead->latestActivity)<div class="font-semibold text-ink">{{ $lead->latestActivity->activity_type }}</div><div>{{ \App\Support\BusinessTime::format($lead->latestActivity->happened_at) }}</div>@else-@endif</td>
                             <td><x-row-actions primary-label="Detail" primary-href="{{ route('leads.show', $lead) }}" /></td>
                         </tr>
                     @empty

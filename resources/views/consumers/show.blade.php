@@ -11,7 +11,7 @@
         @endif
 
         @if ($salesCase->isCancelled())
-            <div class="workspace-card border-red-200 bg-red-50 p-5"><p class="font-semibold text-red-900">Reservasi dibatalkan</p><p class="mt-2 text-sm text-red-800">{{ $salesCase->cancellation_reason }}</p><p class="mt-2 text-xs text-red-700">{{ $salesCase->cancelled_at->translatedFormat('d M Y H:i') }} oleh {{ $salesCase->cancelledBy?->name ?? 'Sistem' }}</p></div>
+            <div class="workspace-card border-red-200 bg-red-50 p-5"><p class="font-semibold text-red-900">Reservasi dibatalkan</p><p class="mt-2 text-sm text-red-800">{{ $salesCase->cancellation_reason }}</p><p class="mt-2 text-xs text-red-700">{{ \App\Support\BusinessTime::format($salesCase->cancelled_at, 'd M Y H:i') }} oleh {{ $salesCase->cancelledBy?->name ?? 'Sistem' }}</p></div>
         @endif
 
         <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">

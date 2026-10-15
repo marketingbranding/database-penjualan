@@ -27,7 +27,7 @@
                     @forelse ($agenda->assignmentHistories as $history)
                         <div class="border-b border-line py-3 last:border-0">
                             <p class="text-sm font-semibold text-ink">{{ match ($history->action) { 'created_for' => 'Dibuat untuk', 'redirected' => 'Dialihkan', 'cancelled_by_coordinator' => 'Dibatalkan oleh koordinator', default => $history->action } }}</p>
-                            <p class="mt-1 text-xs text-muted">{{ $history->fromUser?->name ?? '—' }} → {{ $history->toUser?->name ?? '—' }} · oleh {{ $history->byUser?->name ?? '—' }} · {{ $history->created_at?->format('d/m/Y H:i') }}</p>
+                            <p class="mt-1 text-xs text-muted">{{ $history->fromUser?->name ?? '—' }} → {{ $history->toUser?->name ?? '—' }} · oleh {{ $history->byUser?->name ?? '—' }} · {{ \App\Support\BusinessTime::format($history->created_at) }}</p>
                             @if ($history->reason)<p class="mt-1 text-sm text-muted">{{ $history->reason }}</p>@endif
                         </div>
                     @empty

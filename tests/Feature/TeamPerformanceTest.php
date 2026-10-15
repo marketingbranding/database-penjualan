@@ -148,12 +148,12 @@ class TeamPerformanceTest extends TestCase
     {
         CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-10-14 17:30:00', 'UTC'));
         [$branch, $project, $team, $sales, $viewer] = $this->reportContext();
-        Lead::factory()->create(['id_lead' => 'TP-MIDNIGHT-1', 'branch_id' => $branch->id, 'project_id' => $project->id, 'team_id' => $team->id, 'sales_pic_id' => $sales->id, 'created_by' => $sales->id, 'next_follow_up_at' => '2026-10-15 00:30:00']);
-        Lead::factory()->create(['id_lead' => 'TP-MIDNIGHT-2', 'branch_id' => $branch->id, 'project_id' => $project->id, 'team_id' => $team->id, 'sales_pic_id' => $sales->id, 'created_by' => $sales->id, 'next_follow_up_at' => '2026-10-14 23:30:00']);
+        Lead::factory()->create(['id_lead' => 'TP-MIDNIGHT-1', 'branch_id' => $branch->id, 'project_id' => $project->id, 'team_id' => $team->id, 'sales_pic_id' => $sales->id, 'created_by' => $sales->id, 'next_follow_up_at' => '2026-10-14 17:30:00']);
+        Lead::factory()->create(['id_lead' => 'TP-MIDNIGHT-2', 'branch_id' => $branch->id, 'project_id' => $project->id, 'team_id' => $team->id, 'sales_pic_id' => $sales->id, 'created_by' => $sales->id, 'next_follow_up_at' => '2026-10-14 16:30:00']);
         $boundaryLead = Lead::factory()->create(['id_lead' => 'TP-MIDNIGHT-3', 'branch_id' => $branch->id, 'project_id' => $project->id, 'team_id' => $team->id, 'sales_pic_id' => $sales->id, 'created_by' => $sales->id, 'status_lead' => 'No Respon']);
         $previousLead = Lead::factory()->create(['id_lead' => 'TP-MIDNIGHT-4', 'branch_id' => $branch->id, 'project_id' => $project->id, 'team_id' => $team->id, 'sales_pic_id' => $sales->id, 'created_by' => $sales->id, 'status_lead' => 'No Respon']);
-        LeadActivity::factory()->create(['lead_id' => $boundaryLead->id, 'activity_type' => 'Status Update', 'status_to' => 'UTJ', 'happened_at' => '2026-10-15 00:30:00']);
-        LeadActivity::factory()->create(['lead_id' => $previousLead->id, 'activity_type' => 'Status Update', 'status_to' => 'UTJ', 'happened_at' => '2026-10-14 23:30:00']);
+        LeadActivity::factory()->create(['lead_id' => $boundaryLead->id, 'activity_type' => 'Status Update', 'status_to' => 'UTJ', 'happened_at' => '2026-10-14 17:30:00']);
+        LeadActivity::factory()->create(['lead_id' => $previousLead->id, 'activity_type' => 'Status Update', 'status_to' => 'UTJ', 'happened_at' => '2026-10-14 16:30:00']);
 
         $report = app(TeamPerformanceService::class)->build($viewer, ['branch_id' => $branch->id, 'project_id' => $project->id, 'coordinator_id' => null, 'date_from' => '2026-10-15', 'date_to' => '2026-10-15']);
 

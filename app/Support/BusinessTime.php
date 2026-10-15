@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use Carbon\CarbonImmutable;
+use DateTimeInterface;
 
 final class BusinessTime
 {
@@ -29,5 +30,26 @@ final class BusinessTime
     public static function utcEndOfDay(string $date): CarbonImmutable
     {
         return self::endOfDay($date)->utc();
+    }
+
+    public static function fromInput(?string $value): ?string
+    {
+        if ($value === null || trim($value) === '') {
+            return null;
+        }
+
+        return CarbonImmutable::parse($value, config('app.business_timezone', 'Asia/Jakarta'))
+            ->utc()
+            ->format('Y-m-d H:i:s');
+    }
+
+    public static function forInput(?DateTimeInterface $value): ?string
+    {
+        return $value === null ? null : CarbonImmutable::instance($value)->setTimezone(config('app.business_timezone', 'Asia/Jakarta'))->format('Y-m-d\TH:i');
+    }
+
+    public static function format(?DateTimeInterface $value, string $format = 'd/m/Y H:i'): ?string
+    {
+        return $value === null ? null : CarbonImmutable::instance($value)->setTimezone(config('app.business_timezone', 'Asia/Jakarta'))->format($format);
     }
 }

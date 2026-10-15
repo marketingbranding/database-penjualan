@@ -3,11 +3,19 @@
 namespace App\Http\Requests;
 
 use App\Models\Lead;
+use App\Support\BusinessTime;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreLeadActivityRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        if ($this->filled('happened_at')) {
+            $this->merge(['happened_at' => BusinessTime::fromInput($this->string('happened_at')->toString())]);
+        }
+    }
+
     public function authorize(): bool
     {
         $lead = $this->route('lead');

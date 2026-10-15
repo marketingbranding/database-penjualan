@@ -17,6 +17,7 @@ use App\Models\SalesCase;
 use App\Models\Team;
 use App\Models\User;
 use App\PaymentMethod;
+use App\Support\BusinessTime;
 use App\Support\Rbac;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -199,7 +200,8 @@ class UatSeeder extends Seeder
             'user_id' => $creator->id,
             'description' => 'Lead UAT dibuat.',
             'status_to' => 'No Respon',
-            'happened_at' => $data['date'].' 09:00:00',
+            'happened_at_source' => 'system',
+            'happened_at' => BusinessTime::fromInput($data['date'].'T09:00'),
         ]);
 
         if ($data['status'] !== 'No Respon') {
@@ -208,7 +210,8 @@ class UatSeeder extends Seeder
                 'description' => 'Status UAT diperbarui.',
                 'status_from' => 'No Respon',
                 'status_to' => $data['status'],
-                'happened_at' => $data['date'].' 14:00:00',
+                'happened_at_source' => 'system',
+                'happened_at' => BusinessTime::fromInput($data['date'].'T14:00'),
             ]);
         }
 
@@ -234,7 +237,7 @@ class UatSeeder extends Seeder
             'location' => 'Lokasi UAT',
             'activity_result' => $result,
             'status' => $status,
-            'completed_at' => $status === 'done' ? $date.' 17:00:00' : null,
+            'completed_at' => $status === 'done' ? BusinessTime::fromInput($date.'T17:00') : null,
             'created_by' => $creator->id,
             'owner_id' => $creator->id,
         ]);
