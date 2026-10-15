@@ -45,7 +45,7 @@ class DashboardController extends Controller
                 'accent' => 'terracotta',
             ]);
         $recentAgendaActivities = (clone $agendas)
-            ->with('creator')
+            ->with(['creator', 'owner'])
             ->latest('updated_at')
             ->limit(6)
             ->get()
@@ -129,13 +129,17 @@ class DashboardController extends Controller
             ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
             ->when(! $user->canAccessAllBranches() && ! $branchId, fn ($query) => $query->whereRaw('1 = 0'))
             ->when(! $user->can('sales.view-all'), function ($query) use ($user): void {
+                if ($user->can('leads.view-branch') || $user->can('leads.monitor')) {
+                    return;
+                }
+
                 if ($user->can('sales.view-team')) {
                     $query->whereIn('team_id', $user->teams()->pluck('teams.id')->all());
 
                     return;
                 }
 
-                $query->where('created_by', $user->getKey());
+                $query->where('owner_id', $user->getKey());
             });
     }
 }

@@ -18,6 +18,7 @@ class StoreSalesAgendaRequest extends FormRequest
         return [
             'sales_case_id' => ['nullable', 'integer', 'exists:sales_cases,id'],
             'lead_id' => ['nullable', 'integer', 'exists:leads,id'],
+            'owner_id' => ['nullable', 'integer', 'exists:users,id'],
             'agenda_date' => ['required', 'date'],
             'activity_category' => ['required', Rule::in(SalesAgenda::CATEGORIES)],
             'title' => ['required', 'string', 'max:255'],

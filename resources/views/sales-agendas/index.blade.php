@@ -7,6 +7,7 @@
 
     @php($hasActiveFilters = filled($branchId) || filled($category) || filled($status) || request()->filled('date_from') || request()->filled('date_to'))
     <div class="module-page">
+        @if (Auth::user()->can('sales.view-own'))<div class="mb-4"><a href="{{ route('sales-agendas.index', ['view' => 'redirected']) }}" class="module-button module-button-secondary">Agenda dialihkan</a></div>@endif
         @if (session('status'))<x-ui.toast message="Agenda berhasil diproses." />@endif
         <x-table-card title="Queue agenda" :count="number_format($agendas->total()).' agenda'" class="min-h-0">
             <x-slot name="toolbar">
@@ -21,19 +22,20 @@
                 </x-toolbar>
             </x-slot>
             <x-data-table caption="Queue agenda">
-                <x-slot name="header"><tr><th>Tanggal</th><th>Aktivitas</th><th>Lokasi</th><th>Sales</th><th>Status</th><th class="text-right">Aksi</th></tr></x-slot>
+                <x-slot name="header"><tr><th>Tanggal</th><th>Aktivitas</th><th>Lokasi</th><th>Pemilik</th><th>Dibuat oleh</th><th>Status</th><th class="text-right">Aksi</th></tr></x-slot>
                 <x-slot name="body">
                     @forelse ($agendas as $agenda)
                         <tr>
                             <td class="whitespace-nowrap"><div class="font-semibold">{{ $agenda->agenda_date->translatedFormat('d M Y') }}</div><div class="text-[11px] text-muted">{{ $agenda->agenda_date->format('H:i') }}</div></td>
                             <td><div class="font-semibold">{{ $agenda->title }}</div><div class="mt-1 text-[11px] text-orange">{{ $agenda->activity_category }}</div>@if ($agenda->salesCase)<div class="text-[11px] text-muted">{{ $agenda->salesCase->consumer->nama_konsumen }}</div>@elseif ($agenda->lead)<div class="text-[11px] text-muted">{{ $agenda->lead->id_lead }} · {{ $agenda->lead->nama_konsumen }}</div>@endif</td>
                             <td class="text-muted">{{ $agenda->location ?: 'Lokasi belum diisi' }}@if ($agenda->evidence->isNotEmpty())<div class="text-[11px]">{{ $agenda->evidence->count() }} foto</div>@endif</td>
-                            <td class="text-muted">{{ $agenda->creator->name }}</td>
+                            <td class="text-muted">{{ $agenda->owner?->name ?? '-' }}</td>
+                            <td class="text-muted">{{ $agenda->creator?->name ?? '-' }}@if ($agenda->creator?->isNot($agenda->owner))<div class="text-[11px]">@php($redirect = $agenda->assignmentHistories->firstWhere('action', 'redirected'))@if ($redirect)Dialihkan ke {{ $redirect->toUser?->name ?? '-' }} oleh {{ $redirect->byUser?->name ?? '-' }}@if ($redirect->reason) · {{ $redirect->reason }}@endif @endif</div>@endif</td>
                             <td><x-status-badge :status="str($agenda->status)->replace('_', ' ')->title()" :tone="$agenda->status === 'done' ? 'success' : ($agenda->status === 'cancelled' ? 'danger' : 'warning')" /></td>
-                            <td><x-row-actions><x-slot name="primary"><a href="{{ route('sales-agendas.edit', $agenda) }}" class="module-row-primary">Edit</a></x-slot><x-slot name="menu">@can('create', App\Models\Lead::class)<a href="{{ route('leads.create', ['from_agenda' => $agenda->id]) }}" class="module-menu-link">Jadikan Lead</a>@endcan @can('update', $agenda) @if ($agenda->status === 'planned')<form method="POST" action="{{ route('sales-agendas.complete', $agenda) }}" class="module-inline-form">@csrf @method('PATCH')<input name="activity_result" required placeholder="Hasil" class="module-form-control w-28"><button class="module-menu-link">Selesai</button></form><form method="POST" action="{{ route('sales-agendas.cancel', $agenda) }}" onsubmit="return confirm('Yakin membatalkan agenda ini?')">@csrf @method('PATCH')<button class="module-menu-link is-danger">Batal</button></form>@endif @endcan</x-slot></x-row-actions></td>
+                            <td><x-row-actions><x-slot name="primary"><a href="{{ route('sales-agendas.show', $agenda) }}" class="module-row-primary">Detail</a></x-slot><x-slot name="menu">@can('update', $agenda)<a href="{{ route('sales-agendas.edit', $agenda) }}" class="module-menu-link">Edit</a>@endcan @can('create', App\Models\Lead::class)<a href="{{ route('leads.create', ['from_agenda' => $agenda->id]) }}" class="module-menu-link">Jadikan Lead</a>@endcan @if ($agenda->status === 'planned') @can('redirect', $agenda)<a href="{{ route('sales-agendas.redirect-form', $agenda) }}" class="module-menu-link">Alihkan</a><form method="POST" action="{{ route('sales-agendas.cancel-by-coordinator', $agenda) }}" class="module-inline-form">@csrf @method('PATCH')<input name="reason" required placeholder="Alasan pembatalan" class="module-form-control w-40"><button class="module-menu-link is-danger">Batalkan</button></form>@endcan @can('update', $agenda)<form method="POST" action="{{ route('sales-agendas.complete', $agenda) }}" class="module-inline-form">@csrf @method('PATCH')<input name="activity_result" required placeholder="Hasil" class="module-form-control w-28"><button class="module-menu-link">Selesai</button></form><form method="POST" action="{{ route('sales-agendas.cancel', $agenda) }}" onsubmit="return confirm('Yakin membatalkan agenda ini?')">@csrf @method('PATCH')<button class="module-menu-link is-danger">Batal</button></form>@endcan @endif @can('delete', $agenda)<form method="POST" action="{{ route('sales-agendas.destroy', $agenda) }}" onsubmit="return confirm('Hapus agenda ini?')">@csrf @method('DELETE')<button class="module-menu-link is-danger">Hapus</button></form>@endcan</x-slot></x-row-actions></td>
                         </tr>
                     @empty
-                        <tr><td colspan="6"><x-empty-state title="Belum ada agenda sesuai filter." :reset-href="$hasActiveFilters ? route('sales-agendas.index') : null" action-label="Agenda baru" action-href="{{ ! $hasActiveFilters && Auth::user()->can('create', App\Models\SalesAgenda::class) ? route('sales-agendas.create') : null }}" /></td></tr>
+                        <tr><td colspan="7"><x-empty-state title="Belum ada agenda sesuai filter." :reset-href="$hasActiveFilters ? route('sales-agendas.index') : null" action-label="Agenda baru" action-href="{{ ! $hasActiveFilters && Auth::user()->can('create', App\Models\SalesAgenda::class) ? route('sales-agendas.create') : null }}" /></td></tr>
                     @endforelse
                 </x-slot>
             </x-data-table>

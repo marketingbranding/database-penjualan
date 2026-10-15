@@ -236,6 +236,7 @@ class UatSeeder extends Seeder
             'status' => $status,
             'completed_at' => $status === 'done' ? $date.' 17:00:00' : null,
             'created_by' => $creator->id,
+            'owner_id' => $creator->id,
         ]);
         $agenda->save();
 

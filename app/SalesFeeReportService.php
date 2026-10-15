@@ -32,13 +32,14 @@ class SalesFeeReportService
             ->values();
 
         $agendas = SalesAgenda::query()
-            ->with(['creator', 'team.coordinator', 'lead.project', 'salesCase.lot.project'])
-            ->whereBetween('agenda_date', [$from->toDateString(), $to->toDateString()])
+            ->with(['owner', 'creator', 'team.coordinator', 'lead.project', 'salesCase.lot.project'])
+            ->whereDate('agenda_date', '>=', $from->toDateString())
+            ->whereDate('agenda_date', '<=', $to->toDateString())
             ->when($filters['branch_id'], fn ($query, int $branchId) => $query->where('branch_id', $branchId))
-            ->when($filters['sales_pic_id'], fn ($query, int $salesPicId) => $query->where('created_by', $salesPicId))
+            ->when($filters['sales_pic_id'], fn ($query, int $salesPicId) => $query->where('owner_id', $salesPicId))
             ->when($filters['coordinator_id'], fn ($query, int $coordinatorId) => $query->whereHas('team', fn ($team) => $team->where('coordinator_id', $coordinatorId)))
             ->when(! $viewer->canAccessAllBranches() && $viewer->can('sales.view-team'), fn ($query) => $query->whereIn('team_id', $viewer->teams()->pluck('teams.id')->all()))
-            ->when(! $viewer->canAccessAllBranches() && ! $viewer->can('sales.view-team') && ! $viewer->can('sales.view-all'), fn ($query) => $query->where('created_by', $viewer->getKey()))
+            ->when(! $viewer->canAccessAllBranches() && ! $viewer->can('sales.view-team') && ! $viewer->can('sales.view-all'), fn ($query) => $query->where('owner_id', $viewer->getKey()))
             ->get()
             ->filter(fn (SalesAgenda $agenda): bool => $this->matchesProject($this->projectForAgenda($agenda), $filters['project_id'] ?? null))
             ->values();
@@ -58,8 +59,8 @@ class SalesFeeReportService
 
         foreach ($agendas as $agenda) {
             $project = $this->projectForAgenda($agenda);
-            $key = $this->rowKey($agenda->creator?->getKey(), $project?->getKey());
-            $row = $rows[$key] ?? $this->newRow($agenda->creator, $agenda->team?->coordinator?->name, $project);
+            $key = $this->rowKey($agenda->owner?->getKey(), $project?->getKey());
+            $row = $rows[$key] ?? $this->newRow($agenda->owner, $agenda->team?->coordinator?->name, $project);
             $row['total_agenda']++;
             $row['agenda_selesai'] += $agenda->status === 'done' ? 1 : 0;
             $rows[$key] = $row;

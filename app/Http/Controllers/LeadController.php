@@ -435,7 +435,7 @@ class LeadController extends Controller
             'kanal_masuk' => $mapped['kanal'],
             'aktivitas_lead' => $mapped['aktivitas'],
             'status_lead' => 'No Respon',
-            'sales_pic_id' => $agenda->created_by,
+            'sales_pic_id' => $agenda->owner_id,
             'keterangan' => 'Berasal dari agenda: '.$agenda->title.' ('.$agenda->agenda_date->format('d M Y').').',
         ];
     }
@@ -455,6 +455,13 @@ class LeadController extends Controller
     {
         if ($user->can('leads.view-own') && ! $user->can('leads.view-team')) {
             return collect([$user]);
+        }
+
+        if ($user->can('leads.view-branch') || $user->can('leads.monitor')) {
+            return User::query()
+                ->where('branch_id', $user->branch_id)
+                ->orderBy('name')
+                ->get();
         }
 
         if ($user->canAccessAllBranches()) {

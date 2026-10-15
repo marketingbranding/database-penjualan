@@ -28,12 +28,22 @@ class SalesAgendaPolicy
             return true;
         }
 
-        if ($salesAgenda->created_by === $user->getKey()) {
+        if ($salesAgenda->owner_id === $user->getKey()) {
             return $user->can('sales.view-own') || $user->can('sales.view-team');
         }
 
-        return $user->can('sales.view-team')
-            && $user->teams()->whereKey($salesAgenda->team_id)->exists();
+        if ($user->can('sales.view-team') && $user->teams()->whereKey($salesAgenda->team_id)->exists()) {
+            return true;
+        }
+
+        if ($user->can('leads.view-branch') || $user->can('leads.monitor')) {
+            return true;
+        }
+
+        return $salesAgenda->assignmentHistories()
+            ->where('action', 'redirected')
+            ->where('from_user_id', $user->getKey())
+            ->exists();
     }
 
     /**
@@ -50,7 +60,7 @@ class SalesAgendaPolicy
     public function update(User $user, SalesAgenda $salesAgenda): bool
     {
         return $this->view($user, $salesAgenda)
-            && ($salesAgenda->created_by === $user->getKey() || $user->can('sales.view-all'))
+            && ($salesAgenda->owner_id === $user->getKey() || $user->can('sales.view-all'))
             && $user->can('sales.update');
     }
 
@@ -60,6 +70,19 @@ class SalesAgendaPolicy
     public function delete(User $user, SalesAgenda $salesAgenda): bool
     {
         return $this->update($user, $salesAgenda) && $user->can('sales.delete');
+    }
+
+    public function redirect(User $user, SalesAgenda $salesAgenda): bool
+    {
+        return $user->can('sales.view-team')
+            && $salesAgenda->team_id !== null
+            && $salesAgenda->team?->coordinator_id === $user->getKey()
+            && $user->teams()->whereKey($salesAgenda->team_id)->exists();
+    }
+
+    public function cancelAsCoordinator(User $user, SalesAgenda $salesAgenda): bool
+    {
+        return $this->redirect($user, $salesAgenda);
     }
 
     /**

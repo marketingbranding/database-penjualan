@@ -1,9 +1,43 @@
 <x-app-layout>
     <x-slot name="header">
-        <x-page-header :title="$agenda ? 'Edit agenda' : 'Agenda baru'" description="Jadwalkan follow-up lapangan dan tautkan ke Lead atau transaksi." />
+        <x-page-header :title="$readonly ? 'Detail agenda' : ($agenda ? 'Edit agenda' : 'Agenda baru')" description="Jadwalkan follow-up lapangan dan tautkan ke Lead atau transaksi." />
     </x-slot>
 
     <div class="module-page">
+        @if ($readonly)
+            <div class="mx-auto grid w-full max-w-5xl gap-4">
+                <x-form-section title="Detail agenda" description="Informasi agenda dan riwayat penugasannya.">
+                    <div class="grid gap-4 text-sm md:grid-cols-2">
+                        <div><span class="text-muted">Tanggal</span><p class="mt-1 font-semibold text-ink">{{ $agenda->agenda_date->translatedFormat('d M Y') }}</p></div>
+                        <div><span class="text-muted">Status</span><p class="mt-1 font-semibold text-ink">{{ str($agenda->status)->replace('_', ' ')->title() }}</p></div>
+                        <div><span class="text-muted">Judul</span><p class="mt-1 font-semibold text-ink">{{ $agenda->title }}</p></div>
+                        <div><span class="text-muted">Kategori</span><p class="mt-1 font-semibold text-ink">{{ $agenda->activity_category }}</p></div>
+                        <div><span class="text-muted">Pemilik agenda</span><p class="mt-1 font-semibold text-ink">{{ $agenda->owner?->name ?? '-' }}</p></div>
+                        <div><span class="text-muted">Dibuat oleh</span><p class="mt-1 font-semibold text-ink">{{ $agenda->creator?->name ?? '-' }}</p></div>
+                        <div><span class="text-muted">Lokasi</span><p class="mt-1 font-semibold text-ink">{{ $agenda->location ?: '-' }}</p></div>
+                        <div><span class="text-muted">Hasil aktivitas</span><p class="mt-1 font-semibold text-ink">{{ $agenda->activity_result ?: '-' }}</p></div>
+                    </div>
+                </x-form-section>
+
+                @if ($agenda->lead)
+                    <div class="rounded-2xl border border-orange/30 bg-orange/10 p-4 text-sm text-ink">Agenda ini terhubung ke Lead {{ $agenda->lead->id_lead }}. Pengalihan agenda tidak mengubah kepemilikan Lead.</div>
+                @endif
+
+                <x-form-section title="Riwayat penugasan" description="Perubahan owner dan pembatalan yang dilakukan koordinator.">
+                    @forelse ($agenda->assignmentHistories as $history)
+                        <div class="border-b border-line py-3 last:border-0">
+                            <p class="text-sm font-semibold text-ink">{{ match ($history->action) { 'created_for' => 'Dibuat untuk', 'redirected' => 'Dialihkan', 'cancelled_by_coordinator' => 'Dibatalkan oleh koordinator', default => $history->action } }}</p>
+                            <p class="mt-1 text-xs text-muted">{{ $history->fromUser?->name ?? '—' }} → {{ $history->toUser?->name ?? '—' }} · oleh {{ $history->byUser?->name ?? '—' }} · {{ $history->created_at?->format('d/m/Y H:i') }}</p>
+                            @if ($history->reason)<p class="mt-1 text-sm text-muted">{{ $history->reason }}</p>@endif
+                        </div>
+                    @empty
+                        <p class="text-sm text-muted">Belum ada riwayat pengalihan atau pembatalan.</p>
+                    @endforelse
+                </x-form-section>
+
+                <div class="flex justify-end"><a href="{{ route('sales-agendas.index') }}" class="inline-flex min-h-10 items-center rounded-2xl border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink transition hover:bg-canvas">Kembali</a></div>
+            </div>
+        @else
         <form method="POST" enctype="multipart/form-data" action="{{ $agenda ? route('sales-agendas.update', $agenda) : route('sales-agendas.store') }}" class="mx-auto w-full max-w-5xl">
             @csrf
             @if ($agenda)
@@ -12,6 +46,19 @@
 
             <x-form-section :title="$agenda ? 'Perbarui agenda' : 'Detail agenda'" description="Field bertanda * wajib diisi.">
             <div class="grid gap-5 md:grid-cols-2">
+                <div>
+                    @if ($canChooseOwner)
+                        <x-input-label for="owner_id" value="Pemilik agenda" />
+                        <select id="owner_id" name="owner_id" class="workspace-control mt-1 block w-full py-2.5 text-sm">
+                            <option value="{{ Auth::id() }}">Saya sendiri</option>
+                            @foreach ($owners as $owner)
+                                <option value="{{ $owner->id }}" @selected((string) old('owner_id') === (string) $owner->id)>{{ $owner->name }}</option>
+                            @endforeach
+                        </select>
+                        <x-input-error :messages="$errors->get('owner_id')" class="mt-2" />
+                    @endif
+                </div>
+
                 <div>
                     <x-input-label for="agenda_date" value="Tanggal Agenda *" />
                     <x-text-input id="agenda_date" name="agenda_date" type="date" class="mt-1 block w-full" required value="{{ old('agenda_date', $agenda?->agenda_date?->format('Y-m-d') ?? today()->toDateString()) }}" />
@@ -95,5 +142,6 @@
                 <x-primary-button>{{ $agenda ? 'Perbarui agenda' : 'Simpan agenda' }}</x-primary-button>
             </div>
         </form>
+        @endif
     </div>
 </x-app-layout>

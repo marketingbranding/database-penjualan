@@ -45,18 +45,18 @@ class GlobalSearchController extends Controller
                     ->get();
             }
 
-            if ($user->can('sales.view-own') || $user->can('sales.view-team') || $user->can('sales.view-all')) {
+            if ($user->can('sales.view-own') || $user->can('sales.view-team') || $user->can('sales.view-all') || $user->can('leads.view-branch') || $user->can('leads.monitor')) {
                 $agendas = SalesAgenda::query()
-                    ->with('lead')
+                    ->with(['lead', 'owner', 'creator'])
                     ->when($branchId, fn ($builder) => $builder->where('branch_id', $branchId))
-                    ->when(! $user->can('sales.view-all'), function ($builder) use ($user): void {
+                    ->when(! $user->can('sales.view-all') && ! $user->can('leads.view-branch') && ! $user->can('leads.monitor'), function ($builder) use ($user): void {
                         if ($user->can('sales.view-team')) {
                             $builder->whereIn('team_id', $user->teams()->pluck('teams.id')->all());
 
                             return;
                         }
 
-                        $builder->where('created_by', $user->getKey());
+                        $builder->where('owner_id', $user->getKey());
                     })
                     ->where(function ($builder) use ($query): void {
                         $builder->where('title', 'like', "%{$query}%")

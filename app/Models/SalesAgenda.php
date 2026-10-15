@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'branch_id', 'created_by', 'sales_case_id', 'lead_id', 'agenda_date', 'activity_category',
-    'team_id', 'title', 'location', 'activity_result', 'status', 'completed_at',
+    'owner_id', 'team_id', 'title', 'location', 'activity_result', 'status', 'completed_at',
 ])]
 class SalesAgenda extends Model
 {
@@ -45,6 +45,11 @@ class SalesAgenda extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function owner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'owner_id');
+    }
+
     public function team(): BelongsTo
     {
         return $this->belongsTo(Team::class);
@@ -63,6 +68,11 @@ class SalesAgenda extends Model
     public function evidence(): HasMany
     {
         return $this->hasMany(SalesAgendaEvidence::class);
+    }
+
+    public function assignmentHistories(): HasMany
+    {
+        return $this->hasMany(SalesAgendaAssignmentHistory::class)->latest();
     }
 
     public function scopeActive(Builder $query): Builder

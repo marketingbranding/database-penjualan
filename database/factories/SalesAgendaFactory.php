@@ -12,6 +12,13 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class SalesAgendaFactory extends Factory
 {
+    public function configure(): static
+    {
+        return $this->afterMaking(function (SalesAgenda $agenda): void {
+            $agenda->owner_id ??= $agenda->created_by;
+        });
+    }
+
     /**
      * Define the model's default state.
      *
@@ -22,6 +29,7 @@ class SalesAgendaFactory extends Factory
         return [
             'branch_id' => Branch::factory(),
             'created_by' => User::factory(),
+            'owner_id' => null,
             'team_id' => null,
             'sales_case_id' => null,
             'lead_id' => null,

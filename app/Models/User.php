@@ -45,6 +45,11 @@ class User extends Authenticatable
 
     public function salesAgendas(): HasMany
     {
+        return $this->hasMany(SalesAgenda::class, 'owner_id');
+    }
+
+    public function createdSalesAgendas(): HasMany
+    {
         return $this->hasMany(SalesAgenda::class, 'created_by');
     }
 

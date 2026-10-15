@@ -97,11 +97,11 @@ class SalesFeeReportController extends Controller
 
         $agendaSheet = $spreadsheet->createSheet();
         $agendaSheet->setTitle('Detail Agenda');
-        $agendaSheet->fromArray([['Tanggal', 'Sales', 'Proyek', 'Kategori', 'Judul Agenda', 'Lokasi', 'Hasil', 'Status']]);
+        $agendaSheet->fromArray([['Tanggal', 'Sales Owner', 'Dibuat Oleh', 'Proyek', 'Kategori', 'Judul Agenda', 'Lokasi', 'Hasil', 'Status']]);
         $row = 2;
         foreach ($report['agendas'] as $agenda) {
             $agendaSheet->fromArray([[
-                $agenda->agenda_date->format('Y-m-d'), $agenda->creator->name,
+                $agenda->agenda_date->format('Y-m-d'), $agenda->owner->name, $agenda->creator->name,
                 $agenda->lead?->project?->name ?? $agenda->salesCase?->lot?->project?->name ?? '-',
                 $agenda->activity_category, $agenda->title, $agenda->location,
                 $agenda->activity_result, $agenda->status,

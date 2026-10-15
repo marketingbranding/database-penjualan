@@ -107,10 +107,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/agenda-sales', [SalesAgendaController::class, 'index'])->name('sales-agendas.index');
     Route::get('/agenda-sales/create', [SalesAgendaController::class, 'create'])->name('sales-agendas.create');
     Route::post('/agenda-sales', [SalesAgendaController::class, 'store'])->name('sales-agendas.store');
+    Route::get('/agenda-sales/{salesAgenda}', [SalesAgendaController::class, 'show'])->name('sales-agendas.show');
     Route::get('/agenda-sales/{salesAgenda}/edit', [SalesAgendaController::class, 'edit'])->name('sales-agendas.edit');
+    Route::get('/agenda-sales/{salesAgenda}/redirect', [SalesAgendaController::class, 'redirectForm'])->name('sales-agendas.redirect-form');
     Route::put('/agenda-sales/{salesAgenda}', [SalesAgendaController::class, 'update'])->name('sales-agendas.update');
+    Route::patch('/agenda-sales/{salesAgenda}/redirect', [SalesAgendaController::class, 'redirect'])->name('sales-agendas.redirect');
+    Route::patch('/agenda-sales/{salesAgenda}/cancel-by-coordinator', [SalesAgendaController::class, 'cancelAsCoordinator'])->name('sales-agendas.cancel-by-coordinator');
     Route::patch('/agenda-sales/{salesAgenda}/complete', [SalesAgendaController::class, 'complete'])->name('sales-agendas.complete');
     Route::patch('/agenda-sales/{salesAgenda}/cancel', [SalesAgendaController::class, 'cancel'])->name('sales-agendas.cancel');
+    Route::delete('/agenda-sales/{salesAgenda}', [SalesAgendaController::class, 'destroy'])->name('sales-agendas.destroy');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
