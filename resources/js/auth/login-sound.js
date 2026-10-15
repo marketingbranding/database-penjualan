@@ -126,7 +126,7 @@ class LoginSound {
             this.compressor.attack.value = 0.003;
             this.compressor.release.value = 0.15;
             this.master = this.context.createGain();
-            this.master.gain.value = 0.17;
+            this.master.gain.value = 1;
             this.master.connect(this.compressor);
             this.compressor.connect(this.context.destination);
             this.context.resume().catch(() => {});
