@@ -20,6 +20,7 @@
                         <tr><td colspan="7"><x-empty-state title="Belum ada data PSJB/UTJ." :reset-href="$hasActiveFilters ? route('sales-process.psjb-utj') : null" action-label="Tambah PSJB" action-href="{{ ! $hasActiveFilters && Auth::user()->can('psjb-utj.create') ? route('sales-process.psjb-utj.create') : null }}" /></td></tr>
                     @endforelse
                 </x-slot>
+                <x-slot name="mobile"><x-mobile.process-cards type="psjb" :records="$psjbCases" /></x-slot>
             </x-data-table>
             <x-slot name="footer"><x-pagination :paginator="$psjbCases" /></x-slot>
         </x-table-card>

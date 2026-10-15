@@ -18,7 +18,7 @@
             </x-form-section>
         @endcan
 
-        <x-table-card title="Daftar garansi" :count="number_format($records->total()).' garansi'" class="min-h-0">
+        <x-table-card title="Daftar garansi" :count="number_format($records->total(), 0, ',', '.').' garansi'" class="min-h-0">
             <x-data-table caption="Daftar garansi">
                 <x-slot name="header"><tr><th>Garansi</th><th>Konsumen</th><th>BAST</th><th>Komplain</th><th>Status</th><th>PIC</th></tr></x-slot>
                 <x-slot name="body">
@@ -26,6 +26,20 @@
                         <tr><td class="font-semibold">{{ $record->warranty_number }}</td><td><div class="font-semibold">{{ $record->salesCase->consumer->nama_konsumen }}</div><div class="text-[11px] text-muted">{{ $record->salesCase->lot->code }}</div></td><td class="text-muted">{{ $record->bast?->bast_number ?? '-' }}</td><td class="text-muted">{{ $record->complaint_status ?? '-' }}</td><td><x-status-badge :status="str($record->status)->replace('_', ' ')->title()" :tone="$record->status === 'selesai' ? 'success' : ($record->status === 'proses' ? 'warning' : 'neutral')" /></td><td class="text-muted">{{ $record->assignee?->name ?? '-' }}</td></tr>
                     @empty
                         <tr><td colspan="6"><x-empty-state title="Belum ada data garansi." /></td></tr>
+                    @endforelse
+                </x-slot>
+                <x-slot name="mobile">
+                    @forelse ($records as $record)
+                        <x-mobile.data-card :title="$record->warranty_number" :subtitle="$record->salesCase->consumer->nama_konsumen.' · '.$record->salesCase->lot->code" :chip="str($record->status)->replace('_', ' ')->title()">
+                            <x-slot name="details">
+                                <div class="mobile-data-card-detail"><small>BAST</small><strong>{{ $record->bast?->bast_number ?? '-' }}</strong></div>
+                                <div class="mobile-data-card-detail"><small>PIC</small><strong>{{ $record->assignee?->name ?? '-' }}</strong></div>
+                                <div class="mobile-data-card-detail"><small>Komplain</small><strong>{{ $record->complaint_status ?? '-' }}</strong></div>
+                                <div class="mobile-data-card-detail"><small>Laporan</small><strong>{{ $record->reported_at?->format('d M Y') ?? '-' }}</strong></div>
+                            </x-slot>
+                        </x-mobile.data-card>
+                    @empty
+                        <x-empty-state title="Belum ada data garansi." />
                     @endforelse
                 </x-slot>
             </x-data-table>

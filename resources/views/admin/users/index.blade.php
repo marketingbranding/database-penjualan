@@ -90,6 +90,22 @@
                         <tr><td colspan="6"><x-empty-state title="Belum ada pengguna sesuai filter" :reset-href="$hasActiveFilters ? route('admin.users.index') : null" action-label="Tambah pengguna" action-href="{{ ! $hasActiveFilters && Auth::user()->can('users.create') ? route('admin.users.create') : null }}" /></td></tr>
                     @endforelse
                 </x-slot>
+                <x-slot name="mobile">
+                    @forelse ($users as $user)
+                        <x-mobile.data-card class="users-mobile-card" :title="$user->name" :subtitle="($user->branch?->name ?? '-').' · '.($user->teams->pluck('name')->join(', ') ?: 'Tanpa tim')" :chip="$user->globalRoles->pluck('name')->join(', ') ?: 'Tanpa role'" selected-expression="selectedIds.includes({{ $user->id }})">
+                            <x-slot name="leading"><input type="checkbox" name="ids[]" value="{{ $user->id }}" form="bulk-users-form" data-user-select class="module-checkbox" x-model="selectedIds" aria-label="Pilih {{ $user->name }}"></x-slot>
+                            <x-slot name="actions">
+                                <a href="{{ route('admin.users.edit', $user) }}">Kelola akses</a>
+                                @if (Auth::user()->hasGlobalRole('super_admin') && ! $user->hasGlobalRole('super_admin') && ! Auth::user()->is($user))
+                                    <form method="POST" action="{{ route('admin.users.impersonate', $user) }}">@csrf<button type="submit">Login sebagai</button></form>
+                                @endif
+                                @can('users.delete')<form method="POST" action="{{ route('admin.users.destroy', $user) }}" onsubmit="return confirm('Hapus pengguna ini?')">@csrf @method('DELETE')<button type="submit">Hapus pengguna</button></form>@endcan
+                            </x-slot>
+                        </x-mobile.data-card>
+                    @empty
+                        <x-empty-state title="Belum ada pengguna sesuai filter" :reset-href="$hasActiveFilters ? route('admin.users.index') : null" action-label="Tambah pengguna" action-href="{{ ! $hasActiveFilters && Auth::user()->can('users.create') ? route('admin.users.create') : null }}" />
+                    @endforelse
+                </x-slot>
             </x-data-table>
 
             <x-slot name="footer">
@@ -99,7 +115,7 @@
 
         <form id="bulk-users-form" method="POST" action="{{ route('admin.users.bulk') }}" onsubmit="return confirm('Terapkan aksi massal pada pengguna terpilih?')">
             @csrf
-            <x-bulk-bar dynamic count-expression="selectedIds.length">
+            <x-bulk-bar dynamic count-expression="selectedIds.length" select-all-expression="allIds">
                 <x-slot name="action">
                     <select name="action" x-model="action" class="module-bulk-select" aria-label="Aksi massal">
                         <option value="assign-branch">Pindahkan ke cabang</option>

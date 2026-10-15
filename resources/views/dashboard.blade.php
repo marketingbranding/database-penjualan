@@ -7,29 +7,29 @@
         </div>
     </x-slot>
 
-    <div class="space-y-6 px-4 py-8 sm:px-6 lg:px-8">
-        <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            <x-ui.stat-card label="Lead aktif" :value="number_format($metrics['leads'])" tone="lime">
+    <div class="dashboard-page space-y-6 px-4 py-8 sm:px-6 lg:px-8">
+        <x-mobile.kpi-strip>
+            <x-ui.stat-card label="Lead aktif" :value="number_format($metrics['leads'], 0, ',', '.')" tone="lime">
                 <x-slot:icon><svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="1.8" d="M5 19V9m7 10V5m7 14v-7" /></svg></x-slot:icon>
             </x-ui.stat-card>
-            <x-ui.stat-card label="Agenda mendatang" :value="number_format($metrics['plannedAgendas'])" description="Agenda terjadwal mulai hari ini." tone="orange">
+            <x-ui.stat-card label="Agenda mendatang" :value="number_format($metrics['plannedAgendas'], 0, ',', '.')" description="Agenda terjadwal mulai hari ini." tone="orange">
                 <x-slot:icon><svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="1.8" d="M8 3v4m8-4v4M4 10h16m-9 4h.01M15 14h.01M9 17h.01M15 17h.01" /></svg></x-slot:icon>
             </x-ui.stat-card>
-            <x-ui.stat-card label="Agenda selesai" :value="number_format($metrics['completedAgendas'])" description="Selesai sejak awal bulan ini." tone="surface">
+            <x-ui.stat-card label="Agenda selesai" :value="number_format($metrics['completedAgendas'], 0, ',', '.')" description="Selesai sejak awal bulan ini." tone="surface">
                 <x-slot:icon><svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="1.8" d="m5 12 4 4L19 6" /></svg></x-slot:icon>
             </x-ui.stat-card>
-            <x-ui.stat-card label="Konsumen" :value="number_format($metrics['consumers'])" description="Konsumen dengan proses aktif." tone="ink">
+            <x-ui.stat-card label="Konsumen" :value="number_format($metrics['consumers'], 0, ',', '.')" description="Konsumen dengan proses aktif." tone="ink">
                 <x-slot:icon><svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="1.8" d="M16 20v-1.5A3.5 3.5 0 0 0 12.5 15h-5A3.5 3.5 0 0 0 4 18.5V20m6-9a4 4 0 1 0-8 0 4 4 0 0 0 8 0Zm6-7.5a3.5 3.5 0 0 1 0 6.8M17 15a3.5 3.5 0 0 1 3 3.5V20" /></svg></x-slot:icon>
             </x-ui.stat-card>
-            <x-ui.stat-card label="Kavling tersedia" :value="number_format($metrics['availableLots'])" description="Kavling yang masih tersedia." tone="surface">
+            <x-ui.stat-card label="Kavling tersedia" :value="number_format($metrics['availableLots'], 0, ',', '.')" description="Kavling yang masih tersedia." tone="surface">
                 <x-slot:icon><svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 19h16M6 16V8l6-4 6 4v8M9 19v-5h6v5" /></svg></x-slot:icon>
             </x-ui.stat-card>
-            <x-ui.stat-card label="Kavling terjual" :value="number_format($metrics['soldLots'])" description="Kavling dengan status akad." tone="yellow">
+            <x-ui.stat-card label="Kavling terjual" :value="number_format($metrics['soldLots'], 0, ',', '.')" description="Kavling dengan status akad." tone="yellow">
                 <x-slot:icon><svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m5 12 4 4L19 6" /></svg></x-slot:icon>
             </x-ui.stat-card>
-        </section>
+        </x-mobile.kpi-strip>
 
-        <section>
+        <section class="dashboard-quick-actions">
             <x-ui.card title="Aksi cepat" description="Buka pekerjaan yang paling sering digunakan." padding="p-6">
                 <div class="grid gap-2">
                     @can('create', App\Models\Lead::class)
@@ -49,7 +49,7 @@
         </section>
 
         <section class="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
-            <x-ui.card title="Agenda mendatang" description="Pekerjaan lapangan yang perlu dijaga ritmenya." padding="p-0">
+            <x-ui.card title="Agenda mendatang" description="Pekerjaan lapangan yang perlu dijaga ritmenya." padding="p-0" class="dashboard-agenda-card">
                 <x-slot:actions>
                     @can('create', App\Models\SalesAgenda::class)
                         <a href="{{ route('sales-agendas.create') }}" class="rounded-xl bg-lime px-3 py-2 text-xs font-semibold text-on-accent transition hover:bg-lime-dark hover:text-white">Agenda baru</a>
@@ -72,7 +72,7 @@
                 @endforelse
             </x-ui.card>
 
-            <x-ui.card title="Lead terbaru" description="Lead yang baru masuk ke ruang kerja." padding="p-0">
+            <x-ui.card title="Lead terbaru" description="Lead yang baru masuk ke ruang kerja." padding="p-0" class="dashboard-leads-card">
                 <x-slot:actions>
                     <a href="{{ route('leads.index') }}" class="text-xs font-semibold text-lime-dark hover:underline">Lihat semua</a>
                 </x-slot:actions>

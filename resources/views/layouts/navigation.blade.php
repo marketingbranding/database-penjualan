@@ -49,9 +49,6 @@
                 <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9.75 3.5h4.5l.55 2.05a7.7 7.7 0 0 1 1.7.98l2.03-.65 2.25 3.9-1.48 1.5a7.7 7.7 0 0 1 0 1.96l1.48 1.5-2.25 3.9-2.03-.65a7.7 7.7 0 0 1-1.7.98l-.55 2.05h-4.5l-.55-2.05a7.7 7.7 0 0 1-1.7-.98l-2.03.65-2.25-3.9 1.48-1.5a7.7 7.7 0 0 1 0-1.96l-1.48-1.5 2.25-3.9 2.03.65a7.7 7.7 0 0 1 1.7-.98l.55-2.05Z" /><circle cx="12" cy="12" r="2.75" stroke-width="1.8" /></svg>
             </a>
         @endcanany
-        <button type="button" class="{{ $railLink }} lg:hidden" @click="sidebarOpen = true" aria-label="Buka navigasi" title="Buka navigasi">
-            <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 6h16M4 12h16M4 18h16" /></svg>
-        </button>
     </div>
 </aside>
 

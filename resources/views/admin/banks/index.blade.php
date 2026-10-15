@@ -12,7 +12,7 @@
         @endcan
 
         @forelse ($banks as $bank)
-            <x-table-card :title="$bank->name" :count="$bank->units->count().' unit'" class="module-bank-card">
+            <x-table-card :title="$bank->name" :count="number_format($bank->units->count(), 0, ',', '.').' unit'" class="module-bank-card">
                 <x-slot name="toolbar">
                     <div class="module-bank-header-form">
                         <form method="POST" action="{{ route('admin.banks.update', $bank) }}" class="module-inline-form">@csrf @method('PATCH')<input name="name" value="{{ $bank->name }}" class="module-form-control font-semibold" required>@can('banks.update')<label class="module-inline-check"><input type="hidden" name="is_active" value="0"><input type="checkbox" name="is_active" value="1" @checked($bank->is_active)>Aktif</label><button class="module-menu-link">Simpan</button>@else<x-status-badge :status="$bank->is_active ? 'Aktif' : 'Nonaktif'" :tone="$bank->is_active ? 'success' : 'neutral'" />@endcan</form>
@@ -31,8 +31,20 @@
                         @empty
                             <tr><td colspan="3"><x-empty-state title="Belum ada KC/unit" /></td></tr>
                         @endforelse
-                    </x-slot>
-                </x-data-table>
+                </x-slot>
+                <x-slot name="mobile">
+                    @forelse ($bank->units as $unit)
+                        <x-mobile.data-card :title="$unit->name" :subtitle="$bank->name" :chip="$unit->is_active ? 'Aktif' : 'Nonaktif'">
+                            <x-slot name="actions">
+                                @can('banks.update')<form method="POST" action="{{ route('admin.bank-units.update', $unit) }}">@csrf @method('PATCH')<input name="name" value="{{ $unit->name }}" class="module-form-control" required><input type="hidden" name="is_active" value="0"><label class="mobile-inline-check"><input type="checkbox" name="is_active" value="1" @checked($unit->is_active)> Aktif</label><button type="submit">Simpan unit</button></form>@endcan
+                                @can('banks.delete')<form method="POST" action="{{ route('admin.bank-units.destroy', $unit) }}" onsubmit="return confirm('Hapus KC/unit ini?')">@csrf @method('DELETE')<button type="submit">Hapus unit</button></form>@endcan
+                            </x-slot>
+                        </x-mobile.data-card>
+                    @empty
+                        <x-empty-state title="Belum ada KC/unit" />
+                    @endforelse
+                </x-slot>
+            </x-data-table>
                 @can('banks.create')<form method="POST" action="{{ route('admin.banks.units.store', $bank) }}" class="module-inline-form module-bank-add-unit">@csrf<x-text-input name="name" class="module-form-control" placeholder="Nama KC/unit baru" required/><x-secondary-button>Tambah KC/unit</x-secondary-button></form>@endcan
             </x-table-card>
         @empty

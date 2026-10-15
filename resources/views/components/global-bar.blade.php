@@ -11,9 +11,10 @@
 @php($profileUser = $user ?: auth()->user())
 
 <header {{ $attributes->merge(['class' => 'module-global-bar']) }}>
-    <button type="button" class="module-mobile-menu" @click="sidebarOpen = true" aria-label="Buka navigasi">
-        <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 6h16M4 12h16M4 18h16" /></svg>
-    </button>
+    <div class="module-mobile-leading">
+        <a href="{{ route('dashboard') }}" class="module-mobile-brand" aria-label="Oasis Next, buka dashboard"><x-brand.logo variant="mark" size="sm" aria-hidden="true" class="size-8" /></a>
+        <button type="button" class="module-mobile-team" @click="openMobileSheet('team')" aria-label="Pilih tim aktif"><span>{{ $teamCode ?: 'TIM' }}</span><span aria-hidden="true">⌄</span></button>
+    </div>
     <a href="{{ $searchAction ?: route('search') }}" class="module-mobile-search" aria-label="Buka pencarian">
         <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6" stroke-width="1.8" /><path stroke-linecap="round" stroke-width="1.8" d="m16 16 4 4" /></svg>
     </a>
@@ -52,7 +53,7 @@
         @endif
 
         @if ($profileUser)
-            <x-dropdown align="right" width="48">
+            <x-dropdown align="right" width="48" class="module-desktop-profile">
                 <x-slot name="trigger">
                     <button type="button" class="module-profile-trigger" aria-label="Buka profil">
                         <x-ui.avatar :name="$profileUser->name" size="sm" tone="ink" />
@@ -81,6 +82,7 @@
                     </form>
                 </x-slot>
             </x-dropdown>
+            <button type="button" class="module-mobile-profile" @click="openMobileSheet('profile')" aria-label="Buka profil"><x-ui.avatar :name="$profileUser->name" size="sm" tone="ink" /></button>
         @endif
     </div>
 </header>

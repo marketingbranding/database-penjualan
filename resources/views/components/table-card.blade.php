@@ -18,6 +18,9 @@
             @if ($count !== null)
                 <span class="text-xs text-muted">{{ $count }}</span>
             @endif
+            @isset($mobileView)
+                {{ $mobileView }}
+            @endisset
         </header>
     @endif
 

@@ -11,7 +11,7 @@
     @endphp
 
     <div class="module-page">
-        <x-table-card title="Daftar proyek" :count="number_format($projects->total()).' proyek'" class="min-h-0">
+        <x-table-card title="Daftar proyek" :count="number_format($projects->total(), 0, ',', '.').' proyek'" class="min-h-0">
             <x-slot name="toolbar">
                 <x-toolbar action="{{ route('admin.projects.index') }}" :result-count="$projects->total()" result-label="proyek" :has-active-filters="$hasActiveFilters" reset-href="{{ route('admin.projects.index') }}">
                     <x-slot name="filters"><x-filter-pill label="Cabang" name="branch_id" :options="$projectBranchOptions" :selected="$branchId" :active="filled($branchId)" /></x-slot>
@@ -31,6 +31,16 @@
                         </tr>
                     @empty
                         <tr><td colspan="6"><x-empty-state title="Belum ada proyek sesuai filter" :reset-href="$hasActiveFilters ? route('admin.projects.index') : null" action-label="Tambah proyek" action-href="{{ ! $hasActiveFilters && Auth::user()->can('projects.create') ? route('admin.projects.create') : null }}" /></td></tr>
+                    @endforelse
+                </x-slot>
+                <x-slot name="mobile">
+                    @forelse ($projects as $project)
+                        <x-mobile.data-card :title="$project->name" :subtitle="$project->code.' · '.$project->branch->name" :chip="$project->is_active ? 'Aktif' : 'Nonaktif'">
+                            <x-slot name="metrics"><div class="mobile-data-card-metric"><small>Blok</small><strong>{{ number_format($project->blocks_count, 0, ',', '.') }}</strong></div><div class="mobile-data-card-metric"><small>Kavling</small><strong>{{ number_format($project->lots_count, 0, ',', '.') }}</strong></div><div class="mobile-data-card-metric"><small>Cabang</small><strong>{{ $project->branch->name }}</strong></div></x-slot>
+                            <x-slot name="actions">@can('projects.update')<a href="{{ route('admin.projects.edit', $project) }}">Edit proyek</a>@endcan</x-slot>
+                        </x-mobile.data-card>
+                    @empty
+                        <x-empty-state title="Belum ada proyek sesuai filter" :reset-href="$hasActiveFilters ? route('admin.projects.index') : null" action-label="Tambah proyek" action-href="{{ ! $hasActiveFilters && Auth::user()->can('projects.create') ? route('admin.projects.create') : null }}" />
                     @endforelse
                 </x-slot>
             </x-data-table>

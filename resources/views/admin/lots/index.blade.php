@@ -11,7 +11,7 @@
 
     <div class="module-page">
         @if (session('status'))<x-ui.toast message="Status kavling berhasil diperbarui." />@endif
-        <x-table-card title="Daftar kavling" :count="number_format($lots->total()).' kavling'" class="min-h-0">
+        <x-table-card title="Daftar kavling" :count="number_format($lots->total(), 0, ',', '.').' kavling'" class="min-h-0">
             <x-slot name="toolbar">
                 <x-toolbar action="{{ route('admin.lots.index') }}" :result-count="$lots->total()" result-label="kavling" :has-active-filters="$hasActiveFilters" reset-href="{{ route('admin.lots.index') }}">
                     <x-slot name="filters">
@@ -43,6 +43,19 @@
                         </tr>
                     @empty
                         <tr><td colspan="6"><x-empty-state title="Belum ada kavling untuk filter yang dipilih" :reset-href="$hasActiveFilters ? route('admin.lots.index') : null" /></td></tr>
+                    @endforelse
+                </x-slot>
+                <x-slot name="mobile">
+                    @forelse ($lots as $lot)
+                        <x-mobile.data-card :title="$lot->code" :subtitle="$lot->project->name.' · Blok '.$lot->block->code" :chip="$lot->status->label()">
+                            <x-slot name="details"><div class="mobile-data-card-detail"><small>Cabang</small><strong>{{ $lot->project->branch->name }}</strong></div><div class="mobile-data-card-detail"><small>Status</small><strong>{{ $lot->status->label() }}</strong></div></x-slot>
+                            <x-slot name="actions">
+                                <a href="{{ route('admin.lots.history', $lot) }}">Riwayat</a>
+                                @can('lots.update')<form method="POST" action="{{ route('admin.lots.update', $lot) }}">@csrf @method('PATCH')<select name="status" onchange="this.form.submit()" class="module-form-control">@foreach ($statuses as $option)<option value="{{ $option->value }}" @selected($lot->status === $option)>{{ $option->label() }}</option>@endforeach</select></form>@endcan
+                            </x-slot>
+                        </x-mobile.data-card>
+                    @empty
+                        <x-empty-state title="Belum ada kavling untuk filter yang dipilih" :reset-href="$hasActiveFilters ? route('admin.lots.index') : null" />
                     @endforelse
                 </x-slot>
             </x-data-table>

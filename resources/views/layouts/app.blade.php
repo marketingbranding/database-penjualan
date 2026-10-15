@@ -35,7 +35,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <meta name="color-scheme" content="light dark">
         <meta name="theme-color" content="#ecece9" media="(prefers-color-scheme: light)">
@@ -83,7 +83,7 @@
                 <button type="button" class="welcome-skip" data-welcome-skip>Lewati</button>
             </div>
         </div>
-        <div x-data="{ sidebarOpen: false }" class="flex h-dvh gap-3.5 overflow-hidden bg-canvas p-3.5">
+        <div x-data="{ sidebarOpen: false, mobileSheet: null, mobileMenuQuery: '', openMobileSheet(sheet) { this.mobileSheet = sheet; window.history.pushState({ oasisMobileSheet: sheet }, ''); }, closeMobileSheet() { if (! this.mobileSheet) return; this.mobileSheet = null; if (window.history.state?.oasisMobileSheet) window.history.back(); }, mobileMenuMatches(label) { return ! this.mobileMenuQuery || label.toLowerCase().includes(this.mobileMenuQuery.toLowerCase()); } }" @keydown.escape.window="closeMobileSheet(); sidebarOpen = false" @popstate.window="mobileSheet = null" data-mobile-shell :class="{ 'mobile-sheet-open': mobileSheet }" class="mobile-shell flex h-dvh gap-3.5 overflow-hidden bg-canvas p-3.5">
             @include('layouts.navigation')
 
             <div class="flex h-full min-h-0 min-w-0 flex-1 flex-col lg:ml-[80px] xl:ml-[310px]">
@@ -130,6 +130,8 @@
                     {{ $slot }}
                 </main>
             </div>
+
+            @include('components.mobile-navigation')
 
         </div>
     </body>

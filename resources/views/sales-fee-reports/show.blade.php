@@ -20,7 +20,7 @@
                             @empty
                                 <tr><td colspan="4"><x-empty-state title="Tidak ada Lead." /></td></tr>
                             @endforelse
-                </x-slot></x-data-table>
+                </x-slot><x-slot name="mobile">@forelse ($report['leads'] as $lead)<x-mobile.data-card :title="$lead->nama_konsumen" :subtitle="$lead->tanggal_lead->format('d/m/Y')" :chip="$lead->status_lead"><x-slot name="details"><div class="mobile-data-card-detail"><small>Sumber</small><strong>{{ $lead->sumber_lead }}</strong></div><div class="mobile-data-card-detail"><small>Kanal</small><strong>{{ $lead->kanal_masuk }}</strong></div></x-slot></x-mobile.data-card>@empty<x-empty-state title="Tidak ada Lead." />@endforelse</x-slot></x-data-table>
             </x-table-card>
 
             <x-table-card title="Detail agenda" :count="count($report['agendas']).' agenda'" class="min-h-0">
@@ -30,7 +30,7 @@
                             @empty
                                 <tr><td colspan="4"><x-empty-state title="Tidak ada agenda." /></td></tr>
                             @endforelse
-                </x-slot></x-data-table>
+                </x-slot><x-slot name="mobile">@forelse ($report['agendas'] as $agenda)<x-mobile.data-card :title="$agenda->title" :subtitle="$agenda->agenda_date->format('d/m/Y').' · '.$agenda->activity_category" :chip="str($agenda->status)->replace('_', ' ')->title()"><x-slot name="details"><div class="mobile-data-card-detail"><small>Hasil</small><strong>{{ $agenda->activity_result ?: '-' }}</strong></div></x-slot></x-mobile.data-card>@empty<x-empty-state title="Tidak ada agenda." />@endforelse</x-slot></x-data-table>
             </x-table-card>
         </div>
     </div>

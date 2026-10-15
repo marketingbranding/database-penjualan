@@ -23,7 +23,7 @@
             <x-ui.toast message="Data konsumen berhasil diperbarui." />
         @endif
 
-        <x-table-card title="Reservasi aktif" :count="number_format($salesCases->total()).' konsumen'" class="min-h-0">
+        <x-table-card title="Reservasi aktif" :count="number_format($salesCases->total(), 0, ',', '.').' konsumen'" class="min-h-0">
             <x-slot name="toolbar">
                 <x-toolbar
                     action="{{ route('consumers.index') }}"
@@ -64,6 +64,19 @@
                         </tr>
                     @empty
                         <tr><td colspan="9"><x-empty-state title="Belum ada konsumen sesuai filter" :reset-href="$hasActiveFilters ? route('consumers.index') : null" action-label="Tambah konsumen" action-href="{{ ! $hasActiveFilters && Auth::user()->can('create', App\Models\SalesCase::class) ? route('consumers.create') : null }}" /></td></tr>
+                    @endforelse
+                </x-slot>
+                <x-slot name="mobile">
+                    @forelse ($salesCases as $case)
+                        <x-mobile.data-card class="consumers-mobile-card" :title="$case->consumer->nama_konsumen" :subtitle="$case->lot->project->name.'-'.$case->lot->code.' · '.$case->lot->project->branch->name" :value="$case->consumer->no_hp" value-label="Kontak" :href="route('consumers.show', $case)" :chip="$case->lot->status->label()">
+                            <x-slot name="leading"><x-ui.avatar :name="$case->consumer->nama_konsumen" size="sm" :tone="['lime', 'orange', 'yellow'][$case->consumer->id % 3] ?? 'lime'" /></x-slot>
+                            <x-slot name="actions">
+                                <a href="{{ route('consumers.show', $case) }}">Detail</a>
+                                @can('update', $case)<a href="{{ route('consumers.edit', $case) }}">Edit</a>@endcan
+                            </x-slot>
+                        </x-mobile.data-card>
+                    @empty
+                        <x-empty-state title="Belum ada konsumen sesuai filter" :reset-href="$hasActiveFilters ? route('consumers.index') : null" action-label="Tambah konsumen" action-href="{{ ! $hasActiveFilters && Auth::user()->can('create', App\Models\SalesCase::class) ? route('consumers.create') : null }}" />
                     @endforelse
                 </x-slot>
             </x-data-table>

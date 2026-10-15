@@ -6,7 +6,7 @@
     </x-slot>
 
     <div class="module-page">
-        <x-table-card title="Daftar cabang" :count="number_format($branches->total()).' cabang'" class="min-h-0">
+        <x-table-card title="Daftar cabang" :count="number_format($branches->total(), 0, ',', '.').' cabang'" class="min-h-0">
             <x-data-table caption="Daftar cabang">
                 <x-slot name="header"><tr><th>Cabang</th><th>Proyek</th><th>Status</th><th class="text-right">Aksi</th></tr></x-slot>
                 <x-slot name="body">
@@ -19,6 +19,15 @@
                         </tr>
                     @empty
                         <tr><td colspan="4"><x-empty-state title="Belum ada cabang" action-label="Tambah cabang" action-href="{{ Auth::user()->can('branches.create') ? route('admin.branches.create') : null }}" /></td></tr>
+                    @endforelse
+                </x-slot>
+                <x-slot name="mobile">
+                    @forelse ($branches as $branch)
+                        <x-mobile.data-card :title="$branch->name" :subtitle="$branch->code" :chip="$branch->is_active ? 'Aktif' : 'Nonaktif'" :value="number_format($branch->projects_count, 0, ',', '.')" value-label="Proyek">
+                            <x-slot name="actions">@can('branches.update')<a href="{{ route('admin.branches.edit', $branch) }}">Edit cabang</a>@endcan</x-slot>
+                        </x-mobile.data-card>
+                    @empty
+                        <x-empty-state title="Belum ada cabang" action-label="Tambah cabang" action-href="{{ Auth::user()->can('branches.create') ? route('admin.branches.create') : null }}" />
                     @endforelse
                 </x-slot>
             </x-data-table>

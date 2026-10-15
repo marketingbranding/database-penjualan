@@ -20,7 +20,7 @@
         @if (session('status') === 'promotion-deleted')<x-ui.toast message="Promo berhasil dihapus." />@endif
         @if (session('status') === 'promotion-toggled')<x-ui.toast message="Status promo berhasil diperbarui." />@endif
 
-        <x-table-card title="Daftar promo" :count="number_format($promotions->total()).' promo'" class="min-h-0">
+        <x-table-card title="Daftar promo" :count="number_format($promotions->total(), 0, ',', '.').' promo'" class="min-h-0">
             <x-slot name="toolbar">
                 <x-toolbar action="{{ route('admin.promotions.index') }}" :result-count="$promotions->total()" result-label="promo" :has-active-filters="$hasActiveFilters" reset-href="{{ route('admin.promotions.index') }}">
                     <x-slot name="search"><x-search-input name="search" :value="$search" placeholder="Cari ID atau nama promo" /></x-slot>
@@ -43,6 +43,17 @@
                         </tr>
                     @empty
                         <tr><td colspan="6"><x-empty-state title="Belum ada promo sesuai filter" :reset-href="$hasActiveFilters ? route('admin.promotions.index') : null" action-label="Tambah promo" action-href="{{ ! $hasActiveFilters && Auth::user()->can('promotions.create') ? route('admin.promotions.create') : null }}" /></td></tr>
+                    @endforelse
+                </x-slot>
+                <x-slot name="mobile">
+                    @forelse ($promotions as $promotion)
+                        @php($promotionTone = match ($promotion->status()) { 'active' => 'success', 'upcoming' => 'warning', default => 'neutral' })
+                        <x-mobile.data-card :title="$promotion->name" :subtitle="$promotion->promo_id" :chip="$promotion->statusLabel()">
+                            <x-slot name="details"><div class="mobile-data-card-detail"><small>Periode</small><strong>{{ $promotion->start_date?->translatedFormat('d M Y') ?? 'Tanpa batas' }} – {{ $promotion->end_date?->translatedFormat('d M Y') ?? 'Tanpa batas' }}</strong></div><div class="mobile-data-card-detail"><small>Target</small><strong>{{ $promotion->is_global ? 'Lintas cabang' : ($promotion->targets->map(fn ($target) => $target->targetLabel())->join(', ') ?: '-') }}</strong></div></x-slot>
+                            <x-slot name="actions">@can('promotions.update')<a href="{{ route('admin.promotions.edit', $promotion) }}">Edit promo</a><form method="POST" action="{{ route('admin.promotions.toggle-active', $promotion) }}">@csrf @method('PATCH')<button type="submit">{{ $promotion->is_active ? 'Nonaktifkan' : 'Aktifkan' }}</button></form>@endcan</x-slot>
+                        </x-mobile.data-card>
+                    @empty
+                        <x-empty-state title="Belum ada promo sesuai filter" :reset-href="$hasActiveFilters ? route('admin.promotions.index') : null" action-label="Tambah promo" action-href="{{ ! $hasActiveFilters && Auth::user()->can('promotions.create') ? route('admin.promotions.create') : null }}" />
                     @endforelse
                 </x-slot>
             </x-data-table>

@@ -13,7 +13,7 @@
             {{ $search }}
         @endisset
         @if (isset($filters))
-            <button type="button" class="module-toolbar-filter-toggle" @click="filtersOpen = ! filtersOpen">Filter</button>
+            <button type="button" class="module-toolbar-filter-toggle" @click="filtersOpen = ! filtersOpen">Filter @if ($hasActiveFilters)<span class="module-toolbar-filter-count">aktif</span>@endif</button>
             <div class="module-toolbar-filter-sheet" :class="filtersOpen && 'is-open'">
                 {{ $filters }}
             </div>
@@ -24,7 +24,7 @@
     </div>
     <div class="module-toolbar-result">
         @if ($resultCount !== null)
-            <span>{{ $resultCount }} {{ $resultLabel }}</span>
+            <span>{{ number_format($resultCount, 0, ',', '.') }} {{ $resultLabel }}</span>
         @endif
         @if ($hasActiveFilters && $resetHref)
             <a href="{{ $resetHref }}" class="font-semibold text-lime-dark">Reset</a>

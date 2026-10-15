@@ -48,6 +48,16 @@
                         <tr><td colspan="10"><x-empty-state title="Tidak ada Lead pada periode atau filter ini." :reset-href="$hasActiveFilters ? route('leads.monitoring') : null" /></td></tr>
                     @endforelse
                 </x-slot>
+                <x-slot name="mobile">
+                    @forelse ($leads as $lead)
+                        <x-mobile.data-card :title="$lead->nama_konsumen" :subtitle="$lead->id_lead.' · '.$lead->salesPic->name" :chip="$lead->status_lead" :href="route('leads.show', $lead)">
+                            <x-slot name="details"><div class="mobile-data-card-detail"><small>Tanggal</small><strong>{{ $lead->tanggal_lead->format('d/m/Y') }}</strong></div><div class="mobile-data-card-detail"><small>Proyek</small><strong>{{ $lead->project?->name ?? '-' }}</strong></div><div class="mobile-data-card-detail"><small>Sumber/Kanal</small><strong>{{ $lead->sumber_lead }} / {{ $lead->kanal_masuk }}</strong></div><div class="mobile-data-card-detail"><small>Aktivitas terakhir</small><strong>{{ $lead->latestActivity?->activity_type ?? '-' }}</strong></div></x-slot>
+                            <x-slot name="actions"><a href="{{ route('leads.show', $lead) }}">Detail lead</a></x-slot>
+                        </x-mobile.data-card>
+                    @empty
+                        <x-empty-state title="Tidak ada Lead pada periode atau filter ini." :reset-href="$hasActiveFilters ? route('leads.monitoring') : null" />
+                    @endforelse
+                </x-slot>
             </x-data-table>
             <x-slot name="footer"><x-pagination :paginator="$leads" /></x-slot>
         </x-table-card>

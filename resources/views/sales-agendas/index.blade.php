@@ -9,7 +9,7 @@
     <div class="module-page">
         @if (Auth::user()->can('sales.view-own'))<div class="mb-4"><a href="{{ route('sales-agendas.index', ['view' => 'redirected']) }}" class="module-button module-button-secondary">Agenda dialihkan</a></div>@endif
         @if (session('status'))<x-ui.toast message="Agenda berhasil diproses." />@endif
-        <x-table-card title="Queue agenda" :count="number_format($agendas->total()).' agenda'" class="min-h-0">
+            <x-table-card title="Queue agenda" :count="number_format($agendas->total(), 0, ',', '.').' agenda'" class="min-h-0">
             <x-slot name="toolbar">
                 <x-toolbar action="{{ route('sales-agendas.index') }}" :result-count="$agendas->total()" result-label="agenda" :has-active-filters="$hasActiveFilters" reset-href="{{ route('sales-agendas.index') }}">
                     <x-slot name="filters">
@@ -36,6 +36,29 @@
                         </tr>
                     @empty
                         <tr><td colspan="7"><x-empty-state title="Belum ada agenda sesuai filter." :reset-href="$hasActiveFilters ? route('sales-agendas.index') : null" action-label="Agenda baru" action-href="{{ ! $hasActiveFilters && Auth::user()->can('create', App\Models\SalesAgenda::class) ? route('sales-agendas.create') : null }}" /></td></tr>
+                    @endforelse
+                </x-slot>
+                <x-slot name="mobile">
+                    @forelse ($agendas as $agenda)
+                        <x-mobile.data-card :title="$agenda->title" :subtitle="$agenda->agenda_date->translatedFormat('d M Y H:i').' · '.($agenda->owner?->name ?? 'Tanpa pemilik')" :chip="str($agenda->status)->replace('_', ' ')->title()" :href="route('sales-agendas.show', $agenda)">
+                            <x-slot name="leading"><span class="mobile-data-card-date">{{ $agenda->agenda_date->format('d') }}<small>{{ $agenda->agenda_date->translatedFormat('M') }}</small></span></x-slot>
+                            <x-slot name="details">
+                                <div class="mobile-data-card-detail"><small>Lokasi</small><strong>{{ $agenda->location ?: 'Belum diisi' }}</strong></div>
+                                <div class="mobile-data-card-detail"><small>Kategori</small><strong>{{ $agenda->activity_category }}</strong></div>
+                                <div class="mobile-data-card-detail"><small>Konsumen/Lead</small><strong>{{ $agenda->salesCase?->consumer?->nama_konsumen ?? ($agenda->lead?->id_lead ?? '-') }}</strong></div>
+                                <div class="mobile-data-card-detail"><small>Bukti</small><strong>{{ $agenda->evidence->count() }} foto</strong></div>
+                            </x-slot>
+                            <x-slot name="actions">
+                                <a href="{{ route('sales-agendas.show', $agenda) }}">Detail</a>
+                                @can('update', $agenda)<a href="{{ route('sales-agendas.edit', $agenda) }}">Edit</a>@endcan
+                                @if ($agenda->status === 'planned')
+                                    @can('redirect', $agenda)<a href="{{ route('sales-agendas.redirect-form', $agenda) }}">Alihkan</a>@endcan
+                                    @can('update', $agenda)<form method="POST" action="{{ route('sales-agendas.complete', $agenda) }}">@csrf @method('PATCH')<input name="activity_result" required placeholder="Hasil" class="module-form-control"><button type="submit">Selesai</button></form>@endcan
+                                @endif
+                            </x-slot>
+                        </x-mobile.data-card>
+                    @empty
+                        <x-empty-state title="Belum ada agenda sesuai filter." :reset-href="$hasActiveFilters ? route('sales-agendas.index') : null" action-label="Agenda baru" action-href="{{ ! $hasActiveFilters && Auth::user()->can('create', App\Models\SalesAgenda::class) ? route('sales-agendas.create') : null }}" />
                     @endforelse
                 </x-slot>
             </x-data-table>

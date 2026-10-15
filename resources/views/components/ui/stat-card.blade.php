@@ -17,7 +17,7 @@
     $mutedClass = $tone === 'ink' ? 'text-inverse-text/60' : 'text-muted';
 @endphp
 
-<article {{ $attributes->merge(['class' => 'rounded-3xl border p-5 '.$toneClass.' '.($tone === 'ink' ? 'ui-stat-card-tone-ink' : '')]) }}>
+<article {{ $attributes->merge(['class' => 'ui-stat-card rounded-3xl border p-5 '.$toneClass.' '.($tone === 'ink' ? 'ui-stat-card-tone-ink' : '')]) }}>
     <div class="flex items-start justify-between gap-3">
         <p class="text-sm font-medium">{{ $label }}</p>
         @isset($icon)
@@ -26,7 +26,7 @@
             </span>
         @endisset
     </div>
-    <p class="mt-6 text-4xl font-semibold tracking-tight">{{ $value }}</p>
+    <p class="ui-stat-card-value mt-6 text-4xl font-semibold tracking-tight">{{ $value }}</p>
     @if ($description)
         <p class="ui-stat-muted mt-4 text-xs {{ $mutedClass }}">{{ $description }}</p>
     @endif

@@ -3,7 +3,7 @@
 
     @php($hasActiveFilters = filled($branchId) || filled($event) || filled($search))
     <div class="module-page">
-        <x-table-card title="Aktivitas tercatat" :count="number_format($logs->total()).' aktivitas'" class="min-h-0">
+        <x-table-card title="Aktivitas tercatat" :count="number_format($logs->total(), 0, ',', '.').' aktivitas'" class="min-h-0">
             <x-slot name="toolbar">
                 <x-toolbar action="{{ route('admin.audit-logs.index') }}" :result-count="$logs->total()" result-label="aktivitas" :has-active-filters="$hasActiveFilters" reset-href="{{ route('admin.audit-logs.index') }}">
                     <x-slot name="search"><x-search-input name="search" :value="$search" placeholder="Cari deskripsi atau user" /></x-slot>
@@ -26,6 +26,16 @@
                         </tr>
                     @empty
                         <tr><td colspan="5"><x-empty-state title="Belum ada aktivitas tercatat" :reset-href="$hasActiveFilters ? route('admin.audit-logs.index') : null" /></td></tr>
+                    @endforelse
+                </x-slot>
+                <x-slot name="mobile">
+                    @forelse ($logs as $log)
+                        <x-mobile.data-card :title="$log->event" :subtitle="$log->created_at->translatedFormat('d M Y H:i').' · '.($log->user?->name ?? 'Sistem')" :chip="$log->branch?->name ?? 'Tanpa cabang'">
+                            <x-slot name="details"><div class="mobile-data-card-detail"><small>Deskripsi</small><strong>{{ $log->description }}</strong></div><div class="mobile-data-card-detail"><small>IP address</small><strong>{{ $log->ip_address }}</strong></div></x-slot>
+                            <x-slot name="actions"><details class="mobile-audit-detail"><summary>Lihat perubahan</summary><div class="mobile-data-card-details"><div class="mobile-data-card-detail"><small>Sebelum</small><strong><pre>{{ json_encode($log->old_values, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre></strong></div><div class="mobile-data-card-detail"><small>Sesudah</small><strong><pre>{{ json_encode($log->new_values, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre></strong></div></div></details></x-slot>
+                        </x-mobile.data-card>
+                    @empty
+                        <x-empty-state title="Belum ada aktivitas tercatat" :reset-href="$hasActiveFilters ? route('admin.audit-logs.index') : null" />
                     @endforelse
                 </x-slot>
             </x-data-table>
