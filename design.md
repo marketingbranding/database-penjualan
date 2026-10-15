@@ -213,6 +213,16 @@ Tahap 1 menyiapkan satu sumber markup dan token untuk migrasi seluruh halaman mo
 
 Semua komponen menerima attribute bag dan slot eksplisit. Komponen hanya mengatur struktur/presentasi; route, query string, permission, field, dan endpoint tetap diberikan oleh halaman pemanggil.
 
+## Mobile one-handed redesign
+
+Redesign mobile memakai breakpoint `max-width: 767px` agar perilaku desktop dan tablet tetap menggunakan layout existing. Shell mobile memakai top bar ringkas, safe area, tinggi `100dvh`, bottom navigation lima tab, tombol aksi cepat `+`, serta bottom sheet untuk Menu, Team, dan Profile. Sheet mendukung backdrop close, tombol Escape, browser back, transisi, scroll internal, dan penguncian scroll halaman.
+
+Tabel daftar memakai adapter `x-data-table` dengan slot kartu mobile dan fallback card layout untuk tabel legacy. Kartu mempertahankan pagination, filter GET, permission, row action, bulk selection, dan endpoint existing. Laporan performa menyediakan pilihan `Kartu`/`Tabel` yang disimpan di `localStorage`. Angka ringkasan memakai format Indonesia (`1.930`).
+
+Form mobile menggunakan satu kolom, input minimal 16px, target sentuh minimal 44px, dan action simpan sticky di bawah dengan safe-area padding. Tema terang, gelap, dan sistem tetap membaca token yang sama; perubahan mobile hanya aktif di bawah 768px.
+
+Artefak screenshot Tahap 6 tersedia di `docs/screenshots/stage6-login-{light,dark}-{360,390,430}.png`. Login guest diverifikasi pada `360×740`, `390×844`, dan `430×932`: HTTP `200`, tanpa horizontal overflow, input 16px, target submit 48px, dan tanpa console error. Verifikasi halaman authenticated menunggu provisioning user/database lokal; database saat ini belum memiliki user.
+
 ## Dashboard
 
 Dashboard memakai data yang sudah dikirim oleh `DashboardController`. Elemen utama:
