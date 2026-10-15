@@ -11,10 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('consumer_migration_records', function (Blueprint $table) {
+        Schema::create('consumer_migration_records', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('consumer_migration_application_id')
-                ->constrained('consumer_migration_applications')
+            $table->unsignedBigInteger('consumer_migration_application_id');
+            $table->foreign('consumer_migration_application_id', 'consumer_mig_record_app_fk')
+                ->references('id')
+                ->on('consumer_migration_applications')
                 ->cascadeOnDelete();
             $table->string('source_system', 50);
             $table->string('source_transaction_id', 150)->nullable();
@@ -27,9 +29,9 @@ return new class extends Migration
             $table->unsignedBigInteger('target_id')->nullable();
             $table->timestamps();
 
-            $table->unique(['source_system', 'source_type', 'source_record_id']);
-            $table->index(['consumer_migration_application_id', 'source_type']);
-            $table->index(['source_system', 'source_transaction_id']);
+            $table->unique(['source_system', 'source_type', 'source_record_id'], 'consumer_mig_record_source_unique');
+            $table->index(['consumer_migration_application_id', 'source_type'], 'consumer_mig_record_app_idx');
+            $table->index(['source_system', 'source_transaction_id'], 'consumer_mig_record_tx_idx');
         });
     }
 

@@ -21,8 +21,8 @@ return new class extends Migration
             $table->text('reason')->nullable();
             $table->timestamps();
 
-            $table->index(['sales_agenda_id', 'created_at']);
-            $table->index(['from_user_id', 'action']);
+            $table->index(['sales_agenda_id', 'created_at'], 'agenda_history_agenda_date_idx');
+            $table->index(['from_user_id', 'action'], 'agenda_history_from_action_idx');
         });
     }
 

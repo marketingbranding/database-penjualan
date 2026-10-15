@@ -10,6 +10,13 @@ class GuestLayoutTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_homepage_redirects_guests_to_login(): void
+    {
+        $response = $this->get('/');
+
+        $response->assertRedirect(route('login'));
+    }
+
     public function test_guest_auth_pages_render_the_kavling_layout(): void
     {
         foreach ([

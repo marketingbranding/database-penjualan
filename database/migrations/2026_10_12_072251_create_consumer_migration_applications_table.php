@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('consumer_migration_applications', function (Blueprint $table) {
+        Schema::create('consumer_migration_applications', function (Blueprint $table): void {
             $table->id();
             $table->string('source_system', 50);
             $table->string('source_application_id', 100);
@@ -36,9 +36,9 @@ return new class extends Migration
             $table->json('metadata')->nullable();
             $table->timestamps();
 
-            $table->unique(['source_system', 'source_application_id']);
-            $table->index(['source_system', 'source_transaction_id']);
-            $table->index(['branch_id', 'project_id']);
+            $table->unique(['source_system', 'source_application_id'], 'consumer_mig_app_source_unique');
+            $table->index(['source_system', 'source_transaction_id'], 'consumer_mig_app_tx_index');
+            $table->index(['branch_id', 'project_id'], 'consumer_mig_app_branch_project_idx');
         });
     }
 

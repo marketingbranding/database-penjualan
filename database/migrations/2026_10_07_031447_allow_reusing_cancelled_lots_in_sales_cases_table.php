@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('sales_cases', function (Blueprint $table) {
+        Schema::table('sales_cases', function (Blueprint $table): void {
+            $table->dropForeign(['lot_id']);
             $table->dropUnique(['lot_id']);
             $table->index('lot_id');
+            $table->foreign('lot_id')->references('id')->on('lots')->restrictOnDelete();
         });
     }
 
@@ -22,9 +24,11 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('sales_cases', function (Blueprint $table) {
+        Schema::table('sales_cases', function (Blueprint $table): void {
+            $table->dropForeign(['lot_id']);
             $table->dropIndex(['lot_id']);
             $table->unique('lot_id');
+            $table->foreign('lot_id')->references('id')->on('lots')->restrictOnDelete();
         });
     }
 };

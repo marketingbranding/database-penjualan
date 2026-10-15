@@ -25,7 +25,7 @@ return new class extends Migration
             $table->timestamp('reversed_at')->nullable();
             $table->timestamps();
 
-            $table->index(['table_name', 'column_name', 'row_id']);
+            $table->index(['table_name', 'column_name', 'row_id'], 'datetime_normalization_row_idx');
         });
     }
 

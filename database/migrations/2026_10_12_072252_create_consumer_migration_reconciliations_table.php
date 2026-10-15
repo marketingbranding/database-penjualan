@@ -11,11 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('consumer_migration_reconciliations', function (Blueprint $table) {
+        Schema::create('consumer_migration_reconciliations', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('consumer_migration_application_id')
-                ->unique()
-                ->constrained('consumer_migration_applications')
+            $table->unsignedBigInteger('consumer_migration_application_id');
+            $table->unique('consumer_migration_application_id', 'consumer_mig_recon_app_unique');
+            $table->foreign('consumer_migration_application_id', 'consumer_mig_recon_app_fk')
+                ->references('id')
+                ->on('consumer_migration_applications')
                 ->cascadeOnDelete();
             $table->string('source_system', 50);
             $table->foreignId('branch_id')->nullable()->constrained()->nullOnDelete();
@@ -38,8 +40,8 @@ return new class extends Migration
             $table->json('metadata')->nullable();
             $table->timestamps();
 
-            $table->unique(['source_system', 'source_transaction_id']);
-            $table->index(['reconciliation_status', 'branch_id', 'project_id']);
+            $table->unique(['source_system', 'source_transaction_id'], 'consumer_mig_recon_source_unique');
+            $table->index(['reconciliation_status', 'branch_id', 'project_id'], 'consumer_mig_recon_status_idx');
         });
     }
 

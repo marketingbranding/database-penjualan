@@ -138,6 +138,16 @@
             </a>
         @endcan
 
+        @can('sales-fee-reports.view')
+            <div class="my-3 border-t border-line"></div>
+            <p class="mb-1.5 px-2.5 pt-3.5 text-[11px] font-medium text-muted">Laporan</p>
+            <div class="grid gap-1">
+                <a href="{{ route('sales-fee-reports.index') }}" class="{{ $panelLink }} {{ request()->routeIs('sales-fee-reports.*') ? $activePanelLink : $inactivePanelLink }}">
+                    <svg class="size-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="1.8" d="M4 19V5m0 14h16M8 16v-4m4 4V8m4 8v-7m4 7V4" /></svg><span>Laporan Fee Sales</span>
+                </a>
+            </div>
+        @endcan
+
         @canany(['branches.view', 'projects.view', 'lots.view', 'audit-logs.view', 'banks.view', 'lead-time.view', 'promotions.view', 'users.view', 'teams.view', 'roles.view'])
             <div class="my-3 border-t border-line"></div>
             <div x-data="{ open: {{ request()->routeIs('admin.*') ? 'true' : 'false' }} }">

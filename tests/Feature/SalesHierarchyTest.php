@@ -82,6 +82,7 @@ class SalesHierarchyTest extends TestCase
             $this->actingAs($admin)->get(route('leads.index'))
                 ->assertSee($sales->name)->assertSee($coordinator->name)->assertSee($lead->nama_konsumen);
             $this->actingAs($admin)->get(route('leads.monitoring'))->assertSee($coordinator->name);
+            $this->actingAs($admin)->get(route('leads.index'))->assertSeeText('Laporan Fee Sales');
             $this->actingAs($admin)->get(route('sales-fee-reports.index'))->assertOk();
             $this->actingAs($admin)->get(route('sales-fee-reports.print'))->assertOk();
             $this->actingAs($admin)->get(route('sales-fee-reports.export'))->assertDownload();
