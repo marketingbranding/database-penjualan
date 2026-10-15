@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreTeamRequest;
 use App\Http\Requests\UpdateTeamRequest;
 use App\Models\Branch;
+use App\Models\Project;
 use App\Models\Team;
 use App\Models\User;
+use App\Support\AuditLogger;
 use App\Support\CodeGenerator;
 use App\Support\Rbac;
 use Illuminate\Contracts\View\View;
@@ -22,7 +24,7 @@ class TeamController extends Controller
     public function index(): View
     {
         $teams = Team::query()
-            ->with(['parent', 'branch', 'supervisor', 'coordinator'])
+            ->with(['parent', 'branch', 'project', 'supervisor', 'coordinator'])
             ->when(! request()->user()->canAccessAllBranches(), fn ($query) => $query->where(
                 'branch_id',
                 request()->user()->branch_id,
@@ -51,6 +53,9 @@ class TeamController extends Controller
             $team = Team::query()->create($request->validated() + ['code' => $codeGenerator->placeholder()]);
             $team->update(['code' => $codeGenerator->team($team->getKey())]);
             Rbac::provisionTeam($team);
+            AuditLogger::record($team, 'team_structure_created', newValues: $team->only([
+                'branch_id', 'project_id', 'supervisor_id', 'coordinator_id', 'is_active',
+            ]), description: 'Struktur tim dibuat');
 
             return $team;
         });
@@ -74,9 +79,12 @@ class TeamController extends Controller
      */
     public function update(UpdateTeamRequest $request, Team $team): RedirectResponse
     {
-        $team->update($request->safe()->only([
-            'name', 'parent_id', 'branch_id', 'supervisor_id', 'coordinator_id', 'is_active',
-        ]));
+        $data = $request->safe()->only([
+            'name', 'parent_id', 'branch_id', 'project_id', 'supervisor_id', 'coordinator_id', 'is_active',
+        ]);
+        $previous = $team->only(['branch_id', 'project_id', 'supervisor_id', 'coordinator_id', 'is_active']);
+        $team->update($data);
+        AuditLogger::record($team, 'team_structure_updated', $previous, $team->only(array_keys($previous)), 'Struktur tim diperbarui');
 
         return back()->with('status', 'team-updated');
     }
@@ -112,7 +120,17 @@ class TeamController extends Controller
                 ->orderBy('name')
                 ->get(),
             'branches' => Branch::query()->where('is_active', true)->orderBy('name')->get(),
+            'projects' => Project::query()
+                ->where('is_active', true)
+                ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+                ->orderBy('name')
+                ->get(),
             'supervisors' => User::query()
+                ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+                ->whereHas('globalRoles', fn ($query) => $query->where('name', 'spv')->whereNull('team_id'))
+                ->orderBy('name')
+                ->get(),
+            'coordinators' => User::query()
                 ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
                 ->orderBy('name')
                 ->get(),

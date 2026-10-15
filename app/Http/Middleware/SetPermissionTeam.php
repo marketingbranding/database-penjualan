@@ -28,6 +28,7 @@ class SetPermissionTeam
         }
 
         /** @var Collection<int, Team> $availableTeams */
+        $request->attributes->set('requested_active_team_id', $request->session()->get('active_team_id'));
         $availableTeams = $user->hasGlobalRole('super_admin')
             ? Team::query()->where('is_active', true)->orderBy('name')->get()
             : $user->teams()->where('is_active', true)->orderBy('name')->get();

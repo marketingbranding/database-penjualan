@@ -81,13 +81,15 @@ class Rbac
             'dashboard.view',
             'sales-process.view',
             'filing.view', 'filing.create', 'filing.update',
+            'leads.view-branch', 'leads.monitor',
+            'sales-fee-reports.view', 'sales-fee-reports.print', 'sales-fee-reports.export',
         ],
     ];
 
     /** @var array<string, list<string>> */
     public const TEAM_ROLES = [
         'sales' => [
-            'dashboard.view', 'sales.view-own', 'sales.create', 'sales.update',
+            'dashboard.view', 'sales.view-own', 'sales.create', 'sales.update', 'sales.delete',
             'leads.view-own', 'leads.create', 'leads.update-own',
         ],
         'koordinator_sales' => [

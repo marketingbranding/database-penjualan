@@ -144,6 +144,15 @@ class UserController extends Controller
             ]);
         }
 
+        foreach (['bm' => 'Cabang ini sudah memiliki Branch Manager aktif.', 'spv' => 'Cabang ini sudah memiliki Supervisor aktif.'] as $roleName => $message) {
+            $role = Role::query()->whereNull('team_id')->where('name', $roleName)->first();
+
+            if ($role !== null && $globalRoleIds->contains($role->getKey()) && ! empty($data['branch_id'])
+                && $role->globalUsers()->where('users.branch_id', $data['branch_id'])->whereKeyNot($user)->exists()) {
+                throw ValidationException::withMessages(['global_role_ids' => $message]);
+            }
+        }
+
         if (! empty($data['reports_to_id'])) {
             $supervisor = User::query()->findOrFail((int) $data['reports_to_id']);
 

@@ -26,6 +26,11 @@ class Project extends Model
         return $this->hasMany(ProjectBlock::class)->orderBy('sort_order')->orderBy('code');
     }
 
+    public function teams(): HasMany
+    {
+        return $this->hasMany(Team::class);
+    }
+
     public function lots(): HasMany
     {
         return $this->hasMany(Lot::class);

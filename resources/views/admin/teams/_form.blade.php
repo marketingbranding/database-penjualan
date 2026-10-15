@@ -24,6 +24,18 @@
     </div>
 
     <div>
+        <x-input-label for="project_id" value="Proyek" />
+        <select id="project_id" name="project_id" class="workspace-control mt-1 block w-full py-2.5 text-sm">
+            <option value="">Tanpa proyek</option>
+            @foreach ($projects as $project)
+                <option value="{{ $project->id }}" @selected((string) old('project_id', $team?->project_id) === (string) $project->id)>{{ $project->name }}</option>
+            @endforeach
+        </select>
+        <p class="mt-1 text-xs text-muted">Tim koordinator aktif wajib memilih proyek.</p>
+        <x-input-error class="mt-2" :messages="$errors->get('project_id')" />
+    </div>
+
+    <div>
         <x-input-label for="parent_id" value="Induk tim" />
         <select id="parent_id" name="parent_id" class="workspace-control mt-1 block w-full py-2.5 text-sm">
             <option value="">Tanpa induk</option>
@@ -52,14 +64,19 @@
 
         <div>
             <x-input-label for="coordinator_id" value="Koordinator Sales" />
-            <select id="coordinator_id" name="coordinator_id" class="workspace-control mt-1 block w-full py-2.5 text-sm">
-                <option value="">Tanpa koordinator</option>
-                @foreach ($supervisors as $user)
-                    <option value="{{ $user->id }}" @selected((string) old('coordinator_id', $team?->coordinator_id) === (string) $user->id)>
-                        {{ $user->name }}
-                    </option>
-                @endforeach
-            </select>
+            @if ($team)
+                <select id="coordinator_id" name="coordinator_id" class="workspace-control mt-1 block w-full py-2.5 text-sm">
+                    <option value="">Tanpa koordinator</option>
+                    @foreach ($coordinators as $user)
+                        <option value="{{ $user->id }}" @selected((string) old('coordinator_id', $team?->coordinator_id) === (string) $user->id)>
+                            {{ $user->name }}
+                        </option>
+                    @endforeach
+                </select>
+                <p class="mt-1 text-xs text-muted">Koordinator harus menjadi anggota tim dan memiliki role Koordinator Sales pada tim ini.</p>
+            @else
+                <p class="workspace-control mt-1 bg-canvas px-3 py-2 text-sm text-muted">Tetapkan setelah tim dibuat dan role tim tersedia.</p>
+            @endif
             <x-input-error class="mt-2" :messages="$errors->get('coordinator_id')" />
         </div>
     </div>

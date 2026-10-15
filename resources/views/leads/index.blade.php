@@ -28,13 +28,14 @@
                 </x-toolbar>
             </x-slot>
             <x-data-table caption="Daftar Lead">
-                <x-slot name="header"><tr><th>Tanggal</th><th>Konsumen</th><th>Sales</th><th>Proyek</th><th>Sumber</th><th>Tahap & kualifikasi</th><th>Follow-up</th><th class="text-right">Aksi</th></tr></x-slot>
+                <x-slot name="header"><tr><th>Tanggal</th><th>Konsumen</th><th>Sales</th><th>Koordinator</th><th>Proyek</th><th>Sumber</th><th>Tahap & kualifikasi</th><th>Follow-up</th><th class="text-right">Aksi</th></tr></x-slot>
                 <x-slot name="body">
                     @forelse ($leads as $lead)
                         <tr>
                             <td class="whitespace-nowrap"><div class="font-semibold text-ink">{{ $lead->tanggal_lead->translatedFormat('d M Y') }}</div><div class="text-[11px] text-muted">{{ $lead->id_lead }}</div></td>
                             <td><div class="font-semibold text-ink">{{ $lead->nama_konsumen }}</div><div class="text-[11px] text-muted">{{ $lead->no_hp }}</div></td>
                             <td class="text-muted">{{ $lead->salesPic->name }}</td>
+                            <td class="text-muted">{{ $lead->team?->coordinator?->name ?? '-' }}</td>
                             <td class="max-w-[180px] truncate text-muted" title="{{ $lead->project?->name }}">{{ $lead->project?->name ?? '-' }}</td>
                             <td class="text-muted">{{ $lead->sumber_lead }}</td>
                             <td><x-status-badge :status="$lead->status_lead" tone="lime" /><div class="mt-1 text-[11px] text-muted">{{ $qualificationLabels[$lead->qualification_status] ?? $lead->qualification_status }}</div></td>
@@ -42,7 +43,7 @@
                             <td><x-row-actions primary-label="Detail" primary-href="{{ route('leads.show', $lead) }}" /></td>
                         </tr>
                     @empty
-                        <tr><td colspan="8"><x-empty-state title="Belum ada Lead sesuai filter" :reset-href="$hasActiveFilters ? route('leads.index') : null" action-label="Lead baru" action-href="{{ ! $hasActiveFilters && Auth::user()->can('create', App\Models\Lead::class) ? route('leads.create') : null }}" /></td></tr>
+                        <tr><td colspan="9"><x-empty-state title="Belum ada Lead sesuai filter" :reset-href="$hasActiveFilters ? route('leads.index') : null" action-label="Lead baru" action-href="{{ ! $hasActiveFilters && Auth::user()->can('create', App\Models\Lead::class) ? route('leads.create') : null }}" /></td></tr>
                     @endforelse
                 </x-slot>
             </x-data-table>

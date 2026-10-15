@@ -88,7 +88,7 @@ class LeadController extends Controller
             }));
 
         $leads = (clone $leadsQuery)
-            ->with(['project', 'salesPic', 'team', 'creator', 'latestHandoff'])
+            ->with(['project', 'salesPic', 'team.coordinator', 'creator', 'latestHandoff'])
             ->latest('tanggal_lead')
             ->latest('id')
             ->paginate(20)
@@ -192,7 +192,7 @@ class LeadController extends Controller
     {
         $data = $request->validated();
         [$branchId, $teamId] = $this->resolveOwnership($request->user(), (int) $data['sales_pic_id']);
-        $this->ensureProjectBelongsToBranch($data['project_id'] ?? null, $branchId);
+        $this->ensureProjectBelongsToBranch($data['project_id'] ?? null, $branchId, $teamId);
         $originAgenda = $this->resolveOriginAgenda($request->user(), $data['origin_agenda_id'] ?? null);
 
         $lead = DB::transaction(function () use ($data, $request, $branchId, $teamId, $originAgenda): Lead {
@@ -320,7 +320,7 @@ class LeadController extends Controller
     {
         $data = $request->validated();
         [$branchId, $teamId] = $this->resolveOwnership($request->user(), (int) $data['sales_pic_id']);
-        $this->ensureProjectBelongsToBranch($data['project_id'] ?? null, $branchId);
+        $this->ensureProjectBelongsToBranch($data['project_id'] ?? null, $branchId, $teamId);
 
         DB::transaction(function () use ($data, $branchId, $teamId, $lead, $request): void {
             $statusFrom = $lead->status_lead;
@@ -539,10 +539,15 @@ class LeadController extends Controller
             throw ValidationException::withMessages(['sales_pic_id' => 'Sales hanya dapat membuat lead untuk dirinya sendiri.']);
         }
 
-        $actorTeamIds = $actor->teams()->pluck('teams.id')->all();
-        $sharedTeamId = $actor->canAccessAllBranches()
-            ? $salesPic->teams->first()?->getKey()
-            : $salesPic->teams->first(fn (Team $team): bool => in_array($team->getKey(), $actorTeamIds, true))?->getKey();
+        $actorTeamIds = $actor->teams()->where('is_active', true)->pluck('teams.id')->all();
+        $salesTeams = $salesPic->teams->where('is_active', true);
+        $sessionTeamId = (int) request()->session()->get('active_team_id');
+        $preferredTeam = $sessionTeamId > 0
+            ? $salesTeams->firstWhere('id', $sessionTeamId)
+            : null;
+        $sharedTeamId = $preferredTeam?->getKey() ?? ($actor->canAccessAllBranches()
+            ? $salesTeams->first()?->getKey()
+            : $salesTeams->first(fn (Team $team): bool => in_array($team->getKey(), $actorTeamIds, true))?->getKey());
 
         if (! $actor->canAccessAllBranches() && $actor->can('leads.view-team') && $sharedTeamId === null) {
             throw ValidationException::withMessages(['sales_pic_id' => 'Sales PIC harus berada di tim Anda.']);
@@ -551,14 +556,28 @@ class LeadController extends Controller
         return [$salesPic->branch_id, $sharedTeamId];
     }
 
-    private function ensureProjectBelongsToBranch(?int $projectId, int $branchId): void
+    private function ensureProjectBelongsToBranch(?int $projectId, int $branchId, ?int $teamId = null): void
     {
         if ($projectId === null) {
+            if ($teamId !== null && Team::query()->whereKey($teamId)->whereNotNull('project_id')->exists()) {
+                throw ValidationException::withMessages(['project_id' => 'Lead untuk tim ini wajib memilih proyek tim.']);
+            }
+
             return;
         }
 
         if (! Project::query()->whereKey($projectId)->where('branch_id', $branchId)->exists()) {
             throw ValidationException::withMessages(['project_id' => 'Proyek harus berada di cabang Sales PIC.']);
+        }
+
+        if ($teamId === null) {
+            return;
+        }
+
+        $teamProjectId = Team::query()->whereKey($teamId)->value('project_id');
+
+        if ($teamProjectId !== null && $teamProjectId !== $projectId) {
+            throw ValidationException::withMessages(['project_id' => 'Proyek Lead harus sesuai dengan proyek tim Sales.']);
         }
     }
 }
