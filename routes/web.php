@@ -29,9 +29,15 @@ use App\Http\Controllers\SalesFeeReportController;
 use App\Http\Controllers\SalesProcessController;
 use App\Http\Controllers\TeamContextController;
 use App\Http\Controllers\TeamPerformanceController;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::redirect('/', '/login');
+Route::get('/', function (Request $request): RedirectResponse {
+    return $request->user()
+        ? redirect()->route('dashboard')
+        : redirect()->route('login');
+});
 
 Route::get('/dashboard', DashboardController::class)
     ->middleware(['auth', 'verified', 'permission:dashboard.view'])
