@@ -150,6 +150,7 @@
 .personal-stage-text.stage-slik,
 .personal-stage-text.stage-akad,
 .personal-stage-text.stage-discussion {
+    background: transparent;
     color: rgb(var(--c-accent));
 }
 
