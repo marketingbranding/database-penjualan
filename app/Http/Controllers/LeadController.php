@@ -460,27 +460,28 @@ class LeadController extends Controller
     private function availableSalesUsers(User $user): Collection
     {
         if ($user->can('leads.view-own') && ! $user->can('leads.view-team')) {
-            return collect([$user]);
+            return collect([$user->loadMissing('teams.coordinator')]);
         }
 
         if ($user->can('leads.view-branch') || $user->can('leads.monitor')) {
             return User::query()
                 ->where('branch_id', $user->branch_id)
+                ->with('teams.coordinator')
                 ->orderBy('name')
                 ->get();
         }
 
         if ($user->canAccessAllBranches()) {
-            return User::query()->whereNotNull('branch_id')->orderBy('name')->get();
+            return User::query()->whereNotNull('branch_id')->with('teams.coordinator')->orderBy('name')->get();
         }
 
         $teamId = (int) request()->session()->get('active_team_id');
 
         if ($teamId > 0 && $user->teams()->whereKey($teamId)->exists()) {
-            return Team::query()->findOrFail($teamId)->users()->orderBy('name')->get();
+            return Team::query()->with('users.teams.coordinator')->findOrFail($teamId)->users->sortBy('name')->values();
         }
 
-        return $user->teams()->where('branch_id', $user->branch_id)->with('users')->get()->flatMap->users->unique('id')->sortBy('name')->values();
+        return $user->teams()->where('branch_id', $user->branch_id)->with('users.teams.coordinator')->get()->flatMap->users->unique('id')->sortBy('name')->values();
     }
 
     /** @param array<string, int|string|null> $filters */

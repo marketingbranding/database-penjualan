@@ -8,10 +8,10 @@
     'selected' => null,
 ])
 
-<label {{ $attributes->merge(['class' => 'module-filter-pill '.($active ? 'is-active' : '')]) }}>
+<label data-filter-label="{{ $label }}" {{ $attributes->merge(['class' => 'module-filter-pill '.($active ? 'is-active' : '')]) }}>
     <span>{{ $label }}:</span>
     @if ($name && $options)
-        <select name="{{ $name }}" onchange="this.form.submit()" aria-label="{{ $label }}">
+        <select name="{{ $name }}" data-auto-submit aria-label="{{ $label }}" data-filter-label="{{ $label }}">
             @foreach ($options as $optionValue => $optionLabel)
                 <option value="{{ $optionValue }}" @selected((string) $selected === (string) $optionValue)>{{ $optionLabel }}</option>
             @endforeach

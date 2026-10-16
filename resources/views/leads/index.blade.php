@@ -13,7 +13,7 @@
         <x-table-card title="Tabel Lead" description="Gunakan Detail untuk memperbarui aktivitas, kualifikasi, dan follow-up." :count="number_format($leads->total(), 0, ',', '.').' Lead'" class="min-h-0">
             <x-slot name="toolbar">
                 <div class="grid gap-2">
-                    <x-toolbar action="{{ route('leads.index') }}" :result-count="$leads->total()" result-label="Lead" :has-active-filters="$hasActiveFilters" reset-href="{{ route('leads.index') }}">
+                    <x-toolbar action="{{ route('leads.index') }}" filter-title="Filter lead" :result-count="$leads->total()" result-label="Lead" :has-active-filters="$hasActiveFilters" reset-href="{{ route('leads.index') }}">
                         <x-slot name="search"><x-search-input name="search" :value="request('search')" placeholder="Cari ID, nama, no. HP" /></x-slot>
                         <x-slot name="filters">
                             <x-filter-pill label="Sales" name="sales_pic_id" :options="['' => 'Semua sales'] + $salesUsers->mapWithKeys(fn ($salesUser): array => [$salesUser->id => $salesUser->name])->all()" :selected="$salesPicId" :active="filled($salesPicId)" />
@@ -22,11 +22,12 @@
                             <x-filter-pill label="Sumber" name="sumber_lead" :options="['' => 'Semua sumber'] + collect($sources)->mapWithKeys(fn ($item): array => [$item => $item])->all()" :selected="$source" :active="filled($source)" />
                             <x-filter-pill label="Kanal" name="kanal_masuk" :options="['' => 'Semua kanal'] + collect($channels)->mapWithKeys(fn ($item): array => [$item => $item])->all()" :selected="$channel" :active="filled($channel)" />
                             <x-filter-pill label="Proyek" name="project_id" :options="['' => 'Semua proyek'] + $projects->mapWithKeys(fn ($project): array => [$project->id => $project->name])->all()" :selected="request('project_id')" :active="request()->filled('project_id')" />
-                            <label class="module-filter-pill {{ $active ? 'is-active' : '' }}"><input type="checkbox" name="active" value="1" @checked($active) onchange="this.form.submit()"> Lead aktif saja</label>
-                            <label class="module-filter-extra">Dari <input type="date" name="date_from" value="{{ request('date_from') }}" onchange="this.form.submit()"></label>
-                            <label class="module-filter-extra">Sampai <input type="date" name="date_to" value="{{ request('date_to') }}" onchange="this.form.submit()"></label>
+                            <label class="module-filter-pill {{ $active ? 'is-active' : '' }}"><input type="checkbox" name="active" value="1" @checked($active)> Lead aktif saja</label>
+                            <label class="module-filter-extra" data-filter-label="Tanggal lead">Dari <input type="date" name="date_from" value="{{ request('date_from') }}" data-auto-submit></label>
+                            <label class="module-filter-extra" data-filter-label="Tanggal lead">Sampai <input type="date" name="date_to" value="{{ request('date_to') }}" data-auto-submit></label>
                             <x-filter-pill label="Follow-up" name="follow_up" :options="['' => 'Semua jadwal', 'today' => 'Hari ini', 'overdue' => 'Terlambat', 'upcoming' => 'Akan datang']" :selected="$followUp" :active="filled($followUp)" />
                         </x-slot>
+                        <x-slot name="mobileFilters">@include('leads.partials.mobile-filters')</x-slot>
                     </x-toolbar>
                     <x-mobile.filter-chips :chips="$leadQuickFilters" />
                 </div>

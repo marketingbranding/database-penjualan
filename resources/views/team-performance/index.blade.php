@@ -13,8 +13,8 @@
                         @if (Auth::user()->canAccessAllBranches())<x-filter-pill label="Cabang" name="branch_id" :options="['' => 'Semua cabang'] + $branches->mapWithKeys(fn ($branch): array => [$branch->id => $branch->name])->all()" :selected="$filters['branch_id']" :active="filled($filters['branch_id'])" />@endif
                         <x-filter-pill label="Proyek" name="project_id" :options="['' => 'Semua proyek'] + $projects->mapWithKeys(fn ($project): array => [$project->id => $project->name])->all()" :selected="$filters['project_id']" :active="filled($filters['project_id'])" />
                         <x-filter-pill label="Koordinator" name="coordinator_id" :options="['' => 'Semua koordinator'] + $coordinators->mapWithKeys(fn ($user): array => [$user->id => $user->name])->all()" :selected="$filters['coordinator_id']" :active="filled($filters['coordinator_id'])" />
-                        <label class="module-filter-extra">Dari <input type="date" name="date_from" value="{{ $filters['date_from'] }}" onchange="this.form.submit()"></label>
-                        <label class="module-filter-extra">Sampai <input type="date" name="date_to" value="{{ $filters['date_to'] }}" onchange="this.form.submit()"></label>
+                        <label class="module-filter-extra" data-filter-label="Periode">Dari <input type="date" name="date_from" value="{{ $filters['date_from'] }}" data-auto-submit></label>
+                        <label class="module-filter-extra" data-filter-label="Periode">Sampai <input type="date" name="date_to" value="{{ $filters['date_to'] }}" data-auto-submit></label>
                     </x-slot>
                 </x-toolbar>
             </x-slot>

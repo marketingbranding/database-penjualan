@@ -1,6 +1,7 @@
 import Alpine from 'alpinejs';
 import registerPwa from './pwa';
 import initializeTheme from './theme';
+import './mobile-filters';
 
 window.Alpine = Alpine;
 

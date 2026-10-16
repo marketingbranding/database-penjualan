@@ -18,8 +18,8 @@
                         <x-filter-pill label="Sumber" name="sumber_lead" :options="['' => 'Semua sumber'] + collect($sources)->mapWithKeys(fn ($item): array => [$item => $item])->all()" :selected="$filters['sumber_lead']" :active="filled($filters['sumber_lead'])" />
                         <x-filter-pill label="Kanal" name="kanal_masuk" :options="['' => 'Semua kanal'] + collect($channels)->mapWithKeys(fn ($item): array => [$item => $item])->all()" :selected="$filters['kanal_masuk']" :active="filled($filters['kanal_masuk'])" />
                         <x-filter-pill label="Status" name="status_lead" :options="['' => 'Semua status'] + collect($statuses)->mapWithKeys(fn ($item): array => [$item => $item])->all()" :selected="$filters['status_lead']" :active="filled($filters['status_lead'])" />
-                        <label class="module-filter-extra">Dari <input type="date" name="date_from" value="{{ $filters['date_from'] }}" onchange="this.form.submit()"></label>
-                        <label class="module-filter-extra">Sampai <input type="date" name="date_to" value="{{ $filters['date_to'] }}" onchange="this.form.submit()"></label>
+                        <label class="module-filter-extra" data-filter-label="Tanggal lead">Dari <input type="date" name="date_from" value="{{ $filters['date_from'] }}" data-auto-submit></label>
+                        <label class="module-filter-extra" data-filter-label="Tanggal lead">Sampai <input type="date" name="date_to" value="{{ $filters['date_to'] }}" data-auto-submit></label>
                     </x-slot>
                 </x-toolbar>
             </x-slot>

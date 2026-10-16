@@ -16,8 +16,8 @@
                         @if (Auth::user()->canAccessAllBranches())<x-filter-pill label="Cabang" name="branch_id" :options="['' => 'Semua cabang'] + $branches->mapWithKeys(fn ($branch): array => [$branch->id => $branch->name])->all()" :selected="$branchId" :active="filled($branchId)" />@endif
                         <x-filter-pill label="Kategori" name="activity_category" :options="['' => 'Semua kategori'] + collect($categories)->mapWithKeys(fn ($item): array => [$item => $item])->all()" :selected="$category" :active="filled($category)" />
                         <x-filter-pill label="Status" name="status" :options="['' => 'Semua status'] + collect($statuses)->mapWithKeys(fn ($item): array => [$item => str($item)->replace('_', ' ')->title()])->all()" :selected="$status" :active="filled($status)" />
-                        <label class="module-filter-extra">Dari <input type="date" name="date_from" value="{{ request('date_from') }}" onchange="this.form.submit()"></label>
-                        <label class="module-filter-extra">Sampai <input type="date" name="date_to" value="{{ request('date_to') }}" onchange="this.form.submit()"></label>
+                        <label class="module-filter-extra" data-filter-label="Tanggal agenda">Dari <input type="date" name="date_from" value="{{ request('date_from') }}" data-auto-submit></label>
+                        <label class="module-filter-extra" data-filter-label="Tanggal agenda">Sampai <input type="date" name="date_to" value="{{ request('date_to') }}" data-auto-submit></label>
                     </x-slot>
                 </x-toolbar>
             </x-slot>
