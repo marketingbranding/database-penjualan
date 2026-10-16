@@ -89,7 +89,7 @@ const initializeTheme = () => {
         } else if (toggle) {
             toggleTheme();
         }
-    });
+    }, true);
 
     window.addEventListener('storage', (event) => {
         if (event.key === THEME_STORAGE_KEY) {
