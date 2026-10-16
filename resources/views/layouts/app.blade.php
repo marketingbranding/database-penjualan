@@ -30,6 +30,13 @@
     };
     $pageTitle = last($moduleBreadcrumbs) ?: config('app.name', 'Oasis Next');
     $brandVersion = file_exists(public_path('brand/oasis-next-mark.svg')) ? filemtime(public_path('brand/oasis-next-mark.svg')) : 1;
+    $isPersonalSalesDashboard = Auth::user()->can('sales.view-own')
+        && Auth::user()->can('leads.view-own')
+        && ! Auth::user()->can('sales.view-team')
+        && ! Auth::user()->can('sales.view-all')
+        && ! Auth::user()->can('leads.view-team')
+        && ! Auth::user()->can('leads.view-branch')
+        && ! Auth::user()->can('leads.view-all');
 @endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">

@@ -10,14 +10,22 @@ use App\Models\Project;
 use App\Models\SalesAgenda;
 use App\Models\SalesCase;
 use App\PaymentMethod;
+use App\Services\PersonalSalesDashboardService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
+    public function __construct(private PersonalSalesDashboardService $personalSalesDashboard) {}
+
     public function __invoke(Request $request): View
     {
         $user = $request->user();
+
+        if ($this->personalSalesDashboard->isPersonalSales($user)) {
+            return view('dashboard-personal', $this->personalSalesDashboard->build($user));
+        }
+
         $branchId = $user->canAccessAllBranches()
             ? ($request->integer('branch_id') ?: null)
             : $user->branch_id;

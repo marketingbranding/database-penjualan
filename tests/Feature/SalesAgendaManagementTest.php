@@ -6,6 +6,7 @@ use App\Models\Branch;
 use App\Models\Lead;
 use App\Models\Role;
 use App\Models\SalesAgenda;
+use App\Models\SalesAgendaEvidence;
 use App\Models\SalesCase;
 use App\Models\User;
 use App\Support\Rbac;
@@ -78,6 +79,27 @@ class SalesAgendaManagementTest extends TestCase
             'id' => $agenda->id,
             'status' => 'done',
             'activity_result' => 'Berhasil dihubungi.',
+        ]);
+    }
+
+    public function test_sales_can_complete_own_agenda_with_evidence(): void
+    {
+        [$sales] = $this->salesUser();
+        $agenda = SalesAgenda::factory()->create([
+            'branch_id' => $sales->branch_id,
+            'created_by' => $sales->id,
+            'owner_id' => $sales->id,
+        ]);
+        SalesAgendaEvidence::factory()->create(['sales_agenda_id' => $agenda->id]);
+
+        $this->actingAs($sales)
+            ->patch(route('sales-agendas.complete', $agenda), ['activity_result' => 'Bukti sudah diunggah.'])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('sales_agendas', [
+            'id' => $agenda->id,
+            'status' => 'done',
+            'activity_result' => 'Bukti sudah diunggah.',
         ]);
     }
 

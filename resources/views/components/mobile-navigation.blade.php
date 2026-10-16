@@ -99,10 +99,18 @@
         <div class="mobile-sheet-content">
             <header class="mobile-sheet-header"><div><p class="mobile-sheet-eyebrow">Buat baru</p><h2>Aksi cepat</h2></div><button type="button" class="mobile-sheet-close" @click="closeMobileSheet()" aria-label="Tutup aksi cepat">×</button></header>
             <div class="mobile-quick-grid">
-                @can('leads.create')<a href="{{ route('leads.create') }}" class="mobile-quick-action"><strong>＋</strong><span>Lead baru</span></a>@endcan
-                @can('sales.create')<a href="{{ route('sales-agendas.create') }}" class="mobile-quick-action"><strong>＋</strong><span>Agenda baru</span></a>@endcan
-                @can('consumers.create')<a href="{{ route('consumers.create') }}" class="mobile-quick-action"><strong>＋</strong><span>Konsumen baru</span></a>@endcan
-                @can('psjb-utj.create')<a href="{{ route('sales-process.psjb-utj.create') }}" class="mobile-quick-action"><strong>＋</strong><span>PSJB / UTJ</span></a>@endcan
+                @if ($isPersonalSalesDashboard)
+                    @can('leads.create')<a href="{{ route('leads.create') }}" class="mobile-quick-action is-primary"><strong>＋</strong><span><b>Lead baru</b><small>Buat Lead dan mulai tindak lanjut.</small></span></a>@endcan
+                    @can('sales.create')<a href="{{ route('sales-agendas.create') }}" class="mobile-quick-action"><strong>＋</strong><span><b>Agenda baru</b><small>Jadwalkan pekerjaan berikutnya.</small></span></a>@endcan
+                    @can('leads.view-own')<a href="{{ route('leads.index', ['follow_up' => 'today']) }}" class="mobile-quick-action"><strong>↗</strong><span><b>Catat follow-up</b><small>Lihat Lead yang perlu dihubungi hari ini.</small></span></a>@endcan
+                    @can('psjb-utj.create')<a href="{{ route('sales-process.psjb-utj.create') }}" class="mobile-quick-action"><strong>↗</strong><span><b>Buat UTJ</b><small>Mulai proses transaksi konsumen.</small></span></a>@endcan
+                    @can('bi-checking.create')<a href="{{ route('sales-process.bi-checking.create') }}" class="mobile-quick-action"><strong>✓</strong><span><b>Mulai cek SLIK</b><small>Catat pemeriksaan BI Checking.</small></span></a>@endcan
+                @else
+                    @can('leads.create')<a href="{{ route('leads.create') }}" class="mobile-quick-action"><strong>＋</strong><span>Lead baru</span></a>@endcan
+                    @can('sales.create')<a href="{{ route('sales-agendas.create') }}" class="mobile-quick-action"><strong>＋</strong><span>Agenda baru</span></a>@endcan
+                    @can('consumers.create')<a href="{{ route('consumers.create') }}" class="mobile-quick-action"><strong>＋</strong><span>Konsumen baru</span></a>@endcan
+                    @can('psjb-utj.create')<a href="{{ route('sales-process.psjb-utj.create') }}" class="mobile-quick-action"><strong>＋</strong><span>PSJB / UTJ</span></a>@endcan
+                @endif
             </div>
         </div>
     </template>

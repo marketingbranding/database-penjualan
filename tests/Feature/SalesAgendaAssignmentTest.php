@@ -164,6 +164,19 @@ class SalesAgendaAssignmentTest extends TestCase
         $this->assertDatabaseHas('activity_logs', ['subject_type' => $agenda->getMorphClass(), 'subject_id' => $agenda->id, 'event' => 'agenda_cancelled_by_coordinator']);
     }
 
+    public function test_coordinator_cannot_cancel_an_agenda_with_evidence(): void
+    {
+        [$coordinator, $owner, $team] = $this->coordinatorContext();
+        $agenda = SalesAgenda::factory()->create(['branch_id' => $team->branch_id, 'team_id' => $team->id, 'created_by' => $owner->id, 'owner_id' => $owner->id]);
+        SalesAgendaEvidence::factory()->create(['sales_agenda_id' => $agenda->id]);
+
+        $this->actingAs($coordinator)
+            ->patch(route('sales-agendas.cancel-by-coordinator', $agenda), ['reason' => 'Tidak tersedia'])
+            ->assertSessionHasErrors('agenda');
+
+        $this->assertDatabaseHas('sales_agendas', ['id' => $agenda->id, 'status' => 'planned']);
+    }
+
     /** @return array{0: User, 1: User, 2: Team} */
     private function coordinatorContext(): array
     {

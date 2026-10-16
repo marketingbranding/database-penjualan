@@ -288,7 +288,7 @@ class SalesAgendaController extends Controller
         DB::transaction(function () use ($data, $salesAgenda): void {
             $agenda = SalesAgenda::query()->lockForUpdate()->findOrFail($salesAgenda->getKey());
             $this->authorize('update', $agenda);
-            $this->ensurePlannedWithoutEvidence($agenda);
+            $this->ensurePlanned($agenda);
 
             $agenda->update([
                 'activity_result' => $data['activity_result'],
@@ -494,12 +494,17 @@ class SalesAgendaController extends Controller
 
     private function ensurePlannedWithoutEvidence(SalesAgenda $agenda): void
     {
-        if ($agenda->status !== 'planned') {
-            throw ValidationException::withMessages(['status' => 'Agenda hanya dapat diubah saat masih direncanakan.']);
-        }
+        $this->ensurePlanned($agenda);
 
         if ($agenda->evidence()->exists()) {
             throw ValidationException::withMessages(['agenda' => 'Agenda tidak dapat dialihkan atau dibatalkan karena sudah memiliki bukti foto.']);
+        }
+    }
+
+    private function ensurePlanned(SalesAgenda $agenda): void
+    {
+        if ($agenda->status !== 'planned') {
+            throw ValidationException::withMessages(['status' => 'Agenda hanya dapat diubah saat masih direncanakan.']);
         }
     }
 }
