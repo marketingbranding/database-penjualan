@@ -4954,6 +4954,10 @@ body {
 
 /* Keep the mobile filter sheet above the legacy responsive aliases. */
 @media (max-width: 767px) {
+    .module-toolbar-desktop-filters {
+        display: none;
+    }
+
     .module-toolbar-filter-toggle {
         min-width: 108px;
         min-height: 48px;
@@ -4994,6 +4998,10 @@ body {
         margin-top: 0.625rem;
         overflow-x: auto;
         scrollbar-width: none;
+    }
+
+    .module-toolbar-mobile-filters {
+        display: block;
     }
 
     .module-toolbar-active-filters::-webkit-scrollbar {
