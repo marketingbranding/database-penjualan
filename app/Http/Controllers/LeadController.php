@@ -16,6 +16,9 @@ use App\Models\Project;
 use App\Models\SalesAgenda;
 use App\Models\Team;
 use App\Models\User;
+use App\Notifications\LeadCreatedForSalesNotification;
+use App\Services\LeadOwnershipService;
+use App\Support\AuditLogger;
 use App\Support\BusinessTime;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
@@ -29,6 +32,8 @@ use Illuminate\Validation\ValidationException;
 class LeadController extends Controller
 {
     use AuthorizesRequests;
+
+    public function __construct(private LeadOwnershipService $leadOwnership) {}
 
     public function index(Request $request): View
     {
@@ -192,7 +197,8 @@ class LeadController extends Controller
     public function store(StoreLeadRequest $request): RedirectResponse
     {
         $data = $request->validated();
-        [$branchId, $teamId] = $this->resolveOwnership($request->user(), (int) $data['sales_pic_id']);
+        [$branchId, $teamId] = $this->leadOwnership->resolve($request->user(), (int) $data['sales_pic_id']);
+        $salesPic = User::query()->findOrFail((int) $data['sales_pic_id']);
         $this->ensureProjectBelongsToBranch($data['project_id'] ?? null, $branchId, $teamId);
         $originAgenda = $this->resolveOriginAgenda($request->user(), $data['origin_agenda_id'] ?? null);
 
@@ -217,6 +223,14 @@ class LeadController extends Controller
 
             return $lead;
         });
+
+        if ($salesPic->isNot($request->user())) {
+            $salesPic->notify(new LeadCreatedForSalesNotification($lead, $request->user()->name));
+            AuditLogger::record($lead, 'lead_created_for_sales', newValues: [
+                'sales_pic_id' => $salesPic->getKey(),
+                'created_by' => $request->user()->getKey(),
+            ], description: 'Lead dibuat untuk Sales oleh pengguna lain');
+        }
 
         return redirect()->route('leads.show', $lead)->with('status', 'lead-created');
     }
@@ -323,7 +337,10 @@ class LeadController extends Controller
     public function update(UpdateLeadRequest $request, Lead $lead): RedirectResponse
     {
         $data = $request->validated();
-        [$branchId, $teamId] = $this->resolveOwnership($request->user(), (int) $data['sales_pic_id']);
+        $salesPicChanged = (int) $data['sales_pic_id'] !== (int) $lead->sales_pic_id;
+        [$branchId, $teamId] = $salesPicChanged
+            ? $this->leadOwnership->resolve($request->user(), (int) $data['sales_pic_id'])
+            : [$lead->branch_id, $lead->team_id];
         $this->ensureProjectBelongsToBranch($data['project_id'] ?? null, $branchId, $teamId);
 
         DB::transaction(function () use ($data, $branchId, $teamId, $lead, $request): void {
@@ -459,29 +476,7 @@ class LeadController extends Controller
     /** @return Collection<int, User> */
     private function availableSalesUsers(User $user): Collection
     {
-        if ($user->can('leads.view-own') && ! $user->can('leads.view-team')) {
-            return collect([$user->loadMissing('teams.coordinator')]);
-        }
-
-        if ($user->can('leads.view-branch') || $user->can('leads.monitor')) {
-            return User::query()
-                ->where('branch_id', $user->branch_id)
-                ->with('teams.coordinator')
-                ->orderBy('name')
-                ->get();
-        }
-
-        if ($user->canAccessAllBranches()) {
-            return User::query()->whereNotNull('branch_id')->with('teams.coordinator')->orderBy('name')->get();
-        }
-
-        $teamId = (int) request()->session()->get('active_team_id');
-
-        if ($teamId > 0 && $user->teams()->whereKey($teamId)->exists()) {
-            return Team::query()->with('users.teams.coordinator')->findOrFail($teamId)->users->sortBy('name')->values();
-        }
-
-        return $user->teams()->where('branch_id', $user->branch_id)->with('users.teams.coordinator')->get()->flatMap->users->unique('id')->sortBy('name')->values();
+        return $this->leadOwnership->allowedSalesUsers($user);
     }
 
     /** @param array<string, int|string|null> $filters */
@@ -538,36 +533,6 @@ class LeadController extends Controller
             ->whereHas('leads')
             ->orderBy('name')
             ->get();
-    }
-
-    /** @return array{0: int, 1: ?int} */
-    private function resolveOwnership(User $actor, int $salesPicId): array
-    {
-        $salesPic = User::query()->with('teams')->findOrFail($salesPicId);
-
-        if (! $actor->canAccessAllBranches() && $salesPic->branch_id !== $actor->branch_id) {
-            throw ValidationException::withMessages(['sales_pic_id' => 'Sales PIC harus berasal dari cabang Anda.']);
-        }
-
-        if ($actor->can('leads.view-own') && ! $actor->can('leads.view-team') && $salesPic->isNot($actor)) {
-            throw ValidationException::withMessages(['sales_pic_id' => 'Sales hanya dapat membuat lead untuk dirinya sendiri.']);
-        }
-
-        $actorTeamIds = $actor->teams()->where('is_active', true)->pluck('teams.id')->all();
-        $salesTeams = $salesPic->teams->where('is_active', true);
-        $sessionTeamId = (int) request()->session()->get('active_team_id');
-        $preferredTeam = $sessionTeamId > 0
-            ? $salesTeams->firstWhere('id', $sessionTeamId)
-            : null;
-        $sharedTeamId = $preferredTeam?->getKey() ?? ($actor->canAccessAllBranches()
-            ? $salesTeams->first()?->getKey()
-            : $salesTeams->first(fn (Team $team): bool => in_array($team->getKey(), $actorTeamIds, true))?->getKey());
-
-        if (! $actor->canAccessAllBranches() && $actor->can('leads.view-team') && $sharedTeamId === null) {
-            throw ValidationException::withMessages(['sales_pic_id' => 'Sales PIC harus berada di tim Anda.']);
-        }
-
-        return [$salesPic->branch_id, $sharedTeamId];
     }
 
     private function ensureProjectBelongsToBranch(?int $projectId, int $branchId, ?int $teamId = null): void

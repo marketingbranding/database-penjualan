@@ -172,7 +172,7 @@
         @if ($availableTeams->isNotEmpty())
             <div class="mb-3" x-data="{ teamsOpen: false }">
                 <button type="button" class="flex w-full items-center justify-between rounded-2xl bg-surface-2 px-3 py-2.5 text-left transition hover:bg-lime-soft" @click="teamsOpen = ! teamsOpen" :aria-expanded="teamsOpen.toString()">
-                    <span class="min-w-0"><span class="block text-[10px] font-medium text-muted">Tim aktif</span><span class="block truncate text-xs font-semibold text-ink">{{ $activeTeam?->name ?? 'Pilih tim' }}</span></span>
+                    <span class="min-w-0"><span class="block text-[10px] font-medium text-muted">{{ $isCoordinatorDashboard ? 'Cabang · Proyek' : 'Tim aktif' }}</span><span class="block truncate text-xs font-semibold text-ink">{{ $isCoordinatorDashboard ? (($activeTeam?->branch?->name ?? 'Cabang').' · '.($activeTeam?->project?->name ?? 'Tanpa proyek')) : ($activeTeam?->name ?? 'Pilih tim') }}</span></span>
                     <svg class="size-4 text-muted transition" :class="teamsOpen && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="1.8" d="m6 9 6 6 6-6" /></svg>
                 </button>
                 <div x-show="teamsOpen" x-transition.opacity class="mt-2 grid gap-1">

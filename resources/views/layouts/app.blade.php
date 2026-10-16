@@ -37,6 +37,8 @@
         && ! Auth::user()->can('leads.view-team')
         && ! Auth::user()->can('leads.view-branch')
         && ! Auth::user()->can('leads.view-all');
+    $isCoordinatorDashboard = ! Auth::user()->canAccessAllBranches()
+        && $activeTeam?->coordinator_id === Auth::id();
 @endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">

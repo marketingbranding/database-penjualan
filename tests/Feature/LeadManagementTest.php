@@ -9,8 +9,10 @@ use App\Models\Project;
 use App\Models\Role;
 use App\Models\Team;
 use App\Models\User;
+use App\Notifications\LeadCreatedForSalesNotification;
 use App\Support\Rbac;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class LeadManagementTest extends TestCase
@@ -20,6 +22,7 @@ class LeadManagementTest extends TestCase
     public function test_sales_can_create_and_update_own_lead(): void
     {
         [$branch, $team, $sales, $project] = $this->salesContext();
+        Notification::fake();
 
         $payload = [
             'id_promo' => '260101-D1-01',
@@ -64,6 +67,7 @@ class LeadManagementTest extends TestCase
             ->assertRedirect(route('leads.show', $lead));
 
         $this->assertSame('Diskusi', $lead->fresh()->status_lead);
+        Notification::assertNothingSent();
     }
 
     public function test_sales_can_create_a_lead_without_a_phone_number(): void
@@ -276,6 +280,7 @@ class LeadManagementTest extends TestCase
     public function test_coordinator_can_input_lead_for_sales_in_own_team(): void
     {
         [$branch, $team, $sales, $project, $coordinator] = $this->salesContext(withCoordinator: true);
+        Notification::fake();
 
         $this->actingAs($coordinator)
             ->withSession(['active_team_id' => $team->id])
@@ -296,6 +301,51 @@ class LeadManagementTest extends TestCase
         $this->assertSame($sales->id, $lead->sales_pic_id);
         $this->assertSame($coordinator->id, $lead->created_by);
         $this->assertSame($branch->id, $lead->branch_id);
+        Notification::assertSentTo($sales, LeadCreatedForSalesNotification::class);
+        $this->assertDatabaseHas('activity_logs', [
+            'subject_type' => $lead->getMorphClass(),
+            'subject_id' => $lead->id,
+            'event' => 'lead_created_for_sales',
+        ]);
+    }
+
+    public function test_sales_cannot_create_a_lead_for_themselves_through_a_different_sales_pic(): void
+    {
+        [, $team, $sales, $project] = $this->salesContext();
+        $otherSales = User::factory()->for($sales->branch, 'branch')->create();
+
+        $this->actingAs($sales)
+            ->withSession(['active_team_id' => $team->id])
+            ->post(route('leads.store'), [
+                'tanggal_lead' => '2026-06-28', 'sumber_lead' => 'Online', 'kanal_masuk' => 'TikTok',
+                'aktivitas_lead' => 'Live', 'nama_konsumen' => 'Citra', 'project_id' => $project->id,
+                'sales_pic_id' => $otherSales->id, 'status_lead' => 'Diskusi',
+            ])
+            ->assertSessionHasErrors('sales_pic_id');
+    }
+
+    public function test_super_admin_can_edit_legacy_lead_without_a_sales_pic_role(): void
+    {
+        Rbac::provision();
+        $branch = Branch::factory()->create();
+        $project = Project::factory()->for($branch)->create();
+        $legacyPic = User::factory()->for($branch, 'branch')->create();
+        $admin = User::factory()->create();
+        $admin->globalRoles()->attach(Role::query()->whereNull('team_id')->where('name', 'super_admin')->firstOrFail());
+        $lead = Lead::factory()->create([
+            'branch_id' => $branch->id, 'project_id' => $project->id, 'sales_pic_id' => $legacyPic->id,
+            'created_by' => $legacyPic->id, 'nama_konsumen' => 'Legacy Lead',
+        ]);
+
+        $this->actingAs($admin)->put(route('leads.update', $lead), [
+            'tanggal_lead' => $lead->tanggal_lead->toDateString(), 'sumber_lead' => $lead->sumber_lead,
+            'kanal_masuk' => $lead->kanal_masuk, 'aktivitas_lead' => $lead->aktivitas_lead,
+            'nama_konsumen' => 'Legacy Lead Updated', 'no_hp' => $lead->no_hp,
+            'project_id' => $project->id, 'sales_pic_id' => $legacyPic->id,
+            'status_lead' => $lead->status_lead, 'keterangan' => $lead->keterangan,
+        ])->assertRedirect(route('leads.show', $lead));
+
+        $this->assertSame('Legacy Lead Updated', $lead->fresh()->nama_konsumen);
     }
 
     public function test_coordinator_cannot_assign_lead_to_sales_from_another_team(): void
@@ -322,6 +372,43 @@ class LeadManagementTest extends TestCase
             ->assertSessionHasErrors('sales_pic_id');
 
         $this->assertDatabaseCount('leads', 0);
+    }
+
+    public function test_coordinator_form_only_offers_active_sales_from_the_active_team(): void
+    {
+        [$branch, $team, $sales, $project, $coordinator] = $this->salesContext(withCoordinator: true);
+        $outsideSales = User::factory()->for($branch, 'branch')->create(['name' => 'Outside Sales']);
+
+        $this->actingAs($coordinator)
+            ->withSession(['active_team_id' => $team->id])
+            ->get(route('leads.create'))
+            ->assertOk()
+            ->assertSee('value="'.$sales->id.'"', false)
+            ->assertDontSee('value="'.$coordinator->id.'"', false)
+            ->assertDontSee('value="'.$outsideSales->id.'"', false);
+    }
+
+    public function test_super_admin_can_assign_only_an_active_sales_pic(): void
+    {
+        Rbac::provision();
+        $branch = Branch::factory()->create();
+        $team = Team::factory()->for($branch)->create();
+        Rbac::provisionTeam($team);
+        $sales = User::factory()->for($branch, 'branch')->create();
+        $team->users()->attach($sales, ['is_default' => true]);
+        setPermissionsTeamId($team->id);
+        $sales->assignRole(Role::query()->where('team_id', $team->id)->where('name', 'sales')->firstOrFail());
+        $admin = User::factory()->create();
+        $admin->globalRoles()->attach(Role::query()->whereNull('team_id')->where('name', 'super_admin')->firstOrFail());
+        $nonSales = User::factory()->for($branch, 'branch')->create();
+        $payload = [
+            'tanggal_lead' => '2026-06-28', 'sumber_lead' => 'Online', 'kanal_masuk' => 'TikTok',
+            'aktivitas_lead' => 'Live', 'nama_konsumen' => 'Assigned Sales', 'project_id' => null,
+            'status_lead' => 'No Respon',
+        ];
+
+        $this->actingAs($admin)->post(route('leads.store'), [...$payload, 'sales_pic_id' => $sales->id])->assertRedirect();
+        $this->actingAs($admin)->post(route('leads.store'), [...$payload, 'sales_pic_id' => $nonSales->id])->assertSessionHasErrors('sales_pic_id');
     }
 
     public function test_monitoring_role_can_view_but_cannot_create_or_edit_lead(): void

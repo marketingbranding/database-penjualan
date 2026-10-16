@@ -35,7 +35,7 @@
                 <div><dt class="text-xs font-medium uppercase tracking-wide text-muted">Promo</dt><dd class="mt-1 text-sm text-ink">{{ $lead->id_promo ?: '-' }} · {{ $lead->nama_promo ?: '-' }}</dd></div>
                 <div><dt class="text-xs font-medium uppercase tracking-wide text-muted">Proyek</dt><dd class="mt-1 text-sm text-ink">{{ $lead->project?->name ?: '-' }}</dd></div>
                 <div><dt class="text-xs font-medium uppercase tracking-wide text-muted">Tim / Cabang</dt><dd class="mt-1 text-sm text-ink">{{ $lead->team?->name ?: '-' }} / {{ $lead->branch->name }}</dd></div>
-                <div><dt class="text-xs font-medium uppercase tracking-wide text-muted">Diinput oleh</dt><dd class="mt-1 text-sm text-ink">{{ $lead->creator->name }}</dd></div>
+                 @if ($lead->creator && $lead->creator->isNot($lead->salesPic))<div><dt class="text-xs font-medium uppercase tracking-wide text-muted">Dicatat oleh</dt><dd class="mt-1 text-sm text-ink">{{ $lead->creator->name }}</dd></div>@endif
                 @if ($lead->originAgenda)
                     <div><dt class="text-xs font-medium uppercase tracking-wide text-muted">Berasal dari agenda</dt><dd class="mt-1 text-sm text-ink"><a href="{{ route('sales-agendas.edit', $lead->originAgenda) }}" class="font-semibold text-lime-dark hover:underline">{{ $lead->originAgenda->title }}</a> · {{ $lead->originAgenda->agenda_date->format('d M Y') }}</dd></div>
                 @endif

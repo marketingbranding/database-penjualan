@@ -12,10 +12,12 @@ use App\Models\Project;
 use App\Models\ProjectBlock;
 use App\Models\Role;
 use App\Models\SalesAgenda;
+use App\Models\SalesAgendaEvidence;
 use App\Models\SalesCase;
 use App\Models\Team;
 use App\Models\User;
 use App\PaymentMethod;
+use App\Services\CoordinatorSalesDashboardService;
 use App\Support\Rbac;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -151,6 +153,45 @@ class DashboardTest extends TestCase
             ->assertDontSee('Catat follow-up');
     }
 
+    public function test_coordinator_dashboard_is_scoped_and_sorted_for_the_active_team(): void
+    {
+        [$branch, $project, $team, $coordinator, $salesOne, $salesTwo, $otherTeam, $otherSales] = $this->coordinatorDashboardContext();
+        $this->assertTrue(app(CoordinatorSalesDashboardService::class)->isCoordinator($coordinator));
+        Lead::factory()->create(['id_lead' => 'COORD-ONE', 'branch_id' => $branch->id, 'project_id' => $project->id, 'team_id' => $team->id, 'sales_pic_id' => $salesOne->id, 'created_by' => $salesOne->id, 'nama_konsumen' => 'Lead tim saya', 'next_follow_up_at' => '2026-10-15 16:00:00']);
+        Lead::factory()->create(['id_lead' => 'COORD-TWO', 'branch_id' => $branch->id, 'project_id' => $project->id, 'team_id' => $team->id, 'sales_pic_id' => $salesTwo->id, 'created_by' => $salesTwo->id, 'nama_konsumen' => 'Lead sales dua']);
+        Lead::factory()->create(['id_lead' => 'COORD-OTHER', 'branch_id' => $branch->id, 'project_id' => $project->id, 'team_id' => $otherTeam->id, 'sales_pic_id' => $otherSales->id, 'created_by' => $otherSales->id, 'nama_konsumen' => 'Lead tim lain']);
+        SalesAgenda::factory()->create(['branch_id' => $branch->id, 'team_id' => $team->id, 'created_by' => $salesTwo->id, 'owner_id' => $salesTwo->id, 'agenda_date' => '2026-10-16', 'status' => 'planned', 'title' => 'Agenda belum selesai']);
+        SalesAgenda::factory()->create(['branch_id' => $branch->id, 'team_id' => $team->id, 'created_by' => $salesOne->id, 'owner_id' => $salesOne->id, 'agenda_date' => '2026-10-16', 'status' => 'done', 'title' => 'Agenda selesai']);
+
+        $response = $this->actingAs($coordinator)->withSession(['active_team_id' => $team->id])->get(route('dashboard'));
+
+        $response->assertViewIs('dashboard-coordinator')->assertViewHas('salesRows', function (array $rows) use ($salesOne): bool {
+            return $rows[0]['user']->is($salesOne) && $rows[0]['overdue'] === 1;
+        });
+        $response->assertViewHas('metrics', fn (array $metrics): bool => $metrics['overdue'] === 1 && $metrics['agendaDone'] === 1 && $metrics['agendaTotal'] === 2);
+    }
+
+    public function test_coordinator_dashboard_switches_between_multiple_active_teams(): void
+    {
+        [$branch, $project, $team, $coordinator, , , $otherTeam, $otherSales] = $this->coordinatorDashboardContext(true);
+        Lead::factory()->create(['id_lead' => 'COORD-SWITCH', 'branch_id' => $branch->id, 'project_id' => $project->id, 'team_id' => $otherTeam->id, 'sales_pic_id' => $otherSales->id, 'created_by' => $otherSales->id, 'nama_konsumen' => 'Lead team switched']);
+
+        $response = $this->actingAs($coordinator)->withSession(['active_team_id' => $otherTeam->id])->get(route('dashboard'));
+
+        $response->assertViewIs('dashboard-coordinator')->assertViewHas('team', fn (Team $team): bool => $team->is($otherTeam));
+    }
+
+    public function test_coordinator_hides_redirect_for_done_and_evidence_agendas(): void
+    {
+        [$branch, , $team, $coordinator, $salesOne] = $this->coordinatorDashboardContext();
+        SalesAgenda::factory()->create(['branch_id' => $branch->id, 'team_id' => $team->id, 'created_by' => $salesOne->id, 'owner_id' => $salesOne->id, 'agenda_date' => '2026-10-16', 'status' => 'done', 'title' => 'Done agenda']);
+        $withEvidence = SalesAgenda::factory()->create(['branch_id' => $branch->id, 'team_id' => $team->id, 'created_by' => $salesOne->id, 'owner_id' => $salesOne->id, 'agenda_date' => '2026-10-16', 'status' => 'planned', 'title' => 'Evidence agenda']);
+        SalesAgendaEvidence::factory()->create(['sales_agenda_id' => $withEvidence->id]);
+
+        $this->actingAs($coordinator)->withSession(['active_team_id' => $team->id])->get(route('dashboard'))
+            ->assertViewHas('teamAgendas', fn (array $agendas): bool => collect($agendas)->every(fn (array $agenda): bool => $agenda['isRedirectable'] === false));
+    }
+
     /** @return array{Branch, Project} */
     private function projectContext(string $branchName): array
     {
@@ -189,5 +230,39 @@ class DashboardTest extends TestCase
         $sales->assignRole(Role::query()->where('team_id', $team->id)->where('name', 'sales')->firstOrFail());
 
         return [$branch, $project, $team, $sales];
+    }
+
+    /** @return array{Branch, Project, Team, User, User, User, Team, User} */
+    private function coordinatorDashboardContext(bool $multipleTeams = false): array
+    {
+        Rbac::provision();
+        $branch = Branch::factory()->create();
+        $project = Project::factory()->for($branch)->create();
+        $team = Team::factory()->for($branch)->for($project)->create(['coordinator_id' => null]);
+        $otherTeam = Team::factory()->for($branch)->for($project)->create(['coordinator_id' => null]);
+        Rbac::provisionTeam($team);
+        Rbac::provisionTeam($otherTeam);
+        $coordinator = User::factory()->for($branch, 'branch')->create();
+        $salesOne = User::factory()->for($branch, 'branch')->create(['name' => 'Sales Satu']);
+        $salesTwo = User::factory()->for($branch, 'branch')->create(['name' => 'Sales Dua']);
+        $otherSales = User::factory()->for($branch, 'branch')->create(['name' => 'Sales Team Lain']);
+        $team->users()->attach([$coordinator->id => ['is_default' => true], $salesOne->id => ['is_default' => true], $salesTwo->id => ['is_default' => false]]);
+        $otherTeam->users()->attach($otherSales);
+        $team->update(['coordinator_id' => $coordinator->id]);
+        $otherTeam->update(['coordinator_id' => $multipleTeams ? $coordinator->id : null]);
+        setPermissionsTeamId($team->id);
+        $coordinator->assignRole(Role::query()->where('team_id', $team->id)->where('name', 'koordinator_sales')->firstOrFail());
+        $salesOne->assignRole(Role::query()->where('team_id', $team->id)->where('name', 'sales')->firstOrFail());
+        $salesTwo->assignRole(Role::query()->where('team_id', $team->id)->where('name', 'sales')->firstOrFail());
+        $otherSales->assignRole(Role::query()->where('team_id', $otherTeam->id)->where('name', 'sales')->firstOrFail());
+
+        if ($multipleTeams) {
+            $otherTeam->users()->attach($coordinator, ['is_default' => false]);
+            setPermissionsTeamId($otherTeam->id);
+            $coordinator->assignRole(Role::query()->where('team_id', $otherTeam->id)->where('name', 'koordinator_sales')->firstOrFail());
+            setPermissionsTeamId($team->id);
+        }
+
+        return [$branch, $project, $team, $coordinator, $salesOne, $salesTwo, $otherTeam, $otherSales];
     }
 }

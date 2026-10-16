@@ -99,7 +99,11 @@
         <div class="mobile-sheet-content">
             <header class="mobile-sheet-header"><div><p class="mobile-sheet-eyebrow">Buat baru</p><h2>Aksi cepat</h2></div><button type="button" class="mobile-sheet-close" @click="closeMobileSheet()" aria-label="Tutup aksi cepat">×</button></header>
             <div class="mobile-quick-grid">
-                @if ($isPersonalSalesDashboard)
+                @if ($isCoordinatorDashboard)
+                    @can('leads.create')<a href="{{ route('leads.create') }}" class="mobile-quick-action is-primary"><strong>＋</strong><span><b>Lead untuk sales</b><small>Catat Lead untuk anggota tim.</small></span></a>@endcan
+                    @can('sales.create')<a href="{{ route('sales-agendas.create') }}" class="mobile-quick-action"><strong>＋</strong><span><b>Agenda untuk sales</b><small>Jadwalkan agenda tim.</small></span></a>@endcan
+                    @can('sales.view-team')<a href="{{ route('sales-agendas.index', ['status' => 'planned', 'date_from' => today()->toDateString(), 'date_to' => today()->toDateString()]) }}" class="mobile-quick-action"><strong>↗</strong><span><b>Alihkan agenda</b><small>Lihat agenda tim yang belum selesai.</small></span></a>@endcan
+                @elseif ($isPersonalSalesDashboard)
                     @can('leads.create')<a href="{{ route('leads.create') }}" class="mobile-quick-action is-primary"><strong>＋</strong><span><b>Lead baru</b><small>Buat Lead dan mulai tindak lanjut.</small></span></a>@endcan
                     @can('sales.create')<a href="{{ route('sales-agendas.create') }}" class="mobile-quick-action"><strong>＋</strong><span><b>Agenda baru</b><small>Jadwalkan pekerjaan berikutnya.</small></span></a>@endcan
                     @can('leads.view-own')<a href="{{ route('leads.index', ['follow_up' => 'today']) }}" class="mobile-quick-action"><strong>↗</strong><span><b>Catat follow-up</b><small>Lihat Lead yang perlu dihubungi hari ini.</small></span></a>@endcan
@@ -120,7 +124,7 @@
             <header class="mobile-sheet-header"><div><p class="mobile-sheet-eyebrow">Workspace</p><h2>Pilih tim</h2></div><button type="button" class="mobile-sheet-close" @click="closeMobileSheet()" aria-label="Tutup pemilih tim">×</button></header>
             <div class="mobile-sheet-list">
                 @forelse ($availableTeams as $team)
-                    <form method="POST" action="{{ route('team-context.update', $team) }}">@csrf<button type="submit" class="mobile-sheet-list-item {{ $activeTeam?->is($team) ? 'is-active' : '' }}"><span class="mobile-sheet-list-avatar">{{ str($team->name)->substr(0, 1)->upper() }}</span><span class="min-w-0 flex-1 text-left"><strong class="block truncate">{{ $team->name }}</strong><small class="block truncate">{{ $team->branch?->name ?? 'Tim aktif' }}</small></span>@if($activeTeam?->is($team))<span aria-label="Tim aktif">✓</span>@endif</button></form>
+                    <form method="POST" action="{{ route('team-context.update', $team) }}">@csrf<button type="submit" class="mobile-sheet-list-item {{ $activeTeam?->is($team) ? 'is-active' : '' }}"><span class="mobile-sheet-list-avatar">{{ str($team->name)->substr(0, 1)->upper() }}</span><span class="min-w-0 flex-1 text-left"><strong class="block truncate">{{ $team->name }}</strong><small class="block truncate">{{ $isCoordinatorDashboard ? (($team->branch?->name ?? 'Cabang').' · '.($team->project?->name ?? 'Tanpa proyek')) : ($team->branch?->name ?? 'Tim aktif') }}</small></span>@if($activeTeam?->is($team))<span aria-label="Tim aktif">✓</span>@endif</button></form>
                 @empty
                     <p class="mobile-sheet-empty">Belum ada tim yang tersedia.</p>
                 @endforelse

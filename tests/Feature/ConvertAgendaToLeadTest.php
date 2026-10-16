@@ -134,16 +134,22 @@ class ConvertAgendaToLeadTest extends TestCase
     {
         Rbac::provision();
         $branch = Branch::factory()->create();
-        $admin = User::factory()->for($branch, 'branch')->create();
-        $admin->globalRoles()->attach(Role::query()->whereNull('team_id')->where('name', 'super_admin')->firstOrFail());
+        $team = Team::factory()->for($branch)->create();
+        Rbac::provisionTeam($team);
+        $sales = User::factory()->for($branch, 'branch')->create();
+        $team->users()->attach($sales, ['is_default' => true]);
+        setPermissionsTeamId($team->id);
+        $sales->assignRole(Role::query()->where('team_id', $team->id)->where('name', 'sales')->firstOrFail());
         $agenda = SalesAgenda::factory()->create([
             'branch_id' => $branch->id,
-            'created_by' => $admin->id,
+            'team_id' => $team->id,
+            'created_by' => $sales->id,
+            'owner_id' => $sales->id,
             'activity_category' => $category,
             'status' => 'done',
         ]);
 
-        return [$admin, $agenda];
+        return [$sales, $agenda];
     }
 
     /** @return array{User, SalesAgenda} */

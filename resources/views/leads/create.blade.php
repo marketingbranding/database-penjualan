@@ -62,11 +62,16 @@
                 </div>
                 <div>
                     <x-input-label for="sales_pic_id" value="Sales PIC *" />
-                    <select id="sales_pic_id" name="sales_pic_id" class="mt-1 block w-full rounded-md border-gray-300" required>
-                        @foreach ($salesUsers as $salesUser)
-                            <option value="{{ $salesUser->id }}" @selected((string) old('sales_pic_id', $prefill['sales_pic_id'] ?? $lead?->sales_pic_id ?? auth()->id()) === (string) $salesUser->id)>{{ $salesUser->name }}</option>
-                        @endforeach
-                    </select>
+                    @if ($lead && ! $salesUsers->contains('id', $lead->sales_pic_id))
+                        <input type="hidden" name="sales_pic_id" value="{{ $lead->sales_pic_id }}">
+                        <p class="mt-1 rounded-xl border border-line bg-canvas px-3 py-2.5 text-sm text-ink">{{ $lead->salesPic?->name ?? 'Sales PIC lama' }} <span class="text-xs text-muted">(PIC lama, tidak diubah)</span></p>
+                    @else
+                        <select id="sales_pic_id" name="sales_pic_id" class="mt-1 block w-full rounded-md border-gray-300" required>
+                            @foreach ($salesUsers as $salesUser)
+                                <option value="{{ $salesUser->id }}" @selected((string) old('sales_pic_id', $prefill['sales_pic_id'] ?? $lead?->sales_pic_id ?? auth()->id()) === (string) $salesUser->id)>{{ $salesUser->name }}</option>
+                            @endforeach
+                        </select>
+                    @endif
                     <x-input-error :messages="$errors->get('sales_pic_id')" class="mt-2" />
                 </div>
                 <div>
