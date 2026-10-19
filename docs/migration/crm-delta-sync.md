@@ -19,6 +19,25 @@ The timestamps are interpreted in the supplied timezone and are recorded in the
 JSON report. Rows newer than the freeze timestamp are excluded and reported.
 The source database is never written by this command.
 
+The legacy connection is configured only through environment variables. Keep it
+separate from `DB_*`, use a SELECT-only database account where possible, and do
+not make it the default connection:
+
+```dotenv
+LEGACY_DB_CONNECTION=mysql
+LEGACY_DB_HOST=legacy-db-host
+LEGACY_DB_PORT=3306
+LEGACY_DB_DATABASE=legacy-db-name
+LEGACY_DB_USERNAME=legacy-read-only-user
+LEGACY_DB_PASSWORD=secret-supplied-outside-git
+```
+
+The command rejects `--source` when it equals the target connection and checks
+the required legacy tables before reading rows. It also rejects an identical
+source/target database identity outside the test environment. Database/schema
+identity, Branch codes, migration maps, user mappings, and Lead IDs must still
+be reconciled by the operator before a production delta is trusted.
+
 ## Import behavior matrix
 
 | Entity | Stable source key | Target key | New row | Existing row | Source change propagation | OASIS Next protection |
@@ -69,6 +88,13 @@ Delta mode intentionally does not update `reports_to_id`, legacy Team
 memberships, or legacy Team roles. Organization changes must be handled by a
 fresh authoritative Coordinator → Sales mapping and the separate Team
 normalization command before the final Lead audit.
+
+## Production source verification status
+
+The live source must be checked over the approved production access path before
+using this command. If the connection resolves to a placeholder database, or
+source identity cannot be proven against the previous Branch/user/Lead mapping,
+stop. Do not run a delta against a merely schema-compatible database.
 
 ## Field ownership
 

@@ -11,6 +11,8 @@ explicitly signed. Every command is dry-run unless `--apply` is supplied.
 3. Disposition the 36 existing Lead review records. Do not guess their Team.
 4. Confirm backups for both databases and preserve the backup checksums.
 5. Confirm the legacy source connection points to the intended source snapshot.
+   Verify the database/schema identity, Branch codes, known source IDs, user
+   mappings, and existing migration maps. A schema match alone is insufficient.
 6. Choose one timezone and one freeze timestamp. Do not use a moving `now`.
 7. Announce that OASIS CRM writes will stop at the freeze timestamp.
 

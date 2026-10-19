@@ -15,6 +15,13 @@ class OasisCrmMigrationTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_source_connection_cannot_be_the_target_connection(): void
+    {
+        $this->artisan('migration:import-oasis', ['--source' => 'sqlite'])
+            ->assertFailed()
+            ->expectsOutputToContain('must not be the OASIS Next target connection');
+    }
+
     protected function setUp(): void
     {
         parent::setUp();

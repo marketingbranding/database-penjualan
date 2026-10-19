@@ -19,6 +19,19 @@ use RuntimeException;
 
 class OasisCrmMigrationService
 {
+    /** @var list<string> */
+    private const REQUIRED_SOURCE_TABLES = [
+        'branches',
+        'lead_master',
+        'roles',
+        'permissions',
+        'users',
+        'sales_leads',
+        'sales_lead_status_histories',
+        'content_items',
+        'sales_agenda_evidences',
+    ];
+
     /** @var array<string, string> */
     private const ROLE_MAP = [
         'superadmin' => 'super_admin',
@@ -134,8 +147,15 @@ class OasisCrmMigrationService
         string $timezone = 'Asia/Jakarta',
     ): array {
         $this->sourceConnectionName = $sourceConnection;
+        $targetConnectionName = (string) config('database.default');
+        if ($sourceConnection === $targetConnectionName) {
+            throw new RuntimeException('The legacy source connection must not be the OASIS Next target connection.');
+        }
         $this->source = DB::connection($sourceConnection);
-        $this->target = DB::connection((string) config('database.default'));
+        $this->target = DB::connection($targetConnectionName);
+        if (! app()->environment('testing') && $this->sourceAndTargetShareDatabaseIdentity($sourceConnection, $targetConnectionName)) {
+            throw new RuntimeException('The legacy source and OASIS Next target resolve to the same database identity.');
+        }
         $this->targetIds = [];
         $this->mapMetadata = [];
         $this->pendingSourceTimestamps = [];
@@ -188,6 +208,7 @@ class OasisCrmMigrationService
             'has_blocking_issues' => false,
         ];
 
+        $this->validateSourceSchema();
         $this->loadExistingMaps();
         $this->validateEvidenceOptions();
         $this->output->writeln('<comment>Reading legacy Oasis data in '.($apply ? 'apply' : 'dry-run').' mode...</comment>');
@@ -237,6 +258,30 @@ class OasisCrmMigrationService
                 ? (json_decode($map->metadata, true, 512, JSON_THROW_ON_ERROR) ?: [])
                 : [];
         }
+    }
+
+    private function validateSourceSchema(): void
+    {
+        $missing = array_values(array_filter(
+            self::REQUIRED_SOURCE_TABLES,
+            fn (string $table): bool => ! $this->source->getSchemaBuilder()->hasTable($table),
+        ));
+        if ($missing !== []) {
+            throw new RuntimeException('Legacy source schema is incomplete. Missing tables: '.implode(', ', $missing));
+        }
+    }
+
+    private function sourceAndTargetShareDatabaseIdentity(string $sourceConnection, string $targetConnection): bool
+    {
+        $sourceConfig = (array) config('database.connections.'.$sourceConnection, []);
+        $targetConfig = (array) config('database.connections.'.$targetConnection, []);
+        foreach (['driver', 'host', 'port', 'database', 'unix_socket'] as $key) {
+            if (($sourceConfig[$key] ?? null) !== ($targetConfig[$key] ?? null)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function migrateBranches(): void
