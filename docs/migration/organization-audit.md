@@ -38,7 +38,7 @@ Agenda owner = Team member in the same branch
 Agenda Team = linked Lead Team when a Lead is attached
 ```
 
-## Current audit snapshot
+## Pre-normalization OASIS Next audit snapshot
 
 The following is an aggregate snapshot of the current local database audit run.
 It contains no personal names or email addresses.
@@ -70,6 +70,13 @@ nine have no `project_id`.
 > “mapping unavailable” to “membership mostly automatable.” See
 > `legacy-organization-forensics.md` for the anonymized forensic record. The
 > OASIS Next Team and Lead findings below remain valid and still block cutover.
+
+The implemented normalization command is documented in
+`team-normalization-implementation.md`. A safe local apply produced 16
+Coordinator-owned final Teams and changed the Team-based audit to 16 confirmed
+Coordinators and 56 confirmed Sales users. The command deliberately leaves the
+one unassigned active Sales user, two inactive Sales users, and Lead ownership
+records untouched.
 
 ### Critical
 

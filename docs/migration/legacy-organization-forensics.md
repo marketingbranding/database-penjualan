@@ -161,3 +161,8 @@ IDs, legacy empty Team rows, or same-Branch membership alone.
 5. Create/finalize Teams only after business approval and a rollback mapping are
    available.
 6. Re-run the OASIS Next organization audit and require zero critical findings.
+
+The deterministic portion is now implemented by
+`php artisan oasis:normalize-teams`. Its apply capability was exercised only
+against the safe local OASIS Next database; OASIS CRM production and OASIS Next
+production were not modified.

@@ -51,7 +51,7 @@ class OrganizationAuditTest extends TestCase
         $this->assertSame(1, $report['counts']['sales']);
         $this->assertSame(1, $report['counts']['lead_mismatches']);
         $this->assertSame('CONFIRMED', $report['coordinators'][0]['mapping_status']);
-        $this->assertSame('HIGH CONFIDENCE', $report['sales'][0]['mapping_status']);
+        $this->assertSame('CONFIRMED', $report['sales'][0]['mapping_status']);
         $this->assertSame($teamCount, Team::query()->count());
         $this->assertSame($leadCount, Lead::query()->count());
     }

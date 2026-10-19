@@ -14,15 +14,15 @@ Status values:
 | All legacy Sales identities are matched | PASS | 91/91 legacy users have a deterministic privacy-safe identity match |
 | Active Sales are present in OASIS Next | NEEDS REVIEW | 59 Sales role users are present; 57 are active |
 | All active Coordinators exist in OASIS Next | PASS | 16 Coordinator role users are present |
-| Roles correctly mapped | NEEDS REVIEW | Team role records exist, but final Team assignment is not normalized |
+| Roles correctly mapped | PASS (LOCAL) | Final Team role records were provisioned locally; production apply not executed |
 | Sales → Coordinator mapping recovered | PASS | 56 current valid legacy pivot rows cover 56 Sales users |
 | Unassigned active Sales resolved | NEEDS REVIEW | One active Sales user has no current Coordinator assignment |
-| Final Team membership verified | BLOCKED | All 9 active Teams are legacy migration containers |
+| Final Team membership verified | PASS (LOCAL) | Safe local apply created/reused 16 final Coordinator Teams; production apply not executed |
 | Lead ownership verified | BLOCKED | 20 Lead Team/Sales PIC/Branch mismatches |
 | Lead Team scope verified | BLOCKED | Requires final Team mapping and Lead repair |
 | Agenda ownership verified | NEEDS REVIEW | Current snapshot contains 0 Agendas; production/source verification is still required |
-| Coordinator dashboard scope verified | BLOCKED | 16 Coordinators still need final OASIS Next Teams and `coordinator_id` values |
-| Sales dashboard scope verified | BLOCKED | Final Team scope is not normalized; 56 memberships are recoverable from legacy evidence |
+| Coordinator dashboard scope verified | PASS (LOCAL) | Post-normalization local audit reports 16 confirmed Coordinator mappings |
+| Sales dashboard scope verified | BLOCKED | Local audit confirms 56 mapped Sales; one active and two inactive exceptions remain |
 | Quick actions work | PASS | Existing PHPUnit/UI verification covers current flows |
 | Lead create works | PASS | Existing ownership and feature tests pass |
 | Lead follow-up works | PASS | Existing Lead activity/follow-up tests pass |
@@ -55,8 +55,8 @@ user and the 20 Lead mismatches are dispositioned.
 ## Exact blockers before CRM freeze
 
 1. Confirm the one active Sales user without a current Coordinator assignment.
-2. Create/finalize one Team per Coordinator grouping, without assuming one
-   Branch equals one Team.
+2. Review the local normalization report and create/finalize one Team per
+   Coordinator grouping, without assuming one Branch equals one Team.
 3. Set `coordinator_id`, project context, memberships, and Team roles.
 4. Reconcile the 20 Lead mismatches and re-run the audit.
 5. Verify Agenda data from the final source export; the current snapshot has no

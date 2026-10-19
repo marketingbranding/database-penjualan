@@ -297,11 +297,8 @@ class OrganizationAuditService
         if ($memberships->count() > 1) {
             return 'AMBIGUOUS';
         }
-        if ($coordinators->count() === 1 && $reportsToIsCoordinator) {
-            return 'CONFIRMED';
-        }
         if ($coordinators->count() === 1) {
-            return 'HIGH CONFIDENCE';
+            return 'CONFIRMED';
         }
 
         return $memberships->isEmpty() ? 'UNRESOLVED' : 'AMBIGUOUS';

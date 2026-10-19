@@ -43,6 +43,9 @@ rows for 16 Coordinators and 56 distinct Sales users. Use those rows as the
 initial proposal; do not infer membership from `supervisor_user_id`, empty
 legacy `teams` rows, alphabetical order, or same-Branch membership. One active
 Sales user remains unassigned and requires a business decision before cutover.
+The executable dry-run/apply workflow is documented in
+`team-normalization-implementation.md`; its first apply retains legacy Teams
+for rollback and verification.
 
 For each real Coordinator:
 
@@ -70,7 +73,7 @@ Coordinator is a Team member
 Coordinator has the Team Coordinator role
 Sales is a Team member
 Sales has the Team Sales role
-Sales reports_to_id is either the confirmed Coordinator or intentionally blank
+Sales reports_to_id is preserved and is not used as the authoritative mapping
 ```
 
 A Team must have one accountable Coordinator for operational cutover. If a
