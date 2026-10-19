@@ -323,6 +323,10 @@ class LeadTeamReassignmentService
             return [...$base, 'category' => 'NEEDS_REVIEW', 'reason' => 'sales_user_missing'];
         }
 
+        if ($this->isApprovedHistoricalCrossBranch($lead)) {
+            return [...$base, 'category' => 'EXCLUDED', 'reason' => 'approved_historical_cross_branch'];
+        }
+
         $salesPicId = (int) $lead->sales_pic_id;
         $accountingCategory = $categoryByUser[$salesPicId] ?? null;
         $validTeamIds = $teamGraph['valid_sales_team_ids'][$salesPicId] ?? [];
@@ -375,6 +379,15 @@ class LeadTeamReassignmentService
         }
 
         return [...$base, 'category' => 'SAFE_REASSIGN', 'new_team_id' => (int) $targetTeam->id, 'reason' => 'legacy_or_empty_team_to_sales_final_team'];
+    }
+
+    private function isApprovedHistoricalCrossBranch(Lead $lead): bool
+    {
+        if (! preg_match('/^CRM-(\d+)$/', (string) $lead->id_lead, $matches)) {
+            return false;
+        }
+
+        return in_array((int) $matches[1], config('legacy-migration.approved_historical_cross_branch_source_lead_ids', []), true);
     }
 
     /** @param array<string, mixed> $report

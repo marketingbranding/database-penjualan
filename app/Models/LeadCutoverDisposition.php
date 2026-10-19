@@ -17,6 +17,8 @@ class LeadCutoverDisposition extends Model
 
     public const OTHER_BLOCKER = 'OTHER_BLOCKER';
 
+    public const APPROVED_HISTORICAL_CROSS_BRANCH = 'APPROVED_HISTORICAL_CROSS_BRANCH';
+
     protected $fillable = [
         'lead_id', 'classification', 'evidence_confidence', 'cutover_at', 'current_month_boundary',
         'old_sales_pic_id', 'new_sales_pic_id', 'old_team_id', 'new_team_id', 'evidence', 'reason', 'applied_at',

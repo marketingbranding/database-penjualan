@@ -7,6 +7,7 @@ use App\Models\Role;
 use App\Models\Team;
 use App\Models\User;
 use App\Support\Rbac;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -600,9 +601,22 @@ class TeamNormalizationService
 
         $plansBySales = $this->plansBySales($finalPlans);
         $legacyTeamIds = $teams->filter(fn (Team $team): bool => $this->isLegacyTeam($team))->pluck('id')->all();
-        $counts = ['total' => 0, 'existing_consistent' => 0, 'safe_auto_map_candidate' => 0, 'mismatch_needs_review' => 0, 'modified' => false, 'examples' => []];
+        $counts = ['total' => 0, 'existing_consistent' => 0, 'safe_auto_map_candidate' => 0, 'mismatch_needs_review' => 0, 'approved_historical_exception' => 0, 'modified' => false, 'examples' => []];
+        $approvedLeadIds = array_map(
+            fn (int $sourceLeadId): string => 'CRM-'.$sourceLeadId,
+            config('legacy-migration.approved_historical_cross_branch_source_lead_ids', []),
+        );
+        $excludedLeadIds = Schema::hasTable('lead_cutover_dispositions')
+            ? DB::table('lead_cutover_dispositions')->whereIn('classification', ['EXCLUDE_FROM_CUTOVER_OLD_UNRESOLVED'])->pluck('lead_id')->map(fn ($id): int => (int) $id)->all()
+            : [];
 
-        foreach (DB::table('leads')->select(['id', 'branch_id', 'team_id', 'sales_pic_id'])->orderBy('id')->get() as $lead) {
+        foreach (DB::table('leads')->select(['id', 'id_lead', 'branch_id', 'team_id', 'sales_pic_id'])->orderBy('id')->get() as $lead) {
+            if (in_array((string) $lead->id_lead, $approvedLeadIds, true) || in_array((int) $lead->id, $excludedLeadIds, true)) {
+                $counts['approved_historical_exception']++;
+
+                continue;
+            }
+
             $counts['total']++;
             $sales = $lead->sales_pic_id !== null ? $users->get((int) $lead->sales_pic_id) : null;
             $targetPlan = $plansBySales[(int) ($lead->sales_pic_id ?? 0)] ?? null;
@@ -637,8 +651,8 @@ class TeamNormalizationService
 
         $plansBySales = $this->plansBySales($finalPlans);
         $legacyTeamIds = $teams->filter(fn (Team $team): bool => $this->isLegacyTeam($team))->pluck('id')->all();
-        $counts = ['total' => 0, 'existing_consistent' => 0, 'safe_auto_map_candidate' => 0, 'mismatch_needs_review' => 0, 'modified' => false];
-        foreach (DB::table('sales_agendas')->select(['id', 'branch_id', 'team_id', 'owner_id'])->orderBy('id')->get() as $agenda) {
+        $counts = ['total' => 0, 'existing_consistent' => 0, 'safe_auto_map_candidate' => 0, 'mismatch_needs_review' => 0, 'approved_historical_exception' => 0, 'modified' => false];
+        foreach (DB::table('sales_agendas')->select(['id', 'branch_id', 'team_id', 'owner_id', 'agenda_date'])->orderBy('id')->get() as $agenda) {
             $counts['total']++;
             $owner = $agenda->owner_id !== null ? $users->get((int) $agenda->owner_id) : null;
             $targetPlan = $plansBySales[(int) ($agenda->owner_id ?? 0)] ?? null;
@@ -647,6 +661,8 @@ class TeamNormalizationService
                 $counts['existing_consistent']++;
             } elseif ($owner instanceof User && $targetPlan !== null && (int) $owner->branch_id === (int) $agenda->branch_id && ($agenda->team_id === null || in_array((int) $agenda->team_id, $legacyTeamIds, true))) {
                 $counts['safe_auto_map_candidate']++;
+            } elseif ($agenda->agenda_date !== null && CarbonImmutable::parse((string) $agenda->agenda_date)->lessThan(now()->startOfMonth())) {
+                $counts['approved_historical_exception']++;
             } else {
                 $counts['mismatch_needs_review']++;
             }

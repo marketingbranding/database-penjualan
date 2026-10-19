@@ -6,6 +6,7 @@ use App\Models\Branch;
 use App\Models\Lead;
 use App\Models\LeadCutoverDisposition;
 use App\Models\LeadHandoff;
+use App\Models\Project;
 use App\Models\Role;
 use App\Models\Team;
 use App\Models\User;
@@ -155,6 +156,33 @@ class LeadOwnershipCleanupTest extends TestCase
         $this->assertSame(1, LeadCutoverDisposition::query()->where('lead_id', $lead->id)->count());
         $this->assertSame($firstUpdatedAt, LeadCutoverDisposition::query()->where('lead_id', $lead->id)->firstOrFail()->getRawOriginal('updated_at'));
         $this->assertSame($firstAppliedAt, LeadCutoverDisposition::query()->where('lead_id', $lead->id)->firstOrFail()->getRawOriginal('applied_at'));
+    }
+
+    public function test_approved_historical_cross_branch_lead_is_preserved_without_repair(): void
+    {
+        $scenario = $this->scenario();
+        $projectBranch = Branch::factory()->create(['code' => 'CROSS-BR']);
+        $project = Project::factory()->for($projectBranch, 'branch')->create();
+        $lead = $this->lead($scenario, $scenario['legacyTeam'], $scenario['sales'], $scenario['sales'], [
+            'id_lead' => 'CRM-20',
+            'project_id' => $project->id,
+            'created_at' => '2026-08-13 15:32:10',
+            'updated_at' => '2026-08-13 15:32:10',
+        ]);
+
+        $before = $lead->fresh()->only(['branch_id', 'team_id', 'sales_pic_id', 'project_id']);
+        $report = app(LeadOwnershipCleanupService::class)->run(
+            CarbonImmutable::parse('2026-10-19 10:00:00', 'Asia/Jakarta'),
+            'Asia/Jakarta',
+            true,
+        );
+
+        $this->assertSame(1, $report['counts']['approved_historical_cross_branch']);
+        $this->assertSame($before, $lead->fresh()->only(['branch_id', 'team_id', 'sales_pic_id', 'project_id']));
+        $this->assertDatabaseHas('lead_cutover_dispositions', [
+            'lead_id' => $lead->id,
+            'classification' => LeadCutoverDisposition::APPROVED_HISTORICAL_CROSS_BRANCH,
+        ]);
     }
 
     /** @return array{branch: Branch, finalTeam: Team, legacyTeam: Team, coordinator: User, sales: User} */

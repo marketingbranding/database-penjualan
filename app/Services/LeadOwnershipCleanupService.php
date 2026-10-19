@@ -36,6 +36,7 @@ class LeadOwnershipCleanupService
                 'high_confidence_recommendations' => 0,
                 'needs_manual_assignment_current_month' => 0,
                 'exclude_from_cutover_old_unresolved' => 0,
+                'approved_historical_cross_branch' => 0,
                 'other_blocker' => 0,
                 'deterministic_repairs' => 0,
                 'changed' => 0,
@@ -139,6 +140,24 @@ class LeadOwnershipCleanupService
             }
 
             if ($lead->project?->branch_id !== null && $lead->project->branch_id !== $salesPic->branch_id) {
+                if ($this->isApprovedHistoricalCrossBranch($lead, $currentMonthBoundary)) {
+                    return $this->classification(
+                        $lead,
+                        LeadCutoverDisposition::APPROVED_HISTORICAL_CROSS_BRANCH,
+                        'CONFIRMED',
+                        $salesPic,
+                        $finalTeam,
+                        false,
+                        'Approved historical cross-branch exception; preserve original Project, Branch, Team, and Sales PIC.',
+                        [
+                            'is_branch_team_mismatch' => true,
+                            'project_branch_id' => $lead->project->branch_id,
+                            'sales_branch_id' => $salesPic->branch_id,
+                            'historical_exception' => true,
+                        ],
+                    );
+                }
+
                 return $this->otherBlocker($lead, 'Project Branch berbeda dari Sales PIC; Branch Lead tidak diubah tanpa business review.', [
                     'is_branch_team_mismatch' => true,
                     'project_branch_id' => $lead->project->branch_id,
@@ -343,6 +362,7 @@ class LeadOwnershipCleanupService
             LeadCutoverDisposition::RECOVERED_SALES_OWNER => $confidence === 'CONFIRMED' && $deterministicRepair ? 'REPAIR_SALES_PIC_AND_TEAM' : 'MANUAL_REVIEW',
             LeadCutoverDisposition::NEEDS_MANUAL_ASSIGNMENT_CURRENT_MONTH => 'MANUAL_ASSIGNMENT_REQUIRED',
             LeadCutoverDisposition::EXCLUDE_FROM_CUTOVER_OLD_UNRESOLVED => 'EXCLUDE_FROM_OPERATIONAL_CUTOVER',
+            LeadCutoverDisposition::APPROVED_HISTORICAL_CROSS_BRANCH => 'PRESERVE_APPROVED_HISTORICAL_EXCEPTION',
             default => 'MANUAL_REVIEW',
         };
     }
@@ -354,8 +374,22 @@ class LeadOwnershipCleanupService
             LeadCutoverDisposition::RECOVERED_SALES_OWNER => 'recovered_sales_owner',
             LeadCutoverDisposition::NEEDS_MANUAL_ASSIGNMENT_CURRENT_MONTH => 'needs_manual_assignment_current_month',
             LeadCutoverDisposition::EXCLUDE_FROM_CUTOVER_OLD_UNRESOLVED => 'exclude_from_cutover_old_unresolved',
+            LeadCutoverDisposition::APPROVED_HISTORICAL_CROSS_BRANCH => 'approved_historical_cross_branch',
             default => 'other_blocker',
         };
+    }
+
+    private function isApprovedHistoricalCrossBranch(Lead $lead, CarbonImmutable $currentMonthBoundary): bool
+    {
+        if ($lead->created_at === null || CarbonImmutable::instance($lead->created_at)->setTimezone($currentMonthBoundary->getTimezone())->greaterThanOrEqualTo($currentMonthBoundary)) {
+            return false;
+        }
+
+        if (! preg_match('/^CRM-(\d+)$/', (string) $lead->id_lead, $matches)) {
+            return false;
+        }
+
+        return in_array((int) $matches[1], config('legacy-migration.approved_historical_cross_branch_source_lead_ids', []), true);
     }
 
     /** @param array<string, mixed> $classification */

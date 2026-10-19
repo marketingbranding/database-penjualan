@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\LeadCutoverDisposition;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -23,7 +25,10 @@ class OrganizationAuditService
         $globalRoles = $this->globalRoleRows();
         $users = $this->userRows($teamRoles, $globalRoles);
         $leads = $this->leadMismatches();
-        $agendas = $this->agendaMismatches();
+        $allAgendas = $this->agendaMismatches();
+        $historicalAgendas = array_values(array_filter($allAgendas, fn (array $agenda): bool => $this->isApprovedHistoricalAgenda($agenda)));
+        $agendas = array_values(array_filter($allAgendas, fn (array $agenda): bool => ! $this->isApprovedHistoricalAgenda($agenda)));
+        $historicalExceptions = $this->historicalExceptions($historicalAgendas);
         $salesCases = $this->salesCaseSummary();
 
         $teamSummaries = $this->teamSummaries($teams, $teamRoles);
@@ -47,6 +52,7 @@ class OrganizationAuditService
                 'lead_mismatches' => count($leads),
                 'agendas' => (int) DB::table('sales_agendas')->count(),
                 'agenda_mismatches' => count($agendas),
+                'approved_historical_exceptions' => $historicalExceptions['total'],
                 'active_sales_cases' => $salesCases['active'],
             ],
             'branches' => $this->branchSummaries($branches, $teamSummaries),
@@ -56,6 +62,7 @@ class OrganizationAuditService
             'operational' => [
                 'lead_mismatches' => $leads,
                 'agenda_mismatches' => $agendas,
+                'approved_historical_exceptions' => $historicalExceptions,
                 'sales_cases' => $salesCases,
             ],
             'active_team_selector' => $this->selectorSummary($users, $teams),
@@ -311,18 +318,25 @@ class OrganizationAuditService
             ->leftJoin('teams as t', 't.id', '=', 'l.team_id')
             ->leftJoin('users as u', 'u.id', '=', 'l.sales_pic_id')
             ->leftJoin('branches as b', 'b.id', '=', 'l.branch_id')
+            ->leftJoin('projects as p', 'p.id', '=', 'l.project_id')
             ->whereNotExists(function ($query): void {
                 $query->selectRaw('1')
                     ->from('lead_cutover_dispositions as lcd')
                     ->whereColumn('lcd.lead_id', 'l.id')
                     ->where('lcd.classification', 'EXCLUDE_FROM_CUTOVER_OLD_UNRESOLVED');
             })
+            ->when(config('legacy-migration.approved_historical_cross_branch_source_lead_ids', []) !== [], function ($query): void {
+                $query->whereNotIn('l.id_lead', array_map(
+                    fn (int $sourceLeadId): string => 'CRM-'.$sourceLeadId,
+                    config('legacy-migration.approved_historical_cross_branch_source_lead_ids', []),
+                ));
+            })
             ->where(function ($query): void {
-                $query->whereNull('l.team_id')->orWhereNull('l.sales_pic_id')->orWhereColumn('l.branch_id', '<>', 'u.branch_id')->orWhereColumn('t.branch_id', '<>', 'l.branch_id')->orWhereNotExists(function ($subquery): void {
+                $query->whereNull('l.team_id')->orWhereNull('l.sales_pic_id')->orWhereColumn('l.branch_id', '<>', 'u.branch_id')->orWhereColumn('t.branch_id', '<>', 'l.branch_id')->orWhereColumn('p.branch_id', '<>', 'u.branch_id')->orWhereNotExists(function ($subquery): void {
                     $subquery->selectRaw('1')->from('team_user as tu')->whereColumn('tu.team_id', 'l.team_id')->whereColumn('tu.user_id', 'l.sales_pic_id');
                 });
             })
-            ->select(['l.id', 'l.id_lead', 'l.branch_id', 'b.name as branch_name', 'l.team_id', 't.name as team_name', 'l.sales_pic_id', 'u.name as sales_name', 'u.branch_id as sales_branch_id'])
+            ->select(['l.id', 'l.id_lead', 'l.branch_id', 'b.name as branch_name', 'l.team_id', 't.name as team_name', 'l.sales_pic_id', 'u.name as sales_name', 'u.branch_id as sales_branch_id', 'l.project_id', 'p.branch_id as project_branch_id'])
             ->orderBy('l.id')
             ->limit(250)
             ->get()
@@ -344,12 +358,56 @@ class OrganizationAuditService
                     });
                 });
             })
-            ->select(['a.id', 'a.branch_id', 'a.team_id', 't.name as team_name', 'a.owner_id', 'u.name as owner_name', 'a.lead_id', 'l.team_id as lead_team_id', 'l.branch_id as lead_branch_id'])
+            ->select(['a.id', 'a.branch_id', 'a.team_id', 't.name as team_name', 'a.owner_id', 'u.name as owner_name', 'a.lead_id', 'l.team_id as lead_team_id', 'l.branch_id as lead_branch_id', 'a.agenda_date', 'a.status'])
             ->orderBy('a.id')
             ->limit(250)
             ->get()
             ->map(fn (object $row): array => (array) $row)
             ->all();
+    }
+
+    /** @param array<int, array<string, mixed>> $historicalAgendas
+     * @return array{total: int, cross_branch_leads: array<int, array<string, mixed>>, agendas: array<int, array<string, mixed>>, old_unresolved_leads: array<int, array<string, mixed>>}
+     */
+    private function historicalExceptions(array $historicalAgendas): array
+    {
+        $approvedLeadIds = array_map(
+            fn (int $sourceLeadId): string => 'CRM-'.$sourceLeadId,
+            config('legacy-migration.approved_historical_cross_branch_source_lead_ids', []),
+        );
+        $crossBranchLeads = $approvedLeadIds === [] ? [] : DB::table('leads as l')
+            ->leftJoin('users as u', 'u.id', '=', 'l.sales_pic_id')
+            ->leftJoin('projects as p', 'p.id', '=', 'l.project_id')
+            ->whereIn('l.id_lead', $approvedLeadIds)
+            ->select(['l.id', 'l.id_lead', 'l.sales_pic_id', 'u.name as sales_name', 'u.branch_id as sales_branch_id', 'l.project_id', 'p.branch_id as project_branch_id', 'l.branch_id', 'l.team_id'])
+            ->orderBy('l.id')
+            ->get()
+            ->map(fn (object $row): array => (array) $row)
+            ->all();
+        $oldUnresolvedLeads = DB::table('lead_cutover_dispositions as lcd')
+            ->join('leads as l', 'l.id', '=', 'lcd.lead_id')
+            ->where('lcd.classification', LeadCutoverDisposition::EXCLUDE_FROM_CUTOVER_OLD_UNRESOLVED)
+            ->select(['l.id', 'l.id_lead', 'lcd.classification', 'lcd.reason'])
+            ->orderBy('l.id')
+            ->get()
+            ->map(fn (object $row): array => (array) $row)
+            ->all();
+
+        return [
+            'total' => count($crossBranchLeads) + count($historicalAgendas) + count($oldUnresolvedLeads),
+            'cross_branch_leads' => $crossBranchLeads,
+            'agendas' => $historicalAgendas,
+            'old_unresolved_leads' => $oldUnresolvedLeads,
+        ];
+    }
+
+    /** @param array<string, mixed> $agenda */
+    private function isApprovedHistoricalAgenda(array $agenda): bool
+    {
+        return ($agenda['lead_id'] ?? null) === null
+            && ($agenda['owner_id'] ?? null) !== null
+            && ($agenda['agenda_date'] ?? null) !== null
+            && CarbonImmutable::parse((string) $agenda['agenda_date'])->lessThan(now()->startOfMonth());
     }
 
     /** @return array<string, mixed> */
