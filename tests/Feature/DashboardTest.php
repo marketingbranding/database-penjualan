@@ -18,6 +18,7 @@ use App\Models\Team;
 use App\Models\User;
 use App\PaymentMethod;
 use App\Services\CoordinatorSalesDashboardService;
+use App\Support\BusinessTime;
 use App\Support\Rbac;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -74,6 +75,7 @@ class DashboardTest extends TestCase
     public function test_personal_sales_dashboard_shows_only_own_data_and_normalizes_phone(): void
     {
         [$branch, $project, $team, $sales] = $this->personalSalesContext();
+        $today = BusinessTime::now()->toDateString();
         $otherSales = User::factory()->for($branch, 'branch')->create();
         $ownLead = Lead::factory()->create([
             'branch_id' => $branch->id,
@@ -99,7 +101,7 @@ class DashboardTest extends TestCase
             'created_by' => $sales->id,
             'owner_id' => $sales->id,
             'lead_id' => $ownLead->id,
-            'agenda_date' => '2026-10-16',
+            'agenda_date' => $today,
             'title' => 'Hubungi Milik Sales',
         ]);
 
@@ -156,12 +158,13 @@ class DashboardTest extends TestCase
     public function test_coordinator_dashboard_is_scoped_and_sorted_for_the_active_team(): void
     {
         [$branch, $project, $team, $coordinator, $salesOne, $salesTwo, $otherTeam, $otherSales] = $this->coordinatorDashboardContext();
+        $today = BusinessTime::now()->toDateString();
         $this->assertTrue(app(CoordinatorSalesDashboardService::class)->isCoordinator($coordinator));
         Lead::factory()->create(['id_lead' => 'COORD-ONE', 'branch_id' => $branch->id, 'project_id' => $project->id, 'team_id' => $team->id, 'sales_pic_id' => $salesOne->id, 'created_by' => $salesOne->id, 'nama_konsumen' => 'Lead tim saya', 'next_follow_up_at' => '2026-10-15 16:00:00']);
         Lead::factory()->create(['id_lead' => 'COORD-TWO', 'branch_id' => $branch->id, 'project_id' => $project->id, 'team_id' => $team->id, 'sales_pic_id' => $salesTwo->id, 'created_by' => $salesTwo->id, 'nama_konsumen' => 'Lead sales dua']);
         Lead::factory()->create(['id_lead' => 'COORD-OTHER', 'branch_id' => $branch->id, 'project_id' => $project->id, 'team_id' => $otherTeam->id, 'sales_pic_id' => $otherSales->id, 'created_by' => $otherSales->id, 'nama_konsumen' => 'Lead tim lain']);
-        SalesAgenda::factory()->create(['branch_id' => $branch->id, 'team_id' => $team->id, 'created_by' => $salesTwo->id, 'owner_id' => $salesTwo->id, 'agenda_date' => '2026-10-16', 'status' => 'planned', 'title' => 'Agenda belum selesai']);
-        SalesAgenda::factory()->create(['branch_id' => $branch->id, 'team_id' => $team->id, 'created_by' => $salesOne->id, 'owner_id' => $salesOne->id, 'agenda_date' => '2026-10-16', 'status' => 'done', 'title' => 'Agenda selesai']);
+        SalesAgenda::factory()->create(['branch_id' => $branch->id, 'team_id' => $team->id, 'created_by' => $salesTwo->id, 'owner_id' => $salesTwo->id, 'agenda_date' => $today, 'status' => 'planned', 'title' => 'Agenda belum selesai']);
+        SalesAgenda::factory()->create(['branch_id' => $branch->id, 'team_id' => $team->id, 'created_by' => $salesOne->id, 'owner_id' => $salesOne->id, 'agenda_date' => $today, 'status' => 'done', 'title' => 'Agenda selesai']);
 
         $response = $this->actingAs($coordinator)->withSession(['active_team_id' => $team->id])->get(route('dashboard'));
 
@@ -184,8 +187,9 @@ class DashboardTest extends TestCase
     public function test_coordinator_hides_redirect_for_done_and_evidence_agendas(): void
     {
         [$branch, , $team, $coordinator, $salesOne] = $this->coordinatorDashboardContext();
-        SalesAgenda::factory()->create(['branch_id' => $branch->id, 'team_id' => $team->id, 'created_by' => $salesOne->id, 'owner_id' => $salesOne->id, 'agenda_date' => '2026-10-16', 'status' => 'done', 'title' => 'Done agenda']);
-        $withEvidence = SalesAgenda::factory()->create(['branch_id' => $branch->id, 'team_id' => $team->id, 'created_by' => $salesOne->id, 'owner_id' => $salesOne->id, 'agenda_date' => '2026-10-16', 'status' => 'planned', 'title' => 'Evidence agenda']);
+        $today = BusinessTime::now()->toDateString();
+        SalesAgenda::factory()->create(['branch_id' => $branch->id, 'team_id' => $team->id, 'created_by' => $salesOne->id, 'owner_id' => $salesOne->id, 'agenda_date' => $today, 'status' => 'done', 'title' => 'Done agenda']);
+        $withEvidence = SalesAgenda::factory()->create(['branch_id' => $branch->id, 'team_id' => $team->id, 'created_by' => $salesOne->id, 'owner_id' => $salesOne->id, 'agenda_date' => $today, 'status' => 'planned', 'title' => 'Evidence agenda']);
         SalesAgendaEvidence::factory()->create(['sales_agenda_id' => $withEvidence->id]);
 
         $this->actingAs($coordinator)->withSession(['active_team_id' => $team->id])->get(route('dashboard'))
