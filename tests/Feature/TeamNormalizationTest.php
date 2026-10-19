@@ -5,8 +5,10 @@ namespace Tests\Feature;
 use App\Models\Branch;
 use App\Models\Lead;
 use App\Models\Role;
+use App\Models\SalesAgenda;
 use App\Models\Team;
 use App\Models\User;
+use App\Services\TeamNormalizationService;
 use App\Support\Rbac;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -230,6 +232,193 @@ class TeamNormalizationTest extends TestCase
         $this->assertDatabaseMissing('teams', ['code' => 'COORD-B01-U'.$scenario['coordinator']->id]);
     }
 
+    public function test_current_coordinator_owned_agenda_keeps_owner_and_maps_to_coordinator_team(): void
+    {
+        $scenario = $this->scenario();
+        $agenda = SalesAgenda::factory()->create([
+            'branch_id' => $scenario['branch']->id,
+            'team_id' => $scenario['legacyTeam']->id,
+            'created_by' => $scenario['coordinator']->id,
+            'owner_id' => $scenario['coordinator']->id,
+            'agenda_date' => today(),
+        ]);
+        $mapping = $this->mapping($scenario);
+
+        $this->artisan('oasis:normalize-teams', ['--mapping' => $mapping, '--apply' => true])
+            ->assertSuccessful()
+            ->expectsOutputToContain('coordinator_owned_agendas_resolved');
+
+        $finalTeam = Team::query()->where('code', 'COORD-B01-U'.$scenario['coordinator']->id)->firstOrFail();
+        $agenda->refresh();
+
+        $this->assertSame($scenario['coordinator']->id, $agenda->owner_id);
+        $this->assertSame($finalTeam->id, $agenda->team_id);
+        $this->assertDatabaseHas('teams', ['id' => $finalTeam->id, 'coordinator_id' => $scenario['coordinator']->id]);
+    }
+
+    public function test_coordinator_owned_agenda_with_several_sales_members_does_not_select_a_sales_owner(): void
+    {
+        $scenario = $this->scenario();
+        $secondSales = $this->userWithTeamRole($scenario['branch'], $scenario['legacyTeam'], 'sales', 'Second Sales');
+        $thirdSales = $this->userWithTeamRole($scenario['branch'], $scenario['legacyTeam'], 'sales', 'Third Sales');
+        $agenda = SalesAgenda::factory()->create([
+            'branch_id' => $scenario['branch']->id,
+            'team_id' => $scenario['legacyTeam']->id,
+            'created_by' => $scenario['coordinator']->id,
+            'owner_id' => $scenario['coordinator']->id,
+        ]);
+        $mapping = $this->mapping($scenario, [], ['sales_users' => [$scenario['sales'], $secondSales, $thirdSales]]);
+
+        $this->artisan('oasis:normalize-teams', ['--mapping' => $mapping, '--apply' => true])->assertSuccessful();
+
+        $agenda->refresh();
+
+        $this->assertSame($scenario['coordinator']->id, $agenda->owner_id);
+        $this->assertNotContains($agenda->owner_id, [$scenario['sales']->id, $secondSales->id, $thirdSales->id]);
+    }
+
+    public function test_coordinator_owned_agenda_without_a_mapped_final_team_is_a_blocker(): void
+    {
+        $scenario = $this->scenario();
+        $unmappedCoordinator = $this->userWithTeamRole($scenario['branch'], $scenario['legacyTeam'], 'koordinator_sales', 'Unmapped Coordinator');
+        SalesAgenda::factory()->create([
+            'branch_id' => $scenario['branch']->id,
+            'team_id' => $scenario['legacyTeam']->id,
+            'created_by' => $unmappedCoordinator->id,
+            'owner_id' => $unmappedCoordinator->id,
+        ]);
+        $mapping = $this->mapping($scenario);
+
+        $report = app(TeamNormalizationService::class)->run($mapping);
+
+        $this->assertSame(1, $report['agendas']['mismatch_needs_review']);
+        $this->assertContains('agenda_mismatches_needs_review', array_column($report['readiness_blockers'], 'code'));
+    }
+
+    public function test_coordinator_owned_agenda_with_multiple_final_teams_is_blocked_without_selection(): void
+    {
+        $scenario = $this->scenario();
+        $firstFinalTeam = Team::factory()->for($scenario['branch'])->create([
+            'code' => 'COORD-B01-U'.$scenario['coordinator']->id,
+            'coordinator_id' => $scenario['coordinator']->id,
+            'project_id' => null,
+            'supervisor_id' => null,
+        ]);
+        $secondFinalTeam = Team::factory()->for($scenario['branch'])->create([
+            'code' => 'COORD-B01-U'.$scenario['coordinator']->id.'-SECOND',
+            'coordinator_id' => $scenario['coordinator']->id,
+            'project_id' => null,
+            'supervisor_id' => null,
+        ]);
+        Rbac::provisionTeam($firstFinalTeam);
+        Rbac::provisionTeam($secondFinalTeam);
+        $firstFinalTeam->users()->attach($scenario['coordinator'], ['is_default' => true]);
+        $secondFinalTeam->users()->attach($scenario['coordinator'], ['is_default' => false]);
+        SalesAgenda::factory()->create([
+            'branch_id' => $scenario['branch']->id,
+            'team_id' => $scenario['legacyTeam']->id,
+            'created_by' => $scenario['coordinator']->id,
+            'owner_id' => $scenario['coordinator']->id,
+        ]);
+        $mapping = $this->mapping($scenario);
+
+        $report = app(TeamNormalizationService::class)->run($mapping);
+
+        $this->assertSame('BLOCKED', $report['status']);
+        $this->assertSame('multiple_active_teams_for_coordinator', $report['preflight_errors'][0]['code']);
+    }
+
+    public function test_sales_owned_agenda_still_maps_to_the_sales_final_team(): void
+    {
+        $scenario = $this->scenario();
+        $agenda = SalesAgenda::factory()->create([
+            'branch_id' => $scenario['branch']->id,
+            'team_id' => $scenario['legacyTeam']->id,
+            'created_by' => $scenario['sales']->id,
+            'owner_id' => $scenario['sales']->id,
+        ]);
+        $mapping = $this->mapping($scenario);
+
+        app(TeamNormalizationService::class)->run($mapping, true);
+
+        $agenda->refresh();
+        $finalTeam = Team::query()->where('code', 'COORD-B01-U'.$scenario['coordinator']->id)->firstOrFail();
+
+        $this->assertSame($scenario['sales']->id, $agenda->owner_id);
+        $this->assertSame($finalTeam->id, $agenda->team_id);
+    }
+
+    public function test_historical_agenda_exception_remains_approved(): void
+    {
+        $scenario = $this->scenario();
+        $unmappedCoordinator = $this->userWithTeamRole($scenario['branch'], $scenario['legacyTeam'], 'koordinator_sales', 'Historical Coordinator');
+        SalesAgenda::factory()->create([
+            'branch_id' => $scenario['branch']->id,
+            'team_id' => null,
+            'created_by' => $unmappedCoordinator->id,
+            'owner_id' => $unmappedCoordinator->id,
+            'agenda_date' => today()->subMonth(),
+        ]);
+        $mapping = $this->mapping($scenario);
+
+        $report = app(TeamNormalizationService::class)->run($mapping);
+
+        $this->assertSame(1, $report['agendas']['approved_historical_exception']);
+        $this->assertSame(0, $report['agendas']['mismatch_needs_review']);
+    }
+
+    public function test_coordinator_owned_lead_remains_a_sales_ownership_blocker(): void
+    {
+        $scenario = $this->scenario();
+        Lead::factory()->create([
+            'branch_id' => $scenario['branch']->id,
+            'team_id' => $scenario['legacyTeam']->id,
+            'sales_pic_id' => $scenario['coordinator']->id,
+            'created_by' => $scenario['coordinator']->id,
+        ]);
+        $mapping = $this->mapping($scenario);
+
+        $report = app(TeamNormalizationService::class)->run($mapping);
+
+        $this->assertSame(1, $report['leads']['mismatch_needs_review']);
+        $this->assertContains('lead_mismatches_needs_review', array_column($report['readiness_blockers'], 'code'));
+    }
+
+    public function test_cutover_agenda_fixture_resolves_all_five_coordinator_owned_records(): void
+    {
+        $scenario = $this->scenario();
+        $fixtureMap = [5520 => 5332, 5521 => 5333, 5523 => 5335, 5524 => 5336, 5525 => 5337];
+        foreach ($fixtureMap as $sourceId => $targetId) {
+            DB::table('sales_agendas')->insert([
+                'id' => $targetId,
+                'branch_id' => $scenario['branch']->id,
+                'team_id' => $scenario['legacyTeam']->id,
+                'created_by' => $scenario['coordinator']->id,
+                'owner_id' => $scenario['coordinator']->id,
+                'sales_case_id' => null,
+                'lead_id' => null,
+                'agenda_date' => '2026-10-28',
+                'activity_category' => 'Administrasi',
+                'title' => 'Cutover fixture '.$sourceId,
+                'location' => null,
+                'activity_result' => null,
+                'status' => 'planned',
+                'completed_at' => null,
+                'created_at' => '2026-10-01 08:00:00',
+                'updated_at' => '2026-10-01 08:00:00',
+            ]);
+        }
+        $mapping = $this->mapping($scenario);
+
+        $report = app(TeamNormalizationService::class)->run($mapping, true);
+        $finalTeam = Team::query()->where('code', 'COORD-B01-U'.$scenario['coordinator']->id)->firstOrFail();
+
+        $this->assertSame(5, $report['agendas']['coordinator_owned_resolved']);
+        $this->assertSame(0, $report['agendas']['mismatch_needs_review']);
+        $this->assertSame(5, $report['counts']['agenda_team_updates']);
+        $this->assertSame(5, DB::table('sales_agendas')->whereIn('id', array_values($fixtureMap))->where('owner_id', $scenario['coordinator']->id)->where('team_id', $finalTeam->id)->count());
+    }
+
     public function test_legacy_deactivation_requires_complete_final_coverage(): void
     {
         $scenario = $this->scenario();
@@ -295,7 +484,7 @@ class TeamNormalizationTest extends TestCase
     }
 
     /** @param list<int> $unassignedIds
-     * @param  array{branch_code?: string, second_coordinator?: User}  $options
+     * @param  array{branch_code?: string, second_coordinator?: User, sales_users?: list<User>}  $options
      */
     private function mapping(array $scenario, array $unassignedIds = [], array $options = []): string
     {
@@ -304,10 +493,11 @@ class TeamNormalizationTest extends TestCase
         }
 
         $branchCode = $options['branch_code'] ?? $scenario['branch']->code;
+        $salesUsers = $options['sales_users'] ?? [$scenario['sales']];
         $coordinators = [[
             'legacy_user_id' => 1,
             'next_user_id' => $scenario['coordinator']->id,
-            'sales' => [['legacy_user_id' => 2, 'next_user_id' => $scenario['sales']->id]],
+            'sales' => collect($salesUsers)->values()->map(fn (User $sales, int $index): array => ['legacy_user_id' => $index + 2, 'next_user_id' => $sales->id])->all(),
         ]];
         if (isset($options['second_coordinator'])) {
             $coordinators[] = [
@@ -318,7 +508,7 @@ class TeamNormalizationTest extends TestCase
         }
 
         $accounting = [
-            'MAPPED_ACTIVE' => [['legacy_user_id' => 2, 'next_user_id' => $scenario['sales']->id]],
+            'MAPPED_ACTIVE' => collect($salesUsers)->values()->map(fn (User $sales, int $index): array => ['legacy_user_id' => $index + 2, 'next_user_id' => $sales->id])->all(),
             'UNASSIGNED_ACTIVE' => array_map(fn (int $id): array => ['next_user_id' => $id], $unassignedIds),
             'INACTIVE' => [],
             'ANONYMIZED' => [],

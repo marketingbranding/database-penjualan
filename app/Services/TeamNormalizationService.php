@@ -128,6 +128,8 @@ class TeamNormalizationService
                 'sales_other' => 0,
                 'legacy_teams_retained' => 0,
                 'legacy_teams_deactivated' => 0,
+                'coordinator_owned_agendas_resolved' => 0,
+                'agenda_team_updates' => 0,
             ],
             'sales_accounting' => [],
             'branches' => [],
@@ -141,6 +143,7 @@ class TeamNormalizationService
                 'applied' => false,
                 'rolled_back' => false,
                 'created_team_ids' => [],
+                'agenda_team_updates' => [],
                 'old_team_memberships' => [],
                 'old_team_roles' => [],
                 'old_team_states' => [],
@@ -301,7 +304,8 @@ class TeamNormalizationService
         $report['sales_accounting'] = $this->accountingReport($accounting);
         $report['legacy_teams'] = $this->legacyTeamReport($legacyTeams, $teamRows, $mappedUsers);
         $report['leads'] = $this->leadReport($finalPlans, $teamRows, $users);
-        $report['agendas'] = $this->agendaReport($finalPlans, $teamRows, $users);
+        $report['agendas'] = $this->agendaReport($finalPlans, $teamRows, $users, $rolesByUser);
+        $report['counts']['coordinator_owned_agendas_resolved'] = $report['agendas']['coordinator_owned_resolved'] ?? 0;
         $report['sales_cases'] = $this->salesCaseReport();
         $report['readiness_blockers'] = $this->readinessBlockers($report);
 
@@ -641,26 +645,77 @@ class TeamNormalizationService
     /** @param list<array<string, mixed>> $finalPlans
      * @param  EloquentCollection<int, Team>  $teams
      * @param  EloquentCollection<int, User>  $users
+     * @param  Collection<int, list<string>>  $rolesByUser
      * @return array<string, mixed>
      */
-    private function agendaReport(array $finalPlans, EloquentCollection $teams, EloquentCollection $users): array
+    private function agendaReport(array $finalPlans, EloquentCollection $teams, EloquentCollection $users, Collection $rolesByUser): array
     {
         if (! Schema::hasTable('sales_agendas')) {
-            return ['total' => 0, 'existing_consistent' => 0, 'safe_auto_map_candidate' => 0, 'mismatch_needs_review' => 0, 'modified' => false];
+            return [
+                'total' => 0,
+                'existing_consistent' => 0,
+                'safe_auto_map_candidate' => 0,
+                'valid_sales_owned' => 0,
+                'valid_coordinator_owned' => 0,
+                'coordinator_owned_resolved' => 0,
+                'mismatch_needs_review' => 0,
+                'approved_historical_exception' => 0,
+                'modified' => false,
+                'planned_changes' => [],
+            ];
         }
 
         $plansBySales = $this->plansBySales($finalPlans);
+        $plansByCoordinator = $this->plansByCoordinator($finalPlans);
         $legacyTeamIds = $teams->filter(fn (Team $team): bool => $this->isLegacyTeam($team))->pluck('id')->all();
-        $counts = ['total' => 0, 'existing_consistent' => 0, 'safe_auto_map_candidate' => 0, 'mismatch_needs_review' => 0, 'approved_historical_exception' => 0, 'modified' => false];
+        $counts = [
+            'total' => 0,
+            'existing_consistent' => 0,
+            'safe_auto_map_candidate' => 0,
+            'valid_sales_owned' => 0,
+            'valid_coordinator_owned' => 0,
+            'coordinator_owned_resolved' => 0,
+            'mismatch_needs_review' => 0,
+            'approved_historical_exception' => 0,
+            'modified' => false,
+        ];
+        $plannedChanges = [];
         foreach (DB::table('sales_agendas')->select(['id', 'branch_id', 'team_id', 'owner_id', 'agenda_date'])->orderBy('id')->get() as $agenda) {
             $counts['total']++;
             $owner = $agenda->owner_id !== null ? $users->get((int) $agenda->owner_id) : null;
-            $targetPlan = $plansBySales[(int) ($agenda->owner_id ?? 0)] ?? null;
+            $ownerRole = $this->agendaOwnerRole($rolesByUser->get((int) ($agenda->owner_id ?? 0), []));
+            $targetPlan = match ($ownerRole) {
+                'sales' => $plansBySales[(int) $agenda->owner_id] ?? null,
+                'koordinator_sales' => $plansByCoordinator[(int) $agenda->owner_id] ?? null,
+                default => null,
+            };
             $targetTeamId = $targetPlan['team_id'] ?? null;
-            if ($owner instanceof User && $targetPlan !== null && $targetTeamId !== null && (int) $owner->branch_id === (int) $agenda->branch_id && (int) $agenda->team_id === (int) $targetTeamId) {
+            $validOwner = $owner instanceof User
+                && $targetPlan !== null
+                && (int) $owner->branch_id === (int) $agenda->branch_id;
+            if ($validOwner && $ownerRole === 'sales') {
+                $counts['valid_sales_owned']++;
+            }
+            if ($validOwner && $ownerRole === 'koordinator_sales') {
+                $counts['valid_coordinator_owned']++;
+                $counts['coordinator_owned_resolved']++;
+            }
+
+            if ($validOwner && $targetTeamId !== null && (int) $agenda->team_id === (int) $targetTeamId) {
                 $counts['existing_consistent']++;
-            } elseif ($owner instanceof User && $targetPlan !== null && (int) $owner->branch_id === (int) $agenda->branch_id && ($agenda->team_id === null || in_array((int) $agenda->team_id, $legacyTeamIds, true))) {
-                $counts['safe_auto_map_candidate']++;
+            } elseif ($validOwner && ($agenda->team_id === null || in_array((int) $agenda->team_id, $legacyTeamIds, true))) {
+                if ($ownerRole === 'sales') {
+                    $counts['safe_auto_map_candidate']++;
+                }
+                $plannedChanges[] = [
+                    'agenda_id' => (int) $agenda->id,
+                    'owner_id' => (int) $agenda->owner_id,
+                    'owner_role' => $ownerRole === 'koordinator_sales' ? 'coordinator' : 'sales',
+                    'coordinator_id' => (int) $targetPlan['coordinator_id'],
+                    'current_team_id' => $agenda->team_id === null ? null : (int) $agenda->team_id,
+                    'target_team_id' => $targetTeamId,
+                    'target_team_code' => $targetPlan['code'],
+                ];
             } elseif ($agenda->agenda_date !== null && CarbonImmutable::parse((string) $agenda->agenda_date)->lessThan(now()->startOfMonth())) {
                 $counts['approved_historical_exception']++;
             } else {
@@ -668,7 +723,7 @@ class TeamNormalizationService
             }
         }
 
-        return $counts;
+        return [...$counts, 'planned_changes' => $plannedChanges];
     }
 
     /** @return array<string, mixed> */
@@ -770,6 +825,11 @@ class TeamNormalizationService
         }
         unset($salesReport);
 
+        $agendaTeamUpdates = $this->applyAgendaTeamAssignments($report['agendas']['planned_changes'] ?? [], $finalTeamIdsByCoordinator);
+        $report['counts']['agenda_team_updates'] = $agendaTeamUpdates['count'];
+        $report['agendas']['modified'] = $agendaTeamUpdates['count'] > 0;
+        $report['transaction']['agenda_team_updates'] = $agendaTeamUpdates['agenda_ids'];
+
         if ($context['legacy_team_ids'] !== [] && $context['mapped_users'] !== []) {
             DB::table('model_has_roles')->whereIn('team_id', $context['legacy_team_ids'])->where('model_type', User::class)->whereIn('model_id', $context['mapped_users'])->delete();
             DB::table('team_user')->whereIn('team_id', $context['legacy_team_ids'])->whereIn('user_id', $context['mapped_users'])->delete();
@@ -863,6 +923,58 @@ class TeamNormalizationService
         }
 
         return $result;
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $finalPlans
+     * @return array<int, array<string, mixed>>
+     */
+    private function plansByCoordinator(array $finalPlans): array
+    {
+        $result = [];
+        foreach ($finalPlans as $plan) {
+            $result[(int) $plan['coordinator_id']] = $plan;
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param  list<string>  $roleNames
+     */
+    private function agendaOwnerRole(array $roleNames): ?string
+    {
+        $supportedRoles = array_values(array_intersect(['sales', 'koordinator_sales'], $roleNames));
+
+        return count($supportedRoles) === 1 ? $supportedRoles[0] : null;
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $plannedChanges
+     * @param  array<int, int>  $finalTeamIdsByCoordinator
+     * @return array{count: int, agenda_ids: list<int>}
+     */
+    private function applyAgendaTeamAssignments(array $plannedChanges, array $finalTeamIdsByCoordinator): array
+    {
+        $agendaIds = [];
+        foreach ($plannedChanges as $change) {
+            $targetTeamId = $finalTeamIdsByCoordinator[(int) $change['coordinator_id']] ?? null;
+            if ($targetTeamId === null) {
+                throw new \RuntimeException('Agenda owner does not resolve to an applied final Team.');
+            }
+
+            if ((int) ($change['current_team_id'] ?? 0) === $targetTeamId) {
+                continue;
+            }
+
+            DB::table('sales_agendas')->where('id', $change['agenda_id'])->update([
+                'team_id' => $targetTeamId,
+                'updated_at' => now(),
+            ]);
+            $agendaIds[] = (int) $change['agenda_id'];
+        }
+
+        return ['count' => count($agendaIds), 'agenda_ids' => $agendaIds];
     }
 
     private function teamCode(int $branchId, int $coordinatorId): string

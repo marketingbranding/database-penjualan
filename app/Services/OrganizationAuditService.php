@@ -25,9 +25,10 @@ class OrganizationAuditService
         $globalRoles = $this->globalRoleRows();
         $users = $this->userRows($teamRoles, $globalRoles);
         $leads = $this->leadMismatches();
-        $allAgendas = $this->agendaMismatches();
-        $historicalAgendas = array_values(array_filter($allAgendas, fn (array $agenda): bool => $this->isApprovedHistoricalAgenda($agenda)));
-        $agendas = array_values(array_filter($allAgendas, fn (array $agenda): bool => ! $this->isApprovedHistoricalAgenda($agenda)));
+        $agendaAudit = $this->agendaAudit($teamRoles);
+        $allAgendas = $agendaAudit['classifications'];
+        $historicalAgendas = array_values(array_filter($allAgendas, fn (array $agenda): bool => $agenda['classification'] === 'APPROVED_HISTORICAL_EXCEPTION'));
+        $agendas = $agendaAudit['blockers'];
         $historicalExceptions = $this->historicalExceptions($historicalAgendas);
         $salesCases = $this->salesCaseSummary();
 
@@ -52,6 +53,8 @@ class OrganizationAuditService
                 'lead_mismatches' => count($leads),
                 'agendas' => (int) DB::table('sales_agendas')->count(),
                 'agenda_mismatches' => count($agendas),
+                'valid_sales_owned_agendas' => count(array_filter($allAgendas, fn (array $agenda): bool => $agenda['classification'] === 'VALID_SALES_OWNED_AGENDA')),
+                'valid_coordinator_owned_agendas' => count(array_filter($allAgendas, fn (array $agenda): bool => $agenda['classification'] === 'VALID_COORDINATOR_OWNED_AGENDA')),
                 'approved_historical_exceptions' => $historicalExceptions['total'],
                 'active_sales_cases' => $salesCases['active'],
             ],
@@ -62,6 +65,7 @@ class OrganizationAuditService
             'operational' => [
                 'lead_mismatches' => $leads,
                 'agenda_mismatches' => $agendas,
+                'agenda_classifications' => $allAgendas,
                 'approved_historical_exceptions' => $historicalExceptions,
                 'sales_cases' => $salesCases,
             ],
@@ -345,25 +349,52 @@ class OrganizationAuditService
     }
 
     /** @return array<int, array<string, mixed>> */
-    private function agendaMismatches(): array
+    private function agendaAudit(Collection $teamRoles): array
     {
-        return DB::table('sales_agendas as a')
+        $classifications = DB::table('sales_agendas as a')
             ->leftJoin('teams as t', 't.id', '=', 'a.team_id')
             ->leftJoin('users as u', 'u.id', '=', 'a.owner_id')
             ->leftJoin('leads as l', 'l.id', '=', 'a.lead_id')
-            ->where(function ($query): void {
-                $query->whereNull('a.team_id')->orWhereNull('a.owner_id')->orWhereColumn('a.branch_id', '<>', 'u.branch_id')->orWhereColumn('t.branch_id', '<>', 'a.branch_id')->orWhere(function ($query): void {
-                    $query->whereNotNull('a.lead_id')->where(function ($query): void {
-                        $query->whereColumn('l.team_id', '<>', 'a.team_id')->orWhereColumn('l.branch_id', '<>', 'a.branch_id');
-                    });
-                });
-            })
-            ->select(['a.id', 'a.branch_id', 'a.team_id', 't.name as team_name', 'a.owner_id', 'u.name as owner_name', 'a.lead_id', 'l.team_id as lead_team_id', 'l.branch_id as lead_branch_id', 'a.agenda_date', 'a.status'])
+            ->select(['a.id', 'a.branch_id', 'a.team_id', 't.name as team_name', 't.branch_id as team_branch_id', 't.coordinator_id as team_coordinator_id', 't.is_active as team_is_active', 'a.owner_id', 'u.name as owner_name', 'u.branch_id as owner_branch_id', 'a.lead_id', 'l.team_id as lead_team_id', 'l.branch_id as lead_branch_id', 'a.agenda_date', 'a.status'])
             ->orderBy('a.id')
-            ->limit(250)
             ->get()
-            ->map(fn (object $row): array => (array) $row)
+            ->map(function (object $row) use ($teamRoles): array {
+                $ownerRoles = $teamRoles
+                    ->where('team_id', $row->team_id)
+                    ->where('user_id', $row->owner_id)
+                    ->pluck('role_name')
+                    ->filter()
+                    ->unique()
+                    ->values()
+                    ->all();
+                $supportedOwnerRoles = array_values(array_intersect(['sales', 'koordinator_sales'], $ownerRoles));
+                $ownerRole = count($supportedOwnerRoles) === 1 ? $supportedOwnerRoles[0] : null;
+                $ownerScopeValid = $row->owner_id !== null
+                    && $row->owner_branch_id !== null
+                    && (int) $row->owner_branch_id === (int) $row->branch_id
+                    && $row->team_id !== null
+                    && (bool) $row->team_is_active
+                    && (int) $row->team_branch_id === (int) $row->branch_id;
+                $leadScopeValid = $row->lead_id === null
+                    || ((int) $row->lead_team_id === (int) $row->team_id && (int) $row->lead_branch_id === (int) $row->branch_id);
+                $classification = 'OPERATIONAL_BLOCKER';
+                if ($ownerScopeValid && $leadScopeValid && $ownerRole === 'sales') {
+                    $classification = 'VALID_SALES_OWNED_AGENDA';
+                } elseif ($ownerScopeValid && $leadScopeValid && $ownerRole === 'koordinator_sales' && (int) $row->team_coordinator_id === (int) $row->owner_id) {
+                    $classification = 'VALID_COORDINATOR_OWNED_AGENDA';
+                } elseif ($this->isApprovedHistoricalAgenda((array) $row)) {
+                    $classification = 'APPROVED_HISTORICAL_EXCEPTION';
+                }
+
+                return [...(array) $row, 'owner_role' => $ownerRole, 'classification' => $classification];
+            })
+            ->values()
             ->all();
+
+        return [
+            'classifications' => $classifications,
+            'blockers' => array_values(array_filter($classifications, fn (array $agenda): bool => $agenda['classification'] === 'OPERATIONAL_BLOCKER')),
+        ];
     }
 
     /** @param array<int, array<string, mixed>> $historicalAgendas

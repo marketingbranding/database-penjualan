@@ -886,7 +886,10 @@ class OasisCrmMigrationService
                 'updated_at' => $agenda->updated_at,
             ];
             $updateAttributes = $attributes;
-            unset($updateAttributes['team_id'], $updateAttributes['created_at'], $updateAttributes['updated_at']);
+            if ($resolvedTeamId === null) {
+                unset($updateAttributes['team_id']);
+            }
+            unset($updateAttributes['created_at'], $updateAttributes['updated_at']);
             $targetId = $this->upsertMapped(
                 'agenda',
                 $sourceId,
@@ -1290,6 +1293,15 @@ class OasisCrmMigrationService
             return null;
         }
 
+        if ($entity === 'lead') {
+            return $this->resolveSalesFinalTeamId($userId, $branchId, $entity, $sourceId);
+        }
+
+        return $this->resolveAgendaOwnerFinalTeamId($userId, $branchId, $entity, $sourceId);
+    }
+
+    private function resolveSalesFinalTeamId(int $userId, int $branchId, string $entity, int $sourceId): ?int
+    {
         $modelType = (new User)->getMorphClass();
         $teamIds = $this->target->table('team_user as memberships')
             ->join('teams', 'teams.id', '=', 'memberships.team_id')
@@ -1301,7 +1313,7 @@ class OasisCrmMigrationService
             ->join('roles', function (JoinClause $join): void {
                 $join->on('roles.id', '=', 'model_roles.role_id')
                     ->where('roles.name', '=', 'sales')
-                    ->whereColumn('roles.team_id', 'teams.id');
+                    ->whereColumn('roles.team_id', '=', 'teams.id');
             })
             ->where('memberships.user_id', $userId)
             ->where('teams.is_active', true)
@@ -1313,6 +1325,69 @@ class OasisCrmMigrationService
             ->values()
             ->all();
 
+        return $this->singleFinalTeamId($teamIds, $userId, $branchId, $entity, $sourceId);
+    }
+
+    private function resolveAgendaOwnerFinalTeamId(int $userId, int $branchId, string $entity, int $sourceId): ?int
+    {
+        $modelType = (new User)->getMorphClass();
+        $roleNames = $this->target->table('model_has_roles as model_roles')
+            ->join('roles', 'roles.id', '=', 'model_roles.role_id')
+            ->where('model_roles.model_type', $modelType)
+            ->where('model_roles.model_id', $userId)
+            ->pluck('roles.name')
+            ->unique()
+            ->values()
+            ->all();
+        $supportedRoles = array_values(array_intersect(['sales', 'koordinator_sales'], $roleNames));
+
+        if (count($supportedRoles) !== 1) {
+            $this->ambiguous($entity, $sourceId, 'Agenda owner does not have exactly one supported Team role.', [
+                'user_id' => $userId,
+                'roles' => $supportedRoles,
+            ]);
+
+            return null;
+        }
+
+        if ($supportedRoles[0] === 'sales') {
+            return $this->resolveSalesFinalTeamId($userId, $branchId, $entity, $sourceId);
+        }
+
+        $teamIds = $this->target->table('teams')
+            ->where('coordinator_id', $userId)
+            ->where('is_active', true)
+            ->where('branch_id', $branchId)
+            ->where('code', 'like', 'COORD-B%')
+            ->whereExists(function ($query) use ($modelType, $userId): void {
+                $query->selectRaw('1')
+                    ->from('team_user as memberships')
+                    ->join('model_has_roles as model_roles', function (JoinClause $join) use ($modelType): void {
+                        $join->on('model_roles.team_id', '=', 'memberships.team_id')
+                            ->where('model_roles.model_type', '=', $modelType)
+                            ->whereColumn('model_roles.model_id', 'memberships.user_id');
+                    })
+                    ->join('roles', function (JoinClause $join): void {
+                        $join->on('roles.id', '=', 'model_roles.role_id')
+                            ->where('roles.name', '=', 'koordinator_sales')
+                            ->whereColumn('roles.team_id', '=', 'memberships.team_id');
+                    })
+                    ->whereColumn('memberships.team_id', 'teams.id')
+                    ->where('memberships.user_id', $userId);
+            })
+            ->pluck('id')
+            ->map(fn ($id): int => (int) $id)
+            ->values()
+            ->all();
+
+        return $this->singleFinalTeamId($teamIds, $userId, $branchId, $entity, $sourceId);
+    }
+
+    /**
+     * @param  list<int>  $teamIds
+     */
+    private function singleFinalTeamId(array $teamIds, int $userId, int $branchId, string $entity, int $sourceId): ?int
+    {
         if (count($teamIds) > 1) {
             $this->ambiguous($entity, $sourceId, 'user resolves to multiple active final Teams', [
                 'user_id' => $userId,

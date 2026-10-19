@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Branch;
 use App\Models\Lead;
 use App\Models\Role;
+use App\Models\SalesAgenda;
 use App\Models\Team;
 use App\Models\User;
 use App\Services\OrganizationAuditService;
@@ -72,6 +73,34 @@ class OrganizationAuditTest extends TestCase
         $this->assertSame(2, $report['counts']['coordinators']);
         $this->assertCount(1, array_filter($report['issues'], fn (array $issue): bool => $issue['code'] === 'multiple_coordinator_roles_in_team'));
         $this->assertCount(2, array_filter($report['coordinators'], fn (array $coordinator): bool => $coordinator['mapping_status'] === 'AMBIGUOUS'));
+    }
+
+    public function test_audit_classifies_a_coordinator_owned_agenda_as_valid(): void
+    {
+        Rbac::provision();
+        $branch = Branch::factory()->create(['code' => 'AUDIT-COORD']);
+        $team = Team::factory()->for($branch)->create([
+            'code' => 'COORD-B01-U1',
+            'coordinator_id' => null,
+            'is_active' => true,
+        ]);
+        Rbac::provisionTeam($team);
+        $coordinator = User::factory()->for($branch)->create(['name' => 'Audit Coordinator Owner']);
+        $this->assignTeamRole($coordinator, $team, 'koordinator_sales');
+        $team->update(['coordinator_id' => $coordinator->id]);
+        SalesAgenda::factory()->create([
+            'branch_id' => $branch->id,
+            'team_id' => $team->id,
+            'created_by' => $coordinator->id,
+            'owner_id' => $coordinator->id,
+            'agenda_date' => today(),
+        ]);
+
+        $report = app(OrganizationAuditService::class)->run();
+
+        $this->assertSame(1, $report['counts']['valid_coordinator_owned_agendas']);
+        $this->assertSame(0, $report['counts']['agenda_mismatches']);
+        $this->assertSame('VALID_COORDINATOR_OWNED_AGENDA', $report['operational']['agenda_classifications'][0]['classification']);
     }
 
     public function test_audit_command_returns_json_without_mutating_database(): void

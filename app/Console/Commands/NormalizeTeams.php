@@ -49,6 +49,9 @@ class NormalizeTeams extends Command
             ['Metric', 'Value'],
             collect($report['counts'] ?? [])->map(fn ($value, string $key): array => [$key, is_scalar($value) ? (string) $value : json_encode($value)])->values()->all(),
         );
+        if (array_key_exists('coordinator_owned_agendas_resolved', $report['counts'] ?? [])) {
+            $this->line('Coordinator-owned Agenda resolved: '.(int) $report['counts']['coordinator_owned_agendas_resolved']);
+        }
 
         if ($report['branches'] !== []) {
             $this->newLine();

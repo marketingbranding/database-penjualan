@@ -344,6 +344,47 @@ class OasisCrmMigrationTest extends TestCase
         $this->assertSame($finalTeam->id, $agendaAfter->team_id);
     }
 
+    public function test_agenda_import_resolves_coordinator_owner_to_the_coordinator_final_team(): void
+    {
+        $this->seedLegacySnapshot();
+        DB::connection('legacy_test')->table('roles')->insert(['id' => 2, 'slug' => 'sales_coordinator']);
+        DB::connection('legacy_test')->table('users')->insert([
+            'id' => 3, 'name' => 'Coordinator Fixture', 'email' => 'coordinator-fixture@example.test', 'password' => 'hashed-three',
+            'branch_id' => 1, 'role_id' => 2, 'created_at' => '2026-10-19 09:00:00', 'updated_at' => '2026-10-19 09:00:00',
+        ]);
+        DB::connection('legacy_test')->table('content_items')->insert([
+            'id' => 5520, 'item_type' => 'agenda', 'agenda_type' => 'buku_saku_sales', 'branch_id' => 1,
+            'owner_user_id' => 3, 'created_by' => 3, 'scheduled_date' => '2026-10-28',
+            'start_date' => null, 'deadline_date' => null, 'sales_activity_category' => 'Administrasi',
+            'title' => 'Coordinator fixture agenda', 'location' => null, 'activity_result' => null,
+            'status' => 'planned', 'completed_at' => null, 'notes' => null, 'task_detail' => null,
+            'created_at' => '2026-10-01 08:01:29', 'updated_at' => '2026-10-01 08:01:29',
+        ]);
+
+        $this->artisan('migration:import-oasis', ['--source' => 'legacy_test', '--apply' => true])->assertSuccessful();
+
+        $coordinator = User::query()->where('email', 'coordinator-fixture@example.test')->firstOrFail();
+        $finalTeam = Team::query()->create([
+            'parent_id' => null, 'branch_id' => 1, 'project_id' => null,
+            'supervisor_id' => null, 'coordinator_id' => $coordinator->id,
+            'code' => 'COORD-B01-U'.$coordinator->id, 'name' => 'Coordinator Fixture Team', 'is_active' => true,
+        ]);
+        Rbac::provisionTeam($finalTeam);
+        $finalTeam->users()->attach($coordinator->id, ['is_default' => true]);
+        $role = Role::query()->where('team_id', $finalTeam->id)->where('name', 'koordinator_sales')->firstOrFail();
+        DB::table('model_has_roles')->insert([
+            'role_id' => $role->id, 'model_type' => User::class, 'model_id' => $coordinator->id, 'team_id' => $finalTeam->id,
+        ]);
+        DB::connection('legacy_test')->table('content_items')->where('id', 5520)->update(['updated_at' => '2026-10-20 08:00:00']);
+
+        $this->artisan('migration:import-oasis', ['--source' => 'legacy_test', '--apply' => true])->assertSuccessful();
+
+        $agenda = DB::table('sales_agendas')->where('id', DB::table('legacy_migration_maps')->where('entity', 'agenda')->where('source_id', 5520)->value('target_id'))->firstOrFail();
+
+        $this->assertSame($coordinator->id, $agenda->owner_id);
+        $this->assertSame($finalTeam->id, $agenda->team_id);
+    }
+
     public function test_coordinator_pic_is_imported_only_when_sales_owner_is_confirmed_by_history(): void
     {
         $this->seedLegacySnapshot();
