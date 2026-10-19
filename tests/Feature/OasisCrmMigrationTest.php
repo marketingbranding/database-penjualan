@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Support\Rbac;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
@@ -209,6 +210,138 @@ class OasisCrmMigrationTest extends TestCase
         $this->assertSame(2, DB::table('leads')->count());
         $this->assertSame(2, DB::table('lead_activities')->where('lead_id', $updatedLead->id)->count());
         $this->assertEquals((array) $beforeSecondRun, (array) DB::table('leads')->where('id_lead', 'CRM-1')->firstOrFail());
+    }
+
+    public function test_full_import_counts_identical_existing_leads_as_unchanged_without_restamping_maps(): void
+    {
+        $this->seedLegacySnapshot();
+
+        $arguments = [
+            '--source' => 'legacy_test',
+            '--apply' => true,
+            '--freeze-at' => '2026-10-19 12:00:00',
+            '--timezone' => 'Asia/Jakarta',
+        ];
+        $this->artisan('migration:import-oasis', $arguments)->assertSuccessful();
+
+        $leadBefore = DB::table('leads')->where('id_lead', 'CRM-1')->firstOrFail();
+        $mapBefore = DB::table('legacy_migration_maps')->where('entity', 'lead')->where('source_id', 1)->firstOrFail();
+        $reportPath = storage_path('app/full-import-idempotency-test.json');
+
+        try {
+            $this->artisan('migration:import-oasis', [...$arguments, '--report' => $reportPath])->assertSuccessful();
+            $report = json_decode(File::get($reportPath), true, 512, JSON_THROW_ON_ERROR);
+
+            $this->assertSame(0, $report['counts']['leads_inserted']);
+            $this->assertSame(0, $report['counts']['leads_updated']);
+            $this->assertSame(1, $report['counts']['leads_unchanged']);
+            $this->assertSame(1, $report['counts']['lead_activities_unchanged']);
+            $this->assertSame(7, $report['counts']['migration_maps_unchanged']);
+            $this->assertSame((array) $leadBefore, (array) DB::table('leads')->where('id_lead', 'CRM-1')->firstOrFail());
+            $this->assertSame((array) $mapBefore, (array) DB::table('legacy_migration_maps')->where('entity', 'lead')->where('source_id', 1)->firstOrFail());
+        } finally {
+            File::delete($reportPath);
+        }
+    }
+
+    public function test_full_import_updates_only_the_changed_legacy_lead_field(): void
+    {
+        $this->seedLegacySnapshot();
+        $arguments = [
+            '--source' => 'legacy_test',
+            '--apply' => true,
+            '--freeze-at' => '2026-10-19 12:00:00',
+            '--timezone' => 'Asia/Jakarta',
+        ];
+        $this->artisan('migration:import-oasis', $arguments)->assertSuccessful();
+        $leadBefore = DB::table('leads')->where('id_lead', 'CRM-1')->firstOrFail();
+
+        DB::connection('legacy_test')->table('sales_leads')->where('id', 1)->update([
+            'notes' => 'Changed in CRM',
+            'updated_at' => '2026-10-19 11:00:00',
+        ]);
+        $reportPath = storage_path('app/full-import-change-test.json');
+
+        try {
+            $this->artisan('migration:import-oasis', [...$arguments, '--report' => $reportPath])->assertSuccessful();
+            $report = json_decode(File::get($reportPath), true, 512, JSON_THROW_ON_ERROR);
+            $leadAfter = DB::table('leads')->where('id_lead', 'CRM-1')->firstOrFail();
+
+            $this->assertSame(1, $report['counts']['leads_updated']);
+            $this->assertSame(0, $report['counts']['leads_unchanged']);
+            $this->assertSame('Changed in CRM', $leadAfter->keterangan);
+            $this->assertSame($leadBefore->updated_at, $leadAfter->updated_at);
+        } finally {
+            File::delete($reportPath);
+        }
+    }
+
+    public function test_full_import_preserves_a_normalized_lead_team_without_legacy_membership_reinsertion(): void
+    {
+        $this->seedLegacySnapshot();
+        $this->artisan('migration:import-oasis', ['--source' => 'legacy_test', '--apply' => true])->assertSuccessful();
+
+        $branch = DB::table('branches')->firstOrFail();
+        $sales = User::query()->where('email', 'sales-one@example.test')->firstOrFail();
+        $finalTeam = $this->createFinalTeam($branch->id, $sales, 1);
+        $legacyTeamId = DB::table('teams')->where('code', 'LEGACY-B01')->value('id');
+        DB::table('model_has_roles')->where('team_id', $legacyTeamId)->where('model_id', $sales->id)->delete();
+        DB::table('team_user')->where('team_id', $legacyTeamId)->where('user_id', $sales->id)->delete();
+        DB::table('leads')->where('id_lead', 'CRM-1')->update(['team_id' => $finalTeam->id]);
+        $membershipCount = DB::table('team_user')->count();
+
+        $reportPath = storage_path('app/full-import-normalized-team-test.json');
+        try {
+            $this->artisan('migration:import-oasis', ['--source' => 'legacy_test', '--apply' => true, '--report' => $reportPath])->assertSuccessful();
+            $report = json_decode(File::get($reportPath), true, 512, JSON_THROW_ON_ERROR);
+
+            $this->assertSame(0, $report['counts']['leads_updated']);
+            $this->assertSame($finalTeam->id, DB::table('leads')->where('id_lead', 'CRM-1')->value('team_id'));
+            $this->assertSame($membershipCount, DB::table('team_user')->count());
+            $this->assertSame(0, DB::table('team_user')->where('team_id', $legacyTeamId)->where('user_id', $sales->id)->count());
+            $this->assertSame(0, DB::table('model_has_roles')->where('team_id', $legacyTeamId)->where('model_id', $sales->id)->count());
+        } finally {
+            File::delete($reportPath);
+        }
+    }
+
+    public function test_full_import_preserves_a_normalized_agenda_team(): void
+    {
+        $this->seedLegacySnapshot();
+        DB::connection('legacy_test')->table('content_items')->insert([
+            'id' => 1,
+            'item_type' => 'agenda',
+            'agenda_type' => 'buku_saku_sales',
+            'branch_id' => 1,
+            'owner_user_id' => 1,
+            'created_by' => 1,
+            'scheduled_date' => '2026-10-19',
+            'start_date' => null,
+            'deadline_date' => null,
+            'sales_activity_category' => 'Administrasi',
+            'title' => 'Agenda One',
+            'location' => 'Office',
+            'activity_result' => 'Planned',
+            'status' => 'planned',
+            'completed_at' => null,
+            'notes' => null,
+            'task_detail' => null,
+            'created_at' => '2026-10-19 09:30:00',
+            'updated_at' => '2026-10-19 09:30:00',
+        ]);
+        $this->artisan('migration:import-oasis', ['--source' => 'legacy_test', '--apply' => true])->assertSuccessful();
+
+        $branch = DB::table('branches')->firstOrFail();
+        $sales = User::query()->where('email', 'sales-one@example.test')->firstOrFail();
+        $finalTeam = $this->createFinalTeam($branch->id, $sales, 1);
+        DB::table('sales_agendas')->where('id', DB::table('sales_agendas')->where('title', 'Agenda One')->value('id'))->update(['team_id' => $finalTeam->id]);
+        $agendaBefore = DB::table('sales_agendas')->where('title', 'Agenda One')->firstOrFail();
+
+        $this->artisan('migration:import-oasis', ['--source' => 'legacy_test', '--apply' => true])->assertSuccessful();
+        $agendaAfter = DB::table('sales_agendas')->where('title', 'Agenda One')->firstOrFail();
+
+        $this->assertSame((array) $agendaBefore, (array) $agendaAfter);
+        $this->assertSame($finalTeam->id, $agendaAfter->team_id);
     }
 
     public function test_coordinator_pic_is_imported_only_when_sales_owner_is_confirmed_by_history(): void

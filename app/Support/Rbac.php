@@ -115,7 +115,7 @@ class Rbac
                 'guard_name' => 'web',
             ]);
 
-            $role->syncPermissions($permissions);
+            self::syncPermissionsIfChanged($role, $permissions);
         }
 
         if ($team !== null) {
@@ -132,8 +132,21 @@ class Rbac
                 'guard_name' => 'web',
             ]);
 
-            $role->syncPermissions($permissions);
+            self::syncPermissionsIfChanged($role, $permissions);
         }
+    }
+
+    /** @param list<string> $permissions */
+    private static function syncPermissionsIfChanged(Role $role, array $permissions): void
+    {
+        $currentPermissions = $role->permissions()->pluck('name')->sort()->values()->all();
+        $desiredPermissions = collect($permissions)->sort()->values()->all();
+
+        if ($currentPermissions === $desiredPermissions) {
+            return;
+        }
+
+        $role->syncPermissions($permissions);
     }
 
     /** @return list<string> */

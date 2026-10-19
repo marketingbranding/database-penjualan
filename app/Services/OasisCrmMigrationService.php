@@ -208,6 +208,22 @@ class OasisCrmMigrationService
             'report_path' => null,
             'has_blocking_issues' => false,
         ];
+        $this->report['counts'] = array_fill_keys([
+            'branches_inserted', 'branches_updated', 'branches_unchanged',
+            'projects_inserted', 'projects_updated', 'projects_unchanged',
+            'teams_inserted', 'teams_updated', 'teams_unchanged',
+            'users_inserted', 'users_updated', 'users_unchanged',
+            'leads_inserted', 'leads_updated', 'leads_unchanged', 'leads_new',
+            'lead_activities_inserted', 'lead_activities_updated', 'lead_activities_unchanged',
+            'agendas_inserted', 'agendas_updated', 'agendas_unchanged',
+            'agenda_assignments_inserted', 'agenda_assignments_updated', 'agenda_assignments_unchanged',
+            'agenda_evidence_inserted', 'agenda_evidence_updated', 'agenda_evidence_unchanged',
+            'migration_maps_inserted', 'migration_maps_updated', 'migration_maps_unchanged',
+            'team_memberships_inserted', 'team_memberships_updated', 'team_memberships_unchanged',
+            'team_roles_inserted', 'team_roles_unchanged',
+            'global_roles_inserted', 'global_roles_updated', 'global_roles_unchanged',
+            'organization_rows_updated', 'evidence_files_copied', 'evidence_files_unchanged',
+        ], 0) + $this->report['counts'];
 
         $this->validateSourceSchema();
         $this->loadExistingMaps();
@@ -378,22 +394,34 @@ class OasisCrmMigrationService
             }
 
             $code = 'LEGACY-'.Str::upper((string) $branch->code);
+            $attributes = [
+                'parent_id' => null,
+                'branch_id' => $branchId,
+                'project_id' => null,
+                'supervisor_id' => null,
+                'coordinator_id' => null,
+                'code' => $code,
+                'name' => 'Legacy '.$branch->name,
+                'is_active' => (bool) $branch->is_active,
+                'created_at' => $branch->created_at,
+                'updated_at' => $branch->updated_at,
+            ];
+            $updateAttributes = $attributes;
+            unset(
+                $updateAttributes['parent_id'],
+                $updateAttributes['project_id'],
+                $updateAttributes['supervisor_id'],
+                $updateAttributes['coordinator_id'],
+                $updateAttributes['created_at'],
+                $updateAttributes['updated_at'],
+            );
             $targetId = $this->upsertMapped(
                 'team',
                 $sourceId,
                 fn (): ?int => $this->target->table('teams')->where('code', $code)->value('id'),
-                [
-                    'parent_id' => null,
-                    'branch_id' => $branchId,
-                    'project_id' => null,
-                    'supervisor_id' => null,
-                    'coordinator_id' => null,
-                    'code' => $code,
-                    'name' => 'Legacy '.$branch->name,
-                    'is_active' => (bool) $branch->is_active,
-                    'created_at' => $branch->created_at,
-                    'updated_at' => $branch->updated_at,
-                ],
+                $attributes,
+                [],
+                $updateAttributes,
             );
 
             if ($targetId !== null) {
@@ -492,8 +520,14 @@ class OasisCrmMigrationService
             }
 
             if ($this->apply) {
-                $this->target->table('users')->where('id', $targetId)->update(['reports_to_id' => $reportsToId]);
+                if ($this->updateIfChanged('users', ['id' => $targetId], ['reports_to_id' => $reportsToId])) {
+                    $this->count('organization_rows_updated');
+                }
             }
+        }
+
+        if ($this->hasNormalizedFinalTeams()) {
+            return;
         }
 
         foreach ($this->teamIds as $sourceBranchId => $teamId) {
@@ -514,11 +548,11 @@ class OasisCrmMigrationService
                 }
             }
 
-            if ($this->apply) {
-                $this->target->table('teams')->where('id', $teamId)->update([
-                    'supervisor_id' => $supervisorId,
-                    'coordinator_id' => $coordinatorId,
-                ]);
+            if ($this->apply && $this->updateIfChanged('teams', ['id' => $teamId], [
+                'supervisor_id' => $supervisorId,
+                'coordinator_id' => $coordinatorId,
+            ])) {
+                $this->count('organization_rows_updated');
             }
         }
     }
@@ -546,19 +580,33 @@ class OasisCrmMigrationService
                     continue;
                 }
 
-                $this->target->table('team_user')->updateOrInsert(
+                if ($this->hasActiveFinalTeamMembership($targetUserId)) {
+                    $this->count('legacy_team_assignments_preserved');
+
+                    continue;
+                }
+
+                $this->updateOrInsertIfChanged(
+                    'team_user',
                     ['team_id' => $teamId, 'user_id' => $targetUserId],
                     ['is_default' => true, 'created_at' => $user->created_at, 'updated_at' => $user->updated_at],
+                    'team_memberships',
                 );
 
                 $roleId = Role::query()->where('team_id', $teamId)->where('name', $roleName)->value('id');
                 if ($roleId !== null) {
-                    $this->target->table('model_has_roles')->insertOrIgnore([
+                    $roleKey = [
                         'role_id' => $roleId,
                         'model_id' => $targetUserId,
                         'model_type' => 'App\\Models\\User',
                         'team_id' => $teamId,
-                    ]);
+                    ];
+                    if (! $this->target->table('model_has_roles')->where($roleKey)->exists()) {
+                        $this->target->table('model_has_roles')->insert($roleKey);
+                        $this->count('team_roles_inserted');
+                    } else {
+                        $this->count('team_roles_unchanged');
+                    }
                 }
 
                 continue;
@@ -568,9 +616,11 @@ class OasisCrmMigrationService
             if ($this->apply) {
                 $roleId = Role::query()->whereNull('team_id')->where('name', $roleName)->value('id');
                 if ($roleId !== null) {
-                    $this->target->table('global_role_user')->updateOrInsert(
+                    $this->updateOrInsertIfChanged(
+                        'global_role_user',
                         ['role_id' => $roleId, 'user_id' => $targetUserId],
                         ['created_at' => $user->created_at, 'updated_at' => $user->updated_at],
+                        'global_roles',
                     );
                 }
             }
@@ -715,7 +765,6 @@ class OasisCrmMigrationService
 
             if ($targetId !== null) {
                 $this->count('leads');
-                $this->count($wasMapped ? 'leads_updated' : 'leads_new');
 
                 if ($unresolvedDisposition !== null && $ownerResolution !== null) {
                     $this->recordTargetLeadDisposition($sourceId, $targetId, $unresolvedDisposition, $ownerResolution, $sourcePicId, $teamId ?? $legacyTeamId);
@@ -901,7 +950,7 @@ class OasisCrmMigrationService
                     continue;
                 }
 
-                Storage::disk('public')->put($targetPath, File::get($sourcePath));
+                $this->copyEvidenceIfChanged($sourcePath, $targetPath);
             } elseif ($this->apply) {
                 $this->skip('agenda_evidence', (int) $evidence->id, 'apply requires --copy-evidence to create a valid target file');
 
@@ -935,7 +984,15 @@ class OasisCrmMigrationService
         if (isset($this->targetIds[$entity][$sourceId])) {
             $targetId = $this->targetIds[$entity][$sourceId];
             if ($this->apply && $targetId > 0) {
-                $this->target->table($this->targetTable($entity))->where('id', $targetId)->update($updateAttributes ?? $attributes);
+                $persistedAttributes = $updateAttributes ?? $attributes;
+                $existing = $this->target->table($this->targetTable($entity))->where('id', $targetId)->first(array_keys($persistedAttributes));
+                $changes = $existing === null ? $persistedAttributes : $this->changedAttributes($existing, $persistedAttributes);
+                if ($changes !== []) {
+                    $this->target->table($this->targetTable($entity))->where('id', $targetId)->update($changes);
+                    $this->recordUpsertAction($entity, 'updated');
+                } else {
+                    $this->recordUpsertAction($entity, 'unchanged');
+                }
                 $this->storeMap($entity, $sourceId, $targetId, $metadata);
             }
 
@@ -951,11 +1008,22 @@ class OasisCrmMigrationService
             $table = $this->targetTable($entity);
             if ($targetId === null) {
                 $targetId = (int) $this->target->table($table)->insertGetId($attributes);
+                $this->recordUpsertAction($entity, 'inserted');
             } else {
-                $this->target->table($table)->where('id', $targetId)->update($updateAttributes ?? $attributes);
+                $persistedAttributes = $updateAttributes ?? $attributes;
+                $existing = $this->target->table($table)->where('id', $targetId)->first(array_keys($persistedAttributes));
+                $changes = $existing === null ? $persistedAttributes : $this->changedAttributes($existing, $persistedAttributes);
+                if ($changes !== []) {
+                    $this->target->table($table)->where('id', $targetId)->update($changes);
+                    $this->recordUpsertAction($entity, 'updated');
+                } else {
+                    $this->recordUpsertAction($entity, 'unchanged');
+                }
             }
 
             $this->storeMap($entity, $sourceId, $targetId, $metadata);
+        } elseif ($targetId !== null) {
+            $this->recordUpsertAction($entity, isset($this->targetIds[$entity][$sourceId]) ? 'unchanged' : 'inserted');
         }
 
         if ($targetId !== null) {
@@ -973,14 +1041,23 @@ class OasisCrmMigrationService
             $metadata['source_updated_at'] = $pendingTimestamp;
         }
         $key = ['source_connection' => $this->sourceConnectionName, 'entity' => $entity, 'source_id' => $sourceId];
+        $metadataJson = $metadata === [] ? null : json_encode($metadata, JSON_THROW_ON_ERROR);
+        $mapQuery = $this->target->table('legacy_migration_maps')->where($key);
+        $existing = $mapQuery->first(['target_id', 'metadata']);
+        if ($existing !== null && (int) $existing->target_id === $targetId && $this->metadataMatches($existing->metadata, $metadataJson)) {
+            $this->count('migration_maps_unchanged');
+
+            return;
+        }
+
         $values = [
             'target_id' => $targetId,
-            'metadata' => $metadata === [] ? null : json_encode($metadata, JSON_THROW_ON_ERROR),
+            'metadata' => $metadataJson,
             'updated_at' => $now,
         ];
-        $mapQuery = $this->target->table('legacy_migration_maps')->where($key);
-        if ($mapQuery->exists()) {
+        if ($existing !== null) {
             $mapQuery->update($values);
+            $this->count('migration_maps_updated');
 
             $this->mapMetadata[$entity][$sourceId] = $metadata;
 
@@ -988,7 +1065,145 @@ class OasisCrmMigrationService
         }
 
         $this->target->table('legacy_migration_maps')->insert($key + $values + ['created_at' => $now]);
+        $this->count('migration_maps_inserted');
         $this->mapMetadata[$entity][$sourceId] = $metadata;
+    }
+
+    /** @param array<string, mixed> $attributes */
+    private function changedAttributes(object $existing, array $attributes): array
+    {
+        return array_filter(
+            $attributes,
+            fn (mixed $value, string $column): bool => $this->databaseValuesDiffer($existing->{$column} ?? null, $value),
+            ARRAY_FILTER_USE_BOTH,
+        );
+    }
+
+    private function databaseValuesDiffer(mixed $existing, mixed $incoming): bool
+    {
+        if ($existing === null || $incoming === null) {
+            return $existing !== $incoming;
+        }
+
+        if (is_bool($existing) || is_bool($incoming)) {
+            return (int) (bool) $existing !== (int) (bool) $incoming;
+        }
+
+        return (string) $existing !== (string) $incoming;
+    }
+
+    private function metadataMatches(?string $existing, ?string $incoming): bool
+    {
+        if (($existing === null || $existing === '') && ($incoming === null || $incoming === '')) {
+            return true;
+        }
+
+        try {
+            return json_decode((string) $existing, true, 512, JSON_THROW_ON_ERROR) === json_decode((string) $incoming, true, 512, JSON_THROW_ON_ERROR);
+        } catch (Throwable) {
+            return $existing === $incoming;
+        }
+    }
+
+    private function copyEvidenceIfChanged(string $sourcePath, string $targetPath): void
+    {
+        $disk = Storage::disk('public');
+        $targetPathOnDisk = $disk->path($targetPath);
+        $sourceHash = hash_file('sha256', $sourcePath);
+        $targetHash = is_file($targetPathOnDisk) ? hash_file('sha256', $targetPathOnDisk) : false;
+
+        if ($sourceHash !== false && $sourceHash === $targetHash) {
+            $this->count('evidence_files_unchanged');
+
+            return;
+        }
+
+        $disk->put($targetPath, File::get($sourcePath));
+        $this->count('evidence_files_copied');
+    }
+
+    private function recordUpsertAction(string $entity, string $action): void
+    {
+        $prefix = match ($entity) {
+            'branch' => 'branches',
+            'project' => 'projects',
+            'team' => 'teams',
+            'user' => 'users',
+            'lead' => 'leads',
+            'lead_activity' => 'lead_activities',
+            'agenda' => 'agendas',
+            'agenda_assignment' => 'agenda_assignments',
+            'agenda_evidence' => 'agenda_evidence',
+            default => $entity,
+        };
+        $this->count($prefix.'_'.$action);
+        if ($entity === 'lead' && $action === 'inserted') {
+            $this->count('leads_new');
+        }
+    }
+
+    /** @param array<string, mixed> $where
+     * @param  array<string, mixed>  $attributes
+     */
+    private function updateIfChanged(string $table, array $where, array $attributes): bool
+    {
+        $existing = $this->target->table($table)->where($where)->first(array_keys($attributes));
+        if ($existing === null) {
+            return false;
+        }
+
+        $changes = $this->changedAttributes($existing, $attributes);
+        if ($changes === []) {
+            return false;
+        }
+
+        $this->target->table($table)->where($where)->update($changes);
+
+        return true;
+    }
+
+    /** @param array<string, mixed> $where
+     * @param  array<string, mixed>  $values
+     */
+    private function updateOrInsertIfChanged(string $table, array $where, array $values, string $metricPrefix): void
+    {
+        $query = $this->target->table($table)->where($where);
+        $existing = $query->first(array_keys($values));
+        if ($existing === null) {
+            $this->target->table($table)->insert($where + $values);
+            $this->count($metricPrefix.'_inserted');
+
+            return;
+        }
+
+        $changes = $this->changedAttributes($existing, $values);
+        if ($changes === []) {
+            $this->count($metricPrefix.'_unchanged');
+
+            return;
+        }
+
+        $query->update($changes);
+        $this->count($metricPrefix.'_updated');
+    }
+
+    private function hasActiveFinalTeamMembership(int $userId): bool
+    {
+        return $this->target->table('team_user as memberships')
+            ->join('teams', 'teams.id', '=', 'memberships.team_id')
+            ->where('memberships.user_id', $userId)
+            ->where('teams.is_active', true)
+            ->where('teams.code', 'like', 'COORD-B%')
+            ->exists();
+    }
+
+    private function hasNormalizedFinalTeams(): bool
+    {
+        return $this->target->table('teams')
+            ->where('is_active', true)
+            ->whereNotNull('coordinator_id')
+            ->where('code', 'like', 'COORD-B%')
+            ->exists();
     }
 
     private function targetTable(string $entity): string
@@ -1159,7 +1374,7 @@ class OasisCrmMigrationService
                 'mapped_lead_total' => (int) $this->target->table('legacy_migration_maps')->where('source_connection', $this->sourceConnectionName)->where('entity', 'lead')->count(),
                 'newly_imported' => (int) ($this->report['counts']['leads_new'] ?? 0),
                 'updated' => (int) ($this->report['counts']['leads_updated'] ?? 0),
-                'unchanged' => (int) ($this->report['counts']['unchanged_source_records'] ?? 0),
+                'unchanged' => (int) ($this->report['counts']['leads_unchanged'] ?? 0),
                 'exceptions' => count($this->report['issues']['ambiguous'] ?? []),
             ],
         ];
