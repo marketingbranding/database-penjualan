@@ -78,17 +78,28 @@ Coordinators and 56 confirmed Sales users. The command deliberately leaves the
 one unassigned active Sales user, two inactive Sales users, and Lead ownership
 records untouched.
 
-### Critical
+## Post-normalization local Lead verification
+
+The separate `oasis:reassign-lead-teams` command was exercised only against the
+safe local database. It changed only `team_id` for 4,015 of 4,051 Leads. The
+remaining 36 critical findings are explicit review records: 20 Lead
+Branch/Team mismatches and 16 Leads whose Sales PIC has no valid final
+operational Team. The one unassigned active Sales and two inactive Sales own no
+Leads in this snapshot. A second dry-run found 4,015 existing-consistent Leads
+and zero further changes.
+
+### Pre-normalization critical baseline
 
 1. **Coordinator scope is not configured for 15 of 16 Coordinator role users.**
    Only one active Team has a `coordinator_id`. The remaining Coordinator users
    share branch-level migration containers, so the application cannot safely
    resolve one Coordinator → Sales scope for them.
-2. **20 Leads do not match the Sales PIC branch and/or Team membership.**
-   These records must be repaired or explicitly dispositioned before the CRM is
-   frozen. No automatic correction was performed by this audit.
+2. **The baseline's 20 Lead mismatches require explicit disposition.** The
+   local reassignment safely resolved the deterministic Lead set, while those
+   20 baseline records and 16 additional Leads pointing to a Sales PIC without
+   a final Team remain untouched.
 
-### Warnings
+### Pre-normalization warnings
 
 1. Every active Team is still a legacy migration container.
 2. Eight active Teams have no Coordinator pointer.
@@ -98,7 +109,7 @@ records untouched.
 5. Two anonymized users remain Team members and need a final retention decision.
 6. One Team member has no Team-scoped role assignment.
 
-### Informational
+### Pre-normalization informational findings
 
 1. One branch-scoped role user is also a Team member. This is not required by
    the target organization model and should be reviewed during normalization.

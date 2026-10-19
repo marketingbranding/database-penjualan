@@ -18,11 +18,11 @@ Status values:
 | Sales → Coordinator mapping recovered | PASS | 56 current valid legacy pivot rows cover 56 Sales users |
 | Unassigned active Sales resolved | NEEDS REVIEW | One active Sales user has no current Coordinator assignment |
 | Final Team membership verified | PASS (LOCAL) | Safe local apply created/reused 16 final Coordinator Teams; production apply not executed |
-| Lead ownership verified | BLOCKED | 20 Lead Team/Sales PIC/Branch mismatches |
-| Lead Team scope verified | BLOCKED | Requires final Team mapping and Lead repair |
+| Lead ownership verified | BLOCKED | 36 review Leads remain: 20 Branch mismatches and 16 Sales PICs without a final Team |
+| Lead Team scope verified | PASS (LOCAL PARTIAL) | 4,015 Leads reassigned safely; 36 unresolved records remain untouched |
 | Agenda ownership verified | NEEDS REVIEW | Current snapshot contains 0 Agendas; production/source verification is still required |
 | Coordinator dashboard scope verified | PASS (LOCAL) | Post-normalization local audit reports 16 confirmed Coordinator mappings |
-| Sales dashboard scope verified | BLOCKED | Local audit confirms 56 mapped Sales; one active and two inactive exceptions remain |
+| Sales dashboard scope verified | BLOCKED | Local smoke test passes for reassigned Leads; one active and two inactive Sales exceptions remain |
 | Quick actions work | PASS | Existing PHPUnit/UI verification covers current flows |
 | Lead create works | PASS | Existing ownership and feature tests pass |
 | Lead follow-up works | PASS | Existing Lead activity/follow-up tests pass |
@@ -40,25 +40,22 @@ Status values:
 
 ### Sales: NOT READY
 
-Sales users have active Team memberships, but the current Teams are legacy
-containers and one active Sales assignment is unresolved. The 20 Lead mismatches
-also mean some migrated records could be shown under an incorrect operational
-scope after freeze.
+Sales users have final local Team memberships, but one active Sales assignment
+is unresolved and two inactive Sales records need disposition. Thirty-six Leads
+remain outside deterministic reassignment, so production cutover is blocked.
 
 ### Coordinators: NOT READY
 
-The legacy source provides valid membership rows for all 16 Coordinators, but
-OASIS Next still has no final Team per Coordinator. The recovered mapping can
-be used to propose Teams; it must not be written until the one unassigned Sales
-user and the 20 Lead mismatches are dispositioned.
+The legacy source provides valid membership rows for all 16 Coordinators and
+the safe local apply confirms their final Team scope. Production Team apply and
+the remaining Lead review set still require approval.
 
 ## Exact blockers before CRM freeze
 
 1. Confirm the one active Sales user without a current Coordinator assignment.
-2. Review the local normalization report and create/finalize one Team per
-   Coordinator grouping, without assuming one Branch equals one Team.
-3. Set `coordinator_id`, project context, memberships, and Team roles.
-4. Reconcile the 20 Lead mismatches and re-run the audit.
+2. Review and approve the Team normalization report before production apply.
+3. Resolve the one unassigned active Sales and the two inactive Sales decisions.
+4. Reconcile or disposition the 36 Lead review records and re-run the audit.
 5. Verify Agenda data from the final source export; the current snapshot has no
    Agenda rows to validate.
 6. Define and rehearse the final synchronization, freeze timestamp, verification,

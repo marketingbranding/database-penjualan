@@ -1,7 +1,8 @@
 # Team Normalization and Cutover Migration Plan
 
-This plan is for a future implementation phase. The current audit does not
-modify Teams, memberships, Leads, Agendas, or permissions.
+This plan describes the controlled implementation phases. The normalization and
+Lead reassignment commands are dry-run by default; any apply described here is
+for an approved local/staging copy unless production authorization is explicit.
 
 ## Cutover principle
 
@@ -84,14 +85,19 @@ verify that the active-Team selector cannot choose another Branch.
 
 ### Leads
 
-1. Build a deterministic mapping from each legacy Team/container and Sales PIC
-   to a final Team.
-2. For each Lead, set `team_id` to the final Team of its `sales_pic_id`.
+1. Run `oasis:reassign-lead-teams` in dry-run mode.
+2. Build the target Team only from the existing normalized final Team graph and
+   the Lead's `sales_pic_id`.
 3. Confirm `branch_id` matches both the Sales PIC and Team.
 4. Preserve `id`, `id_lead`, activities, timestamps, `created_by`, and audit
-   history.
+   history; update only `team_id`.
 5. Quarantine unresolved records instead of guessing.
-6. Re-run the organization audit and require zero critical Lead mismatches.
+6. Apply only after reviewing the report, then re-run the organization audit.
+
+The implementation and current 4,015/36 local result are documented in
+`lead-team-reassignment.md`. The 36 review Leads are not a reason to rewrite
+Sales PIC ownership: 20 are Branch mismatches and 16 reference a Sales PIC
+without a valid final Team.
 
 ### Agendas
 
