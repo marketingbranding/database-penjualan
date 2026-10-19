@@ -781,7 +781,7 @@ class OasisCrmMigrationService
                         'created_at' => $history->created_at,
                         'updated_at' => $history->updated_at,
                     ],
-                    [],
+                    ['source_updated_at' => $history->updated_at ?? $history->changed_at],
                 );
 
                 if ($activityId !== null) {
