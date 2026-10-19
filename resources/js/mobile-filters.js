@@ -459,6 +459,7 @@ const syncResponsiveControls = () => {
 
         desktop?.classList.toggle('is-collapsed', ! isMobile && shouldCollapseDesktopFilters && toolbar._desktopFiltersOpen !== true);
         desktop?.classList.toggle('is-open', ! isMobile && shouldCollapseDesktopFilters && toolbar._desktopFiltersOpen === true);
+        toolbar.classList.toggle('desktop-filters-open', ! isMobile && shouldCollapseDesktopFilters && toolbar._desktopFiltersOpen === true);
 
         desktop?.querySelectorAll('input, select, textarea').forEach((control) => {
             control.disabled = isMobile;

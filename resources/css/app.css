@@ -1927,6 +1927,10 @@ select:-webkit-autofill:focus {
     gap: 0.625rem;
 }
 
+.module-toolbar.desktop-filters-open {
+    flex-wrap: wrap;
+}
+
 .module-toolbar-controls {
     min-width: 0;
     flex: 1 1 auto;
@@ -1957,9 +1961,25 @@ select:-webkit-autofill:focus {
 }
 
 .module-toolbar-desktop-filters.is-open {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: center;
     width: 100%;
+    max-width: 100%;
+    flex: 0 0 100%;
     border-top: 1px solid rgb(var(--c-line));
     padding-top: 0.75rem;
+}
+
+.module-toolbar-desktop-filters.is-open > .module-filter-pill,
+.module-toolbar-desktop-filters.is-open > .module-filter-extra {
+    width: 100%;
+    min-width: 0;
+}
+
+.module-toolbar-desktop-filters.is-open select,
+.module-toolbar-desktop-filters.is-open input[type='date'] {
+    min-width: 0;
 }
 
 .module-toolbar-desktop-filter-toggle {
