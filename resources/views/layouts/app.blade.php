@@ -95,7 +95,7 @@
         <div x-data="{ sidebarOpen: false, mobileSheet: null, mobileMenuQuery: '', openMobileSheet(sheet) { this.mobileSheet = sheet; window.history.pushState({ oasisMobileSheet: sheet }, ''); }, closeMobileSheet() { if (! this.mobileSheet) return; this.mobileSheet = null; if (window.history.state?.oasisMobileSheet) window.history.back(); }, mobileMenuMatches(label) { return ! this.mobileMenuQuery || label.toLowerCase().includes(this.mobileMenuQuery.toLowerCase()); } }" @keydown.escape.window="closeMobileSheet(); sidebarOpen = false" @popstate.window="mobileSheet = null" data-mobile-shell :class="{ 'mobile-sheet-open': mobileSheet }" class="mobile-shell flex h-dvh gap-3.5 overflow-hidden bg-canvas p-3.5">
             @include('layouts.navigation')
 
-            <div class="flex h-full min-h-0 min-w-0 flex-1 flex-col lg:ml-[80px] xl:ml-[310px]">
+            <div class="flex h-full min-h-0 min-w-0 flex-1 flex-col lg:ml-[266px]">
                 @if (session('impersonator_id'))
                     <div class="flex flex-wrap items-center justify-between gap-3 bg-inverse px-4 py-3 text-sm font-semibold text-inverse-text sm:px-6 lg:px-8">
                         <span>Anda sedang login sebagai {{ Auth::user()->name }}. Super Admin: {{ session('impersonator_name') }}.</span>

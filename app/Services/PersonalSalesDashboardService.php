@@ -48,6 +48,7 @@ class PersonalSalesDashboardService
         $actionMetrics = (clone $ownLeads)
             ->selectRaw('SUM(CASE WHEN next_follow_up_at IS NOT NULL AND next_follow_up_at < ? AND status_lead NOT IN (?, ?) THEN 1 ELSE 0 END) as overdue_count', [$now->utc(), 'Akad', 'Tidak Lolos BI Checking'])
             ->selectRaw('SUM(CASE WHEN next_follow_up_at IS NOT NULL AND next_follow_up_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as today_count', [BusinessTime::utcStartOfDay($today), BusinessTime::utcEndOfDay($today)])
+            ->selectRaw('SUM(CASE WHEN tanggal_lead BETWEEN ? AND ? THEN 1 ELSE 0 END) as new_leads_count', [$lastSevenStart, $today])
             ->selectRaw('SUM(CASE WHEN status_lead = ? AND tanggal_lead BETWEEN ? AND ? AND EXISTS (SELECT 1 FROM lead_activities recent_lead_activity WHERE recent_lead_activity.lead_id = leads.id AND recent_lead_activity.activity_type = ?) AND NOT EXISTS (SELECT 1 FROM lead_activities responded_lead_activity WHERE responded_lead_activity.lead_id = leads.id AND responded_lead_activity.activity_type <> ?) THEN 1 ELSE 0 END) as new_unresponded_count', ['No Respon', $lastSevenStart, $today, 'Lead Baru', 'Lead Baru'])
             ->first();
 
@@ -96,6 +97,7 @@ class PersonalSalesDashboardService
                 'overdue' => (int) ($actionMetrics->overdue_count ?? 0),
                 'today' => (int) ($actionMetrics->today_count ?? 0),
                 'new' => (int) ($actionMetrics->new_unresponded_count ?? 0),
+                'newLeads' => (int) ($actionMetrics->new_leads_count ?? 0),
                 'items' => $desktopItems,
                 'urls' => [
                     'overdue' => route('leads.index', ['follow_up' => 'overdue']),

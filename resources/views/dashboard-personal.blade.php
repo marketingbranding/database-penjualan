@@ -27,6 +27,7 @@
     </x-slot>
 
     <div class="personal-dashboard">
+        <div class="personal-mobile-dashboard">
         <section class="personal-dashboard-section personal-next-section" aria-labelledby="next-agenda-title">
             <div class="personal-section-heading"><div><p class="personal-section-kicker">Prioritas</p><h2 id="next-agenda-title">Agenda berikutnya</h2></div>@can('sales.create')<a href="{{ route('sales-agendas.create') }}" class="personal-inline-action">Agenda baru</a>@endcan</div>
             @if ($nextAgenda)
@@ -100,5 +101,54 @@
         @if ($stock)
             <section class="personal-desktop-only personal-dashboard-section" aria-labelledby="stock-title"><div class="personal-section-heading"><div><p class="personal-section-kicker">Kavling</p><h2 id="stock-title">Stok kavling proyek saya</h2></div></div><div class="personal-stock-grid">@foreach ($stock as $projectStock)<div class="personal-stock-card"><strong>{{ $projectStock['project']->name }}</strong><div><span><i class="stock-available"></i>Tersedia <b>{{ number_format($projectStock['available'], 0, ',', '.') }}</b></span><span><i class="stock-reserved"></i>Dipesan <b>{{ number_format($projectStock['reserved'], 0, ',', '.') }}</b></span><span><i class="stock-sold"></i>Terjual <b>{{ number_format($projectStock['sold'], 0, ',', '.') }}</b></span></div></div>@endforeach</div></section>
         @endif
+        </div>
+
+        @php
+            $desktopActionItems = collect($actions['items'])->flatten(1)->take(3);
+        @endphp
+
+        <div class="personal-desktop-dashboard">
+            <section class="personal-kpi-grid" aria-label="Ringkasan penjualan">
+                <article class="personal-kpi-card"><span>Lead aktif saya</span><strong>{{ number_format($month['activeLeads'], 0, ',', '.') }}</strong><small>{{ number_format($actions['newLeads'], 0, ',', '.') }} lead baru minggu ini</small></article>
+                <article class="personal-kpi-card"><span>Agenda hari ini</span><strong>{{ number_format(count($todayAgendas), 0, ',', '.') }}</strong><small>{{ number_format(collect($todayAgendas)->where('model.status', 'done')->count(), 0, ',', '.') }} selesai</small></article>
+                <article class="personal-kpi-card is-danger"><span>Follow-up terlambat</span><strong>{{ number_format($actions['overdue'], 0, ',', '.') }}</strong><a href="{{ $actions['urls']['overdue'] }}">Kerjakan sekarang</a></article>
+                <article class="personal-kpi-card"><span>Akad bulan ini</span><strong>{{ number_format($month['akadMovement'], 0, ',', '.') }} <small>/ target</small></strong><i><b style="width: {{ min(100, $month['akadMovement'] * 10) }}%"></b></i></article>
+            </section>
+
+            <div class="personal-desktop-main-grid">
+                <section class="personal-desktop-card" aria-labelledby="desktop-action-title">
+                    <div class="personal-section-heading"><div><h2 id="desktop-action-title">Perlu tindakan</h2></div><span class="personal-card-badge">{{ number_format($desktopActionItems->count(), 0, ',', '.') }} item</span></div>
+                    <div class="personal-desktop-task-list">
+                        @forelse ($desktopActionItems as $item)
+                            <a href="{{ route('leads.show', $item['lead']) }}" class="personal-desktop-task"><span class="personal-desktop-task-icon {{ $item['reason'] === 'Follow-up terlambat' ? 'is-danger' : '' }}">{{ $item['reason'] === 'Follow-up terlambat' ? '◷' : '✓' }}</span><span><strong>{{ $item['reason'] }} · {{ $item['lead']->nama_konsumen }}</strong><small>{{ $item['reason'] }} · {{ $item['lead']->project?->name ?? 'Proyek belum dipilih' }}</small></span><span class="personal-desktop-task-action">Buka</span></a>
+                        @empty
+                            @foreach ([['key' => 'overdue', 'label' => 'Follow-up terlambat'], ['key' => 'today', 'label' => 'Follow-up hari ini'], ['key' => 'new', 'label' => 'Lead baru belum direspons']] as $action)
+                                <a href="{{ $actions['urls'][$action['key']] }}" class="personal-desktop-task"><span class="personal-desktop-task-icon {{ $action['key'] === 'overdue' ? 'is-danger' : '' }}">{{ $action['key'] === 'overdue' ? '◷' : '✓' }}</span><span><strong>{{ $action['label'] }}</strong><small>{{ number_format($actions[$action['key']], 0, ',', '.') }} item yang perlu kamu tindak.</small></span><span class="personal-desktop-task-action">Buka</span></a>
+                            @endforeach
+                        @endforelse
+                    </div>
+                </section>
+
+                <section class="personal-desktop-card" aria-labelledby="desktop-today-title">
+                    <div class="personal-section-heading"><div><h2 id="desktop-today-title">Agenda hari ini</h2></div><a href="{{ route('sales-agendas.index') }}" class="personal-inline-action">Semua agenda</a></div>
+                    <div class="personal-desktop-agenda-list">
+                        @forelse ($todayAgendas as $agenda)
+                            <a href="{{ $agenda['detailUrl'] }}" class="personal-desktop-agenda {{ $agenda['model']->status === 'done' ? 'is-done' : ($agenda['model']->id === ($nextAgenda['model']->id ?? null) ? 'is-next' : '') }}"><time>{{ $agenda['model']->agenda_date->format('H.i') }}</time><span><strong>{{ $agenda['model']->title }}</strong><small>{{ $agenda['consumer'] ?? 'Tanpa konsumen' }}@if ($agenda['project']) · {{ $agenda['project'] }}@endif</small></span></a>
+                        @empty
+                            <p class="personal-muted-copy">Tidak ada agenda hari ini.</p>
+                        @endforelse
+                    </div>
+                </section>
+
+                <section class="personal-desktop-card" aria-labelledby="desktop-pipeline-title">
+                    <div class="personal-section-heading"><div><h2 id="desktop-pipeline-title">Pipeline saya</h2></div><a href="{{ route('leads.index') }}" class="personal-inline-action">Buka daftar lead</a></div>
+                    <div class="personal-stage-card"><div class="personal-stage-bar">@foreach ($month['stages'] as $stage => $count)<span class="{{ $stageColors[$stage] ?? 'stage-neutral' }}" style="--stage-share: {{ $count }}"></span>@endforeach</div><div class="personal-stage-legend">@foreach ($month['stages'] as $stage => $count)<span><i class="{{ $stageColors[$stage] ?? 'stage-neutral' }}"></i>{{ $stage }} <b>{{ number_format($count, 0, ',', '.') }}</b></span>@endforeach</div></div>
+                </section>
+
+                @if ($stock)
+                    <section class="personal-desktop-card" aria-labelledby="desktop-stock-title"><div class="personal-section-heading"><div><h2 id="desktop-stock-title">Stok kavling proyek saya</h2></div><a href="{{ route('admin.spatial-workspace') }}" class="personal-inline-action">Lihat peta kavling</a></div><div class="personal-stock-grid">@foreach ($stock as $projectStock)<div class="personal-stock-card"><strong>{{ $projectStock['project']->name }}</strong><div><span><i class="stock-available"></i>Tersedia <b>{{ number_format($projectStock['available'], 0, ',', '.') }}</b></span><span><i class="stock-reserved"></i>Dipesan <b>{{ number_format($projectStock['reserved'], 0, ',', '.') }}</b></span><span><i class="stock-sold"></i>Terjual <b>{{ number_format($projectStock['sold'], 0, ',', '.') }}</b></span></div></div>@endforeach</div></section>
+                @endif
+            </div>
+        </div>
     </div>
 </x-app-layout>

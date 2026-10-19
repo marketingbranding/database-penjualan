@@ -85,7 +85,7 @@ class ModuleNavigationTest extends TestCase
         $this->assertNotEmpty($leadsLink);
         $this->assertNotEmpty($monitoringLink);
         $this->assertStringNotContainsString('bg-lime-soft', $leadsLink[1]);
-        $this->assertStringContainsString('bg-lime-soft', $monitoringLink[1]);
+        $this->assertStringContainsString('bg-lime', $monitoringLink[1]);
     }
 
     public function test_user_without_permission_cannot_open_module_containers(): void

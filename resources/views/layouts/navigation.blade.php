@@ -1,7 +1,7 @@
 @php
     $panelLink = 'group flex h-[35px] min-h-0 items-center gap-2.5 rounded-xl px-2.5 py-1.5 text-[13px] font-medium transition duration-150';
-    $activePanelLink = 'bg-lime-soft text-ink';
-    $inactivePanelLink = 'text-muted hover:bg-canvas hover:text-ink';
+    $activePanelLink = 'bg-lime text-on-accent';
+    $inactivePanelLink = 'text-rail-text/75 hover:bg-surface-2 hover:text-rail-text';
     $railLink = 'group relative grid size-[42px] place-items-center rounded-[14px] text-muted transition duration-150 hover:bg-surface-2 hover:text-lime';
     $activeRailLink = 'bg-surface-2 text-lime';
     $settingsRoute = Auth::user()->can('spatial-workspace.view')
@@ -15,7 +15,7 @@
 
 <div x-cloak x-show="sidebarOpen" x-transition.opacity class="fixed inset-0 z-40 bg-rail/60 lg:hidden" @click="sidebarOpen = false"></div>
 
-<aside class="fixed inset-y-3.5 left-3.5 z-50 hidden w-[66px] flex-col items-center gap-2.5 rounded-3xl bg-rail py-4 text-rail-text lg:flex" aria-label="Navigasi utama">
+<aside class="fixed inset-y-3.5 left-3.5 z-50 hidden w-[66px] flex-col items-center gap-2.5 rounded-3xl bg-rail py-4 text-rail-text lg:hidden" aria-hidden="true">
     <a href="{{ route('dashboard') }}" class="brand-rail-mark mb-2.5 grid size-10 place-items-center rounded-[13px] transition-transform duration-150 hover:scale-[1.06] motion-reduce:transition-none motion-reduce:hover:scale-100" aria-label="Oasis Next, buka dashboard" title="Oasis Next, buka dashboard">
         <x-brand.logo variant="mark" size="md" aria-hidden="true" class="size-10" />
     </a>
@@ -52,7 +52,7 @@
     </div>
 </aside>
 
-<aside class="fixed inset-y-3.5 left-[94px] z-50 flex w-[216px] -translate-x-full flex-col rounded-3xl bg-surface p-3.5 text-ink transition-transform duration-200 xl:translate-x-0" :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full xl:translate-x-0'" aria-label="Panel navigasi">
+<aside class="workspace-sidebar fixed inset-y-3.5 left-3.5 z-50 flex w-[248px] -translate-x-full flex-col rounded-3xl bg-rail p-3.5 text-rail-text transition-transform duration-200 lg:translate-x-0" :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'" aria-label="Navigasi utama">
     <div class="flex items-center justify-between pb-3.5">
         <a href="{{ route('dashboard') }}" class="min-w-0">
             <span class="md:hidden">

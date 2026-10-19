@@ -50,6 +50,207 @@
     padding: 1.25rem 1rem 5.5rem;
 }
 
+.personal-desktop-dashboard {
+    display: none;
+}
+
+.personal-card-badge {
+    border-radius: 999px;
+    background: rgb(var(--c-accent-soft) / var(--c-accent-soft-alpha));
+    padding: 0.35rem 0.65rem;
+    color: rgb(var(--c-accent-text));
+    font-size: 0.6875rem;
+    font-weight: 700;
+}
+
+.personal-desktop-card {
+    display: grid;
+    align-content: start;
+    gap: 0.75rem;
+    min-width: 0;
+    border-radius: 22px;
+    background: rgb(var(--c-surface));
+    padding: 1.25rem;
+}
+
+.personal-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.personal-kpi-card {
+    display: grid;
+    min-height: 128px;
+    align-content: space-between;
+    gap: 0.4rem;
+    border-radius: 20px;
+    background: rgb(var(--c-surface));
+    padding: 1.1rem 1.25rem;
+}
+
+.personal-kpi-card > span,
+.personal-kpi-card > small {
+    color: rgb(var(--c-secondary-text));
+    font-size: 0.75rem;
+}
+
+.personal-kpi-card strong {
+    color: rgb(var(--c-text));
+    font-size: 1.9rem;
+    font-weight: 600;
+    letter-spacing: -0.04em;
+}
+
+.personal-kpi-card strong small {
+    color: rgb(var(--c-secondary-text));
+    font-size: 0.9rem;
+    font-weight: 500;
+    letter-spacing: normal;
+}
+
+.personal-kpi-card a {
+    color: rgb(var(--c-accent-text));
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.personal-kpi-card.is-danger {
+    border: 1px solid rgb(var(--c-danger) / 35%);
+}
+
+.personal-kpi-card.is-danger strong {
+    color: rgb(var(--c-danger));
+}
+
+.personal-kpi-card > i,
+.coordinator-metric-card > i {
+    display: block;
+    height: 7px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgb(var(--c-surface-2));
+}
+
+.personal-kpi-card > i b {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: rgb(var(--c-accent-dark));
+}
+
+.personal-desktop-main-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.personal-desktop-task-list,
+.personal-desktop-agenda-list {
+    display: grid;
+    overflow: hidden;
+    border: 1px solid rgb(var(--c-line));
+    border-radius: 18px;
+}
+
+.personal-desktop-task,
+.personal-desktop-agenda {
+    display: flex;
+    min-height: 68px;
+    align-items: center;
+    gap: 0.75rem;
+    border-bottom: 1px solid rgb(var(--c-line));
+    padding: 0.7rem 0.85rem;
+}
+
+.personal-desktop-task:last-child,
+.personal-desktop-agenda:last-child {
+    border-bottom: 0;
+}
+
+.personal-desktop-task > span:nth-child(2),
+.personal-desktop-agenda > span {
+    display: grid;
+    min-width: 0;
+    flex: 1;
+    gap: 0.2rem;
+}
+
+.personal-desktop-task strong,
+.personal-desktop-agenda strong {
+    overflow: hidden;
+    color: rgb(var(--c-text));
+    font-size: 0.8125rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.personal-desktop-task small,
+.personal-desktop-agenda small {
+    overflow: hidden;
+    color: rgb(var(--c-secondary-text));
+    font-size: 0.6875rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.personal-desktop-task-icon {
+    display: grid;
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+    place-items: center;
+    border-radius: 10px;
+    background: rgb(var(--c-accent-soft) / var(--c-accent-soft-alpha));
+    color: rgb(var(--c-accent-text));
+    font-size: 0.875rem;
+}
+
+.personal-desktop-task-icon.is-danger {
+    background: rgb(var(--c-danger-soft));
+    color: rgb(var(--c-danger));
+}
+
+.personal-desktop-task-action {
+    color: rgb(var(--c-accent-text));
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.personal-desktop-agenda time {
+    width: 42px;
+    flex: 0 0 42px;
+    color: rgb(var(--c-accent-text));
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.personal-desktop-agenda.is-next {
+    border-radius: 0;
+    background: rgb(var(--c-inverse));
+}
+
+.personal-desktop-agenda.is-next strong,
+.personal-desktop-agenda.is-next time {
+    color: rgb(var(--c-inverse-text));
+}
+
+.personal-desktop-agenda.is-next small {
+    color: rgb(var(--c-inverse-text) / 72%);
+}
+
+.personal-desktop-agenda.is-done strong {
+    text-decoration: line-through;
+}
+
+.personal-desktop-agenda-list > .personal-muted-copy {
+    border: 0;
+    padding: 1rem;
+}
+
 .coordinator-dashboard { gap: 1rem; }
 .coordinator-metric-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.75rem; }
 .coordinator-metric-card { display: grid; min-height: 126px; align-content: space-between; gap: 0.35rem; border: 1px solid rgb(var(--c-line)); border-radius: 20px; background: rgb(var(--c-surface)); padding: 1rem; }
@@ -5307,33 +5508,35 @@ body {
 
     .mobile-quick-grid {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
+        gap: 4px;
         overflow-y: auto;
         padding: 12px 0;
     }
 
     .mobile-quick-action {
         display: flex;
-        min-height: 88px;
-        align-items: flex-start;
-        justify-content: space-between;
-        flex-direction: column;
-        border-radius: 18px;
-        background: rgb(var(--c-surface-2));
-        padding: 12px;
+        min-height: 72px;
+        align-items: center;
+        flex-direction: row;
+        gap: 12px;
+        border-radius: 16px;
+        background: transparent;
+        padding: 8px 10px;
         color: rgb(var(--c-text));
         font-size: 0.8125rem;
         font-weight: 600;
     }
 
     .mobile-quick-action.is-primary {
-        border: 1px solid rgb(var(--c-accent));
-        background: rgb(var(--c-accent-soft) / var(--c-accent-soft-alpha));
+        border: 0;
+        background: rgb(var(--c-accent));
+        color: rgb(var(--c-on-accent));
     }
 
     .mobile-quick-action span {
         display: grid;
+        min-width: 0;
+        flex: 1;
         gap: 0.2rem;
     }
 
@@ -5345,9 +5548,25 @@ body {
     }
 
     .mobile-quick-action strong {
+        display: grid;
+        width: 44px;
+        height: 44px;
+        flex: 0 0 44px;
+        place-items: center;
+        border-radius: 13px;
+        background: rgb(var(--c-surface-2));
         color: rgb(var(--c-accent-text));
-        font-size: 1.5rem;
+        font-size: 1.25rem;
         font-weight: 400;
+    }
+
+    .mobile-quick-action.is-primary strong {
+        background: rgb(var(--c-inverse));
+        color: rgb(var(--c-accent));
+    }
+
+    .mobile-quick-action.is-primary span small {
+        color: rgb(var(--c-on-accent) / 76%);
     }
 
     .mobile-sheet-list-item {
@@ -5975,5 +6194,76 @@ body {
         color: rgb(var(--c-filter-muted));
         font-size: 0.8125rem;
         font-weight: 700;
+    }
+}
+
+@media (min-width: 768px) {
+    .personal-dashboard {
+        display: block;
+        max-width: 1180px;
+        padding: 1.75rem 2rem 3rem;
+    }
+
+    .personal-mobile-dashboard {
+        display: none;
+    }
+
+    .personal-desktop-dashboard {
+        display: grid;
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 767px) {
+    .personal-desktop-dashboard {
+        display: none;
+    }
+}
+
+.workspace-sidebar .text-ink {
+    color: rgb(var(--c-rail-text));
+}
+
+.workspace-sidebar .text-muted {
+    color: rgb(var(--c-rail-text) / 62%);
+}
+
+.workspace-sidebar .border-line {
+    border-color: rgb(var(--c-rail-text) / 12%);
+}
+
+.workspace-sidebar .bg-surface-2 {
+    background: rgb(var(--c-rail-text) / 9%);
+}
+
+.workspace-sidebar .hover\:bg-canvas:hover {
+    background: rgb(var(--c-rail-text) / 10%);
+}
+
+.workspace-sidebar .hover\:text-ink:hover {
+    color: rgb(var(--c-rail-text));
+}
+
+.workspace-sidebar .workspace-nav-scroll {
+    scrollbar-color: rgb(var(--c-rail-text) / 18%) transparent;
+}
+
+@media (min-width: 768px) and (max-width: 1100px) {
+    .workspace-sidebar {
+        width: 220px;
+    }
+
+    .mobile-shell > div.flex.h-full.min-h-0.min-w-0.flex-1 {
+        margin-left: 238px;
+    }
+
+    .personal-dashboard {
+        padding-right: 1.25rem;
+        padding-left: 1.25rem;
+    }
+
+    .personal-desktop-main-grid,
+    .coordinator-lower-grid {
+        grid-template-columns: minmax(0, 1fr);
     }
 }

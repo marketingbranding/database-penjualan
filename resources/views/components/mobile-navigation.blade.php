@@ -5,7 +5,7 @@
     </a>
     <a href="{{ route('leads.index') }}" class="mobile-tab {{ request()->routeIs('leads.*') ? 'is-active' : '' }}">
         <span class="mobile-tab-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M5 19V9m7 10V5m7 14v-7" /></svg></span>
-        <span>Leads</span>
+        <span>Lead</span>
     </a>
     <button type="button" class="mobile-tab mobile-tab-create" @click="openMobileSheet('quick')" aria-label="Buka aksi cepat">
         <span class="mobile-create-icon">+</span>
@@ -17,7 +17,7 @@
     </a>
     <button type="button" class="mobile-tab {{ request()->routeIs('dashboard', 'leads.*', 'sales-agendas.*') ? '' : 'is-active' }}" @click="openMobileSheet('menu')" :aria-expanded="(mobileSheet === 'menu').toString()">
         <span class="mobile-tab-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M5 7h14M5 12h14M5 17h14" /></svg></span>
-        <span>Menu</span>
+        <span>Lainnya</span>
     </button>
 </nav>
 
