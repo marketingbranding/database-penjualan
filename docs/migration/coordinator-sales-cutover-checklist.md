@@ -30,9 +30,9 @@ Status values:
 | Coordinator lead assignment works | PASS | Existing ownership tests pass for configured Team cases |
 | Coordinator agenda assignment/redirect works | PASS | Existing redirect and policy tests pass |
 | No cross-Branch exposure | PASS | No cross-Branch or multi-active-Team memberships detected |
-| Legacy CRM final synchronization strategy defined | NEEDS REVIEW | Use the one-time freeze → sync → verify procedure |
-| Freeze timestamp defined | NEEDS REVIEW | Business owner must choose timestamp and timezone |
-| Final migration run procedure defined | PASS | Documented in `team-normalization-plan.md` |
+| Legacy CRM final synchronization strategy defined | PASS (REHEARSED LOCALLY) | Delta importer, reconciliation, and repeat-run procedure are documented in `crm-delta-sync.md` and `cutover-runbook.md` |
+| Freeze timestamp defined | NEEDS REVIEW | Business owner must choose timestamp and timezone; the command now requires both `--since` and `--freeze-at` in delta mode |
+| Final migration run procedure defined | PASS (REHEARSED LOCALLY) | Documented in `cutover-runbook.md`; production freeze/apply remains unauthorized |
 | Post-migration verification defined | PASS | Audit + full test + operational smoke checks documented |
 | Rollback/recovery procedure defined | PASS | Backup, mapping, stop-write, and repair-forward steps documented |
 

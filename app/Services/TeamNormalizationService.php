@@ -856,7 +856,10 @@ class TeamNormalizationService
 
     private function isLegacyTeam(Team $team): bool
     {
-        return str_starts_with((string) $team->name, 'Migrasi Tim') || str_starts_with((string) $team->code, 'SRC-TEAM-BRANCH-');
+        return str_starts_with((string) $team->name, 'Migrasi Tim')
+            || str_starts_with((string) $team->name, 'Legacy ')
+            || str_starts_with((string) $team->code, 'SRC-TEAM-BRANCH-')
+            || str_starts_with((string) $team->code, 'LEGACY-');
     }
 
     private function absolutePath(string $path): string
