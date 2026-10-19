@@ -12,17 +12,17 @@ Status values:
 | Check | Status | Evidence / next action |
 | --- | --- | --- |
 | All legacy Sales identities are matched | PASS | 91/91 legacy users have a deterministic privacy-safe identity match |
-| Active Sales are present in OASIS Next | NEEDS REVIEW | 59 Sales role users are present; 57 are active |
+| Active Sales are present in OASIS Next | NEEDS REVIEW | Fresh production source audit: 59 Sales role users; 57 active; one active Sales (ID 76) remains unassigned |
 | All active Coordinators exist in OASIS Next | PASS | 16 Coordinator role users are present |
 | Roles correctly mapped | PASS (LOCAL) | Final Team role records were provisioned locally; production apply not executed |
 | Sales → Coordinator mapping recovered | PASS | 56 current valid legacy pivot rows cover 56 Sales users |
-| Unassigned active Sales resolved | NEEDS REVIEW | One active Sales user has no current Coordinator assignment |
+| Unassigned active Sales resolved | NEEDS REVIEW | Fresh production source confirms active Sales ID 76 has no current Coordinator assignment and owns 0 active Leads |
 | Final Team membership verified | PASS (LOCAL) | Safe local apply created/reused 16 final Coordinator Teams; production apply not executed |
 | Lead ownership verified | BLOCKED | 36 review Leads remain: 20 Branch mismatches and 16 Sales PICs without a final Team |
 | Lead Team scope verified | PASS (LOCAL PARTIAL) | 4,015 Leads reassigned safely; 36 unresolved records remain untouched |
-| Agenda ownership verified | NEEDS REVIEW | Current snapshot contains 0 Agendas; production/source verification is still required |
+| Agenda ownership verified | NEEDS REVIEW | Fresh production source contains 8,069 Buku Saku Sales Agendas; target-side reconciliation is still required |
 | Coordinator dashboard scope verified | PASS (LOCAL) | Post-normalization local audit reports 16 confirmed Coordinator mappings |
-| Sales dashboard scope verified | BLOCKED | Local smoke test passes for reassigned Leads; one active and two inactive Sales exceptions remain |
+| Sales dashboard scope verified | BLOCKED | Fresh source has 20 branch-mismatch Leads and 16 Leads assigned to active Coordinator ID 59 without a deterministic final Team; anonymized Sales IDs 94/95 own 0 active Leads |
 | Quick actions work | PASS | Existing PHPUnit/UI verification covers current flows |
 | Lead create works | PASS | Existing ownership and feature tests pass |
 | Lead follow-up works | PASS | Existing Lead activity/follow-up tests pass |
@@ -40,24 +40,26 @@ Status values:
 
 ### Sales: NOT READY
 
-Sales users have final local Team memberships, but one active Sales assignment
-is unresolved and two inactive Sales records need disposition. Thirty-six Leads
-remain outside deterministic reassignment, so production cutover is blocked.
+The fresh production source has 56 current valid Coordinator → Sales rows for 57
+active Sales users. Active Sales ID 76 remains unassigned, while IDs 94/95 are
+anonymized and own no active Leads. Thirty-six current, non-deleted Leads remain
+outside deterministic final-Team resolution (20 branch mismatches and 16 Leads
+whose PIC is active Coordinator ID 59), so production cutover is blocked.
 
 ### Coordinators: NOT READY
 
-The legacy source provides valid membership rows for all 16 Coordinators and
-the safe local apply confirms their final Team scope. Production Team apply and
-the remaining Lead review set still require approval.
+The fresh source provides valid membership rows for all 16 Coordinators and the
+56-row effective mapping matches the previous forensic mapping by Branch code,
+Coordinator ID, and Sales ID. Production Team apply and the remaining Lead
+review set still require approval.
 
 ## Exact blockers before CRM freeze
 
-1. Confirm the one active Sales user without a current Coordinator assignment.
+1. Confirm the disposition of active Sales ID 76 without a current Coordinator assignment.
 2. Review and approve the Team normalization report before production apply.
-3. Resolve the one unassigned active Sales and the two inactive Sales decisions.
+3. Resolve the unassigned active Sales decision and document the anonymized Sales IDs 94/95 disposition.
 4. Reconcile or disposition the 36 Lead review records and re-run the audit.
-5. Verify Agenda data from the final source export; the current snapshot has no
-   Agenda rows to validate.
+5. Reconcile the 8,069 source Agendas against the OASIS Next target.
 6. Define and rehearse the final synchronization, freeze timestamp, verification,
    and recovery procedure.
 
@@ -76,18 +78,21 @@ data-level audit must have zero critical findings first.
 
 ### REVIEW
 
-- The approved production SSH destination is known, but the available local
-  SSH identities are not authorized by the server. Confirm the deployment
-  operator's approved key before the next audit attempt.
-- The legacy database account's actual privilege level is not yet verified.
+- The production application account is not read-only: `SHOW GRANTS` indicates
+  `ALL PRIVILEGES`. Obtain a separate SELECT-only credential for migration/audit.
+- Previous 36 target-side Lead review records cannot be matched one-to-one to
+  current source rows because the local snapshot uses `SRC-SL-*` identifiers;
+  the fresh source anomaly categories still total 36 active rows.
 
 ### BLOCKER
 
-- The live production CRM database identity and current counts are unverified.
-  The configured local fallback still resolves to database `laravel` on
-  `127.0.0.1`, and the read-only delta attempt stopped before reading data.
-- No production organization mapping, production delta dry-run, current Lead
-  exception classification, or fresh production snapshot rehearsal can be
-  accepted until source identity is proven.
+- The live source is now identified and verified as the logical source used by
+  the previous audit: the application path/repository, schema, Branch codes,
+  user IDs, and 56 effective pivot mappings agree.
+- The OASIS Next production target and a trustworthy previous production sync
+  boundary are not available from this legacy-server session, so the real delta
+  dry-run has not been attempted.
+- Production Team normalization, Lead reassignment, target reconciliation, and
+  fresh snapshot rehearsal remain pending.
 - Production `OASIS_READ_ONLY` has not been enabled, as required for this
   preparation milestone.
