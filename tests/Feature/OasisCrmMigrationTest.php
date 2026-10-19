@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Lead;
+use App\Models\LeadCutoverDisposition;
 use App\Models\Role;
 use App\Models\Team;
 use App\Models\User;
@@ -238,7 +240,7 @@ class OasisCrmMigrationTest extends TestCase
         $this->assertDatabaseHas('leads', ['id_lead' => 'CRM-2', 'sales_pic_id' => $sales->id, 'created_by' => $sales->id]);
     }
 
-    public function test_unresolved_coordinator_pic_is_isolated_from_operational_import(): void
+    public function test_unresolved_coordinator_pic_is_preserved_as_an_auditable_excluded_record(): void
     {
         $this->seedLegacySnapshot();
         DB::connection('legacy_test')->table('roles')->insert(['id' => 2, 'slug' => 'sales_coordinator']);
@@ -259,8 +261,22 @@ class OasisCrmMigrationTest extends TestCase
             '--timezone' => 'Asia/Jakarta',
         ])->assertFailed()->expectsOutputToContain('lead_coordinator_pic_excluded_from_cutover');
 
-        $this->assertDatabaseMissing('leads', ['id_lead' => 'CRM-2']);
+        $targetLead = DB::table('leads')->where('id_lead', 'CRM-2')->firstOrFail();
+        $this->assertNull($targetLead->sales_pic_id);
+        $this->assertDatabaseHas('lead_cutover_dispositions', [
+            'lead_id' => $targetLead->id,
+            'classification' => LeadCutoverDisposition::EXCLUDE_FROM_CUTOVER_OLD_UNRESOLVED,
+        ]);
+        $this->assertNull(Lead::query()->whereKey($targetLead->id)->first());
+        $this->assertNotNull(Lead::withoutGlobalScopes()->find($targetLead->id));
         $this->assertDatabaseHas('leads', ['id_lead' => 'CRM-1']);
+
+        $disposition = DB::table('lead_cutover_dispositions')->where('lead_id', $targetLead->id)->first();
+        $this->artisan('migration:import-oasis', [
+            '--source' => 'legacy_test', '--apply' => true, '--freeze-at' => '2026-10-19 12:00:00',
+            '--timezone' => 'Asia/Jakarta',
+        ])->assertFailed();
+        $this->assertEquals((array) $disposition, (array) DB::table('lead_cutover_dispositions')->where('lead_id', $targetLead->id)->first());
     }
 
     private function seedLegacySnapshot(): void

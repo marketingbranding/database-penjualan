@@ -311,6 +311,12 @@ class OrganizationAuditService
             ->leftJoin('teams as t', 't.id', '=', 'l.team_id')
             ->leftJoin('users as u', 'u.id', '=', 'l.sales_pic_id')
             ->leftJoin('branches as b', 'b.id', '=', 'l.branch_id')
+            ->whereNotExists(function ($query): void {
+                $query->selectRaw('1')
+                    ->from('lead_cutover_dispositions as lcd')
+                    ->whereColumn('lcd.lead_id', 'l.id')
+                    ->where('lcd.classification', 'EXCLUDE_FROM_CUTOVER_OLD_UNRESOLVED');
+            })
             ->where(function ($query): void {
                 $query->whereNull('l.team_id')->orWhereNull('l.sales_pic_id')->orWhereColumn('l.branch_id', '<>', 'u.branch_id')->orWhereColumn('t.branch_id', '<>', 'l.branch_id')->orWhereNotExists(function ($subquery): void {
                     $subquery->selectRaw('1')->from('team_user as tu')->whereColumn('tu.team_id', 'l.team_id')->whereColumn('tu.user_id', 'l.sales_pic_id');

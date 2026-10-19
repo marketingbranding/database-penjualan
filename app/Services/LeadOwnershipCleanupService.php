@@ -108,6 +108,14 @@ class LeadOwnershipCleanupService
     {
         $salesPic = $lead->salesPic;
         if ($salesPic === null) {
+            $existingDisposition = LeadCutoverDisposition::query()->where('lead_id', $lead->getKey())->first();
+            if ($existingDisposition !== null && in_array($existingDisposition->classification, [
+                LeadCutoverDisposition::NEEDS_MANUAL_ASSIGNMENT_CURRENT_MONTH,
+                LeadCutoverDisposition::EXCLUDE_FROM_CUTOVER_OLD_UNRESOLVED,
+            ], true)) {
+                return null;
+            }
+
             return $this->otherBlocker($lead, 'Lead tidak memiliki Sales PIC.');
         }
 
@@ -392,22 +400,37 @@ class LeadOwnershipCleanupService
             'applied_at' => now(),
         ];
         $existing = LeadCutoverDisposition::query()->where('lead_id', $lead->getKey())->first();
-        if ($existing !== null) {
-            $existingValues = $existing->only([
-                'classification', 'evidence_confidence', 'cutover_at', 'current_month_boundary',
-                'old_sales_pic_id', 'new_sales_pic_id', 'old_team_id', 'new_team_id', 'evidence', 'reason',
-            ]);
-            $newValues = collect($values)->except(['applied_at'])->all();
-            if ($existingValues['evidence'] === json_encode($newValues['evidence'], JSON_THROW_ON_ERROR)) {
-                $existingValues['evidence'] = $newValues['evidence'];
-            }
-            if ($existingValues == $newValues) {
+        if ($existing !== null && $this->dispositionMatches($existing, $values)) {
+            return false;
+        }
+
+        if ($existing === null) {
+            LeadCutoverDisposition::query()->create(['lead_id' => $lead->getKey(), ...$values]);
+        } else {
+            $existing->update($values);
+        }
+
+        return true;
+    }
+
+    /** @param array<string, mixed> $values */
+    private function dispositionMatches(LeadCutoverDisposition $existing, array $values): bool
+    {
+        foreach ([
+            'classification', 'evidence_confidence', 'old_sales_pic_id', 'new_sales_pic_id',
+            'old_team_id', 'new_team_id', 'reason',
+        ] as $field) {
+            if ((string) $existing->getAttribute($field) !== (string) ($values[$field] ?? null)) {
                 return false;
             }
         }
 
-        $disposition = LeadCutoverDisposition::query()->updateOrCreate(['lead_id' => $lead->getKey()], $values);
+        foreach (['cutover_at', 'current_month_boundary'] as $field) {
+            if ($existing->{$field}?->format('Y-m-d H:i:s') !== $values[$field]?->format('Y-m-d H:i:s')) {
+                return false;
+            }
+        }
 
-        return $existing === null || $existing->getAttributes() !== $disposition->getAttributes();
+        return json_encode($existing->evidence, JSON_THROW_ON_ERROR) === json_encode($values['evidence'], JSON_THROW_ON_ERROR);
     }
 }

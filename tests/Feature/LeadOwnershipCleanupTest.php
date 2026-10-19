@@ -144,11 +144,17 @@ class LeadOwnershipCleanupTest extends TestCase
 
         $first = $service->run($cutoverAt, 'Asia/Jakarta', true);
         $second = $service->run($cutoverAt, 'Asia/Jakarta', true);
+        $firstDisposition = LeadCutoverDisposition::query()->where('lead_id', $lead->id)->firstOrFail();
+        $firstUpdatedAt = $firstDisposition->getRawOriginal('updated_at');
+        $firstAppliedAt = $firstDisposition->getRawOriginal('applied_at');
 
         $this->assertSame('2026-10-01T00:00:00+07:00', $first['current_month_boundary']);
         $this->assertSame(1, $first['counts']['needs_manual_assignment_current_month']);
+        $this->assertSame(1, $first['counts']['changed']);
         $this->assertSame(0, $second['counts']['changed']);
         $this->assertSame(1, LeadCutoverDisposition::query()->where('lead_id', $lead->id)->count());
+        $this->assertSame($firstUpdatedAt, LeadCutoverDisposition::query()->where('lead_id', $lead->id)->firstOrFail()->getRawOriginal('updated_at'));
+        $this->assertSame($firstAppliedAt, LeadCutoverDisposition::query()->where('lead_id', $lead->id)->firstOrFail()->getRawOriginal('applied_at'));
     }
 
     /** @return array{branch: Branch, finalTeam: Team, legacyTeam: Team, coordinator: User, sales: User} */
