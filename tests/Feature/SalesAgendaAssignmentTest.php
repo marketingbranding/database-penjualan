@@ -114,6 +114,18 @@ class SalesAgendaAssignmentTest extends TestCase
         }
     }
 
+    public function test_coordinator_can_view_agenda_evidence_from_read_only_detail(): void
+    {
+        [$coordinator, $owner, $team] = $this->coordinatorContext();
+        $agenda = SalesAgenda::factory()->create(['branch_id' => $team->branch_id, 'team_id' => $team->id, 'created_by' => $owner->id, 'owner_id' => $owner->id]);
+        SalesAgendaEvidence::factory()->create(['sales_agenda_id' => $agenda->id, 'original_name' => 'team-evidence.jpg']);
+
+        $this->actingAs($coordinator)
+            ->get(route('sales-agendas.show', $agenda))
+            ->assertOk()
+            ->assertSee('team-evidence.jpg');
+    }
+
     public function test_previous_owner_sees_redirected_history_but_cannot_edit_delete_complete_or_upload(): void
     {
         [$coordinator, $oldOwner, $team] = $this->coordinatorContext();

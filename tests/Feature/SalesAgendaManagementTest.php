@@ -21,7 +21,7 @@ class SalesAgendaManagementTest extends TestCase
 
     public function test_sales_can_create_agenda_with_optional_sales_case_and_evidence(): void
     {
-        Storage::fake('local');
+        Storage::fake('public');
         [$sales, $branch] = $this->salesUser();
         $image = UploadedFile::fake()->image('kunjungan.jpg');
 
@@ -49,6 +49,8 @@ class SalesAgendaManagementTest extends TestCase
             'sales_agenda_id' => $agenda->id,
             'original_name' => 'kunjungan.jpg',
         ]);
+        $evidence = SalesAgendaEvidence::query()->where('sales_agenda_id', $agenda->id)->firstOrFail();
+        $this->assertTrue(Storage::disk('public')->exists($evidence->file_path));
         $this->assertDatabaseHas('activity_logs', [
             'subject_type' => $agenda->getMorphClass(),
             'subject_id' => $agenda->id,

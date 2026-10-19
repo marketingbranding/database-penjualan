@@ -19,6 +19,14 @@
                     </div>
                 </x-form-section>
 
+                <x-form-section title="Bukti foto" description="Bukti yang terhubung dengan agenda ini.">
+                    @forelse ($agenda->evidence as $evidence)
+                        <a href="{{ \Illuminate\Support\Facades\Storage::url($evidence->file_path) }}" target="_blank" rel="noopener noreferrer" class="block border-b border-line py-3 text-sm font-semibold text-lime-dark last:border-0 hover:underline">{{ $evidence->original_name }}</a>
+                    @empty
+                        <p class="text-sm text-muted">Belum ada bukti foto.</p>
+                    @endforelse
+                </x-form-section>
+
                 @if ($agenda->lead)
                     <div class="rounded-2xl border border-orange/30 bg-orange/10 p-4 text-sm text-ink">Agenda ini terhubung ke Lead {{ $agenda->lead->id_lead }}. Pengalihan agenda tidak mengubah kepemilikan Lead.</div>
                 @endif

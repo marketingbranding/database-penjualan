@@ -378,7 +378,7 @@ class SalesAgendaController extends Controller
             }
 
             $agenda->evidence()->create([
-                'file_path' => $file->store('sales-agendas'),
+                'file_path' => $file->store('sales-agendas', 'public'),
                 'original_name' => $file->getClientOriginalName(),
                 'mime_type' => $file->getMimeType(),
                 'file_size' => $file->getSize(),
