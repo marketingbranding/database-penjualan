@@ -63,3 +63,31 @@ the remaining Lead review set still require approval.
 
 Do not mark the cutover ready only because PHPUnit or the build passes. The
 data-level audit must have zero critical findings first.
+
+## Current milestone decision
+
+### GO
+
+- OASIS Next delta synchronization is deterministic, dry-run by default, and
+  source/target guarded.
+- Local delta rehearsal and repeat-run idempotency pass.
+- Legacy CRM read-only support is implemented in source control with
+  `OASIS_READ_ONLY=false` as the default.
+
+### REVIEW
+
+- The approved production SSH destination is known, but the available local
+  SSH identities are not authorized by the server. Confirm the deployment
+  operator's approved key before the next audit attempt.
+- The legacy database account's actual privilege level is not yet verified.
+
+### BLOCKER
+
+- The live production CRM database identity and current counts are unverified.
+  The configured local fallback still resolves to database `laravel` on
+  `127.0.0.1`, and the read-only delta attempt stopped before reading data.
+- No production organization mapping, production delta dry-run, current Lead
+  exception classification, or fresh production snapshot rehearsal can be
+  accepted until source identity is proven.
+- Production `OASIS_READ_ONLY` has not been enabled, as required for this
+  preparation milestone.
