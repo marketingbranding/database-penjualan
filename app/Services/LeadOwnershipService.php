@@ -36,7 +36,8 @@ class LeadOwnershipService
     /** @return array{0: int, 1: int} */
     public function resolve(User $actor, int $salesPicId): array
     {
-        $salesPic = User::query()->with('teams')->findOrFail($salesPicId);
+        $salesPic = $this->assertSalesPic($salesPicId);
+        $salesPic->load('teams');
         $allowedSalesIds = $this->allowedSalesUsers($actor)->modelKeys();
 
         if (! in_array($salesPic->getKey(), $allowedSalesIds, true)) {
@@ -57,6 +58,25 @@ class LeadOwnershipService
         }
 
         return [$salesPic->branch_id, $teamId];
+    }
+
+    public function assertSalesPic(int $salesPicId): User
+    {
+        $salesPic = User::query()->findOrFail($salesPicId);
+        $isSales = DB::table(config('permission.table_names.model_has_roles').' as model_roles')
+            ->join(config('permission.table_names.roles').' as roles', 'roles.id', '=', 'model_roles.role_id')
+            ->join('teams', 'teams.id', '=', 'roles.team_id')
+            ->where('model_roles.model_type', $salesPic->getMorphClass())
+            ->where('model_roles.model_id', $salesPic->getKey())
+            ->where('roles.name', 'sales')
+            ->where('teams.is_active', true)
+            ->exists();
+
+        if (! $isSales) {
+            throw ValidationException::withMessages(['sales_pic_id' => 'Lead PIC harus merupakan pengguna dengan role Sales.']);
+        }
+
+        return $salesPic;
     }
 
     public function isCoordinator(User $user): bool

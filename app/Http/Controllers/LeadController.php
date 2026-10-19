@@ -341,6 +341,9 @@ class LeadController extends Controller
         [$branchId, $teamId] = $salesPicChanged
             ? $this->leadOwnership->resolve($request->user(), (int) $data['sales_pic_id'])
             : [$lead->branch_id, $lead->team_id];
+        if (! $salesPicChanged) {
+            $this->leadOwnership->assertSalesPic((int) $data['sales_pic_id']);
+        }
         $this->ensureProjectBelongsToBranch($data['project_id'] ?? null, $branchId, $teamId);
 
         DB::transaction(function () use ($data, $branchId, $teamId, $lead, $request): void {

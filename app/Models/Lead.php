@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 
 #[Fillable([
     'id_lead', 'id_promo', 'nama_promo', 'tanggal_lead', 'sumber_lead', 'kanal_masuk',
@@ -49,6 +50,18 @@ class Lead extends Model
 
     /** @use HasFactory<LeadFactory> */
     use HasFactory;
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope('operational_cutover', function (Builder $builder): void {
+            $builder->whereNotExists(function (QueryBuilder $query): void {
+                $query->selectRaw('1')
+                    ->from('lead_cutover_dispositions')
+                    ->whereColumn('lead_cutover_dispositions.lead_id', 'leads.id')
+                    ->where('lead_cutover_dispositions.classification', LeadCutoverDisposition::EXCLUDE_FROM_CUTOVER_OLD_UNRESOLVED);
+            });
+        });
+    }
 
     public function branch(): BelongsTo
     {

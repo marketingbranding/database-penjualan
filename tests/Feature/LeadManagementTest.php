@@ -324,7 +324,7 @@ class LeadManagementTest extends TestCase
             ->assertSessionHasErrors('sales_pic_id');
     }
 
-    public function test_super_admin_can_edit_legacy_lead_without_a_sales_pic_role(): void
+    public function test_legacy_lead_without_a_sales_pic_role_is_rejected_on_update(): void
     {
         Rbac::provision();
         $branch = Branch::factory()->create();
@@ -343,9 +343,9 @@ class LeadManagementTest extends TestCase
             'nama_konsumen' => 'Legacy Lead Updated', 'no_hp' => $lead->no_hp,
             'project_id' => $project->id, 'sales_pic_id' => $legacyPic->id,
             'status_lead' => $lead->status_lead, 'keterangan' => $lead->keterangan,
-        ])->assertRedirect(route('leads.show', $lead));
+        ])->assertSessionHasErrors('sales_pic_id');
 
-        $this->assertSame('Legacy Lead Updated', $lead->fresh()->nama_konsumen);
+        $this->assertSame('Legacy Lead', $lead->fresh()->nama_konsumen);
     }
 
     public function test_coordinator_cannot_assign_lead_to_sales_from_another_team(): void
@@ -386,6 +386,28 @@ class LeadManagementTest extends TestCase
             ->assertSee('value="'.$sales->id.'"', false)
             ->assertDontSee('value="'.$coordinator->id.'"', false)
             ->assertDontSee('value="'.$outsideSales->id.'"', false);
+    }
+
+    public function test_direct_request_cannot_use_coordinator_as_lead_pic(): void
+    {
+        [$branch, $team, , $project, $coordinator] = $this->salesContext(withCoordinator: true);
+
+        $this->actingAs($coordinator)
+            ->withSession(['active_team_id' => $team->id])
+            ->post(route('leads.store'), [
+                'tanggal_lead' => '2026-06-28',
+                'sumber_lead' => 'Online',
+                'kanal_masuk' => 'TikTok',
+                'aktivitas_lead' => 'Live',
+                'nama_konsumen' => 'Citra',
+                'project_id' => $project->id,
+                'sales_pic_id' => $coordinator->id,
+                'status_lead' => 'Diskusi',
+            ])
+            ->assertSessionHasErrors('sales_pic_id');
+
+        $this->assertDatabaseCount('leads', 0);
+        $this->assertSame($branch->id, $coordinator->branch_id);
     }
 
     public function test_super_admin_can_assign_only_an_active_sales_pic(): void

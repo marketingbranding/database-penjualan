@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\LeadCutoverDisposition;
 use App\Models\Role;
 use App\Models\Team;
 use App\Models\User;
@@ -591,9 +592,51 @@ class OasisCrmMigrationService
                 continue;
             }
 
+            $sourceSalesUserId = (int) $lead->sales_user_id;
+            $sourcePicRole = $this->roleNames[(int) ($this->sourceUsers[$sourceSalesUserId]->role_id ?? 0)] ?? '';
+            if ($sourcePicRole !== 'sales') {
+                $ownerResolution = $this->resolveSourceSalesOwner($lead);
+                if ($ownerResolution['source_user_id'] === null) {
+                    $classification = $this->sourceLeadIsCurrentCutoverMonth($lead)
+                        ? LeadCutoverDisposition::NEEDS_MANUAL_ASSIGNMENT_CURRENT_MONTH
+                        : LeadCutoverDisposition::EXCLUDE_FROM_CUTOVER_OLD_UNRESOLVED;
+                    $this->count($classification === LeadCutoverDisposition::NEEDS_MANUAL_ASSIGNMENT_CURRENT_MONTH
+                        ? 'lead_coordinator_pic_manual_assignment'
+                        : 'lead_coordinator_pic_excluded_from_cutover');
+                    $this->ambiguous('lead', $sourceId, 'source Lead PIC is not Sales and ownership was not safely recovered', [
+                        'classification' => $classification,
+                        'evidence_confidence' => $ownerResolution['confidence'],
+                        'candidate_source_user_ids' => $ownerResolution['candidate_source_user_ids'],
+                    ]);
+                    $this->recordTargetLeadDisposition($sourceId, $classification, $ownerResolution);
+
+                    continue;
+                }
+
+                if ($ownerResolution['confidence'] !== 'CONFIRMED') {
+                    $classification = $this->sourceLeadIsCurrentCutoverMonth($lead)
+                        ? LeadCutoverDisposition::NEEDS_MANUAL_ASSIGNMENT_CURRENT_MONTH
+                        : LeadCutoverDisposition::EXCLUDE_FROM_CUTOVER_OLD_UNRESOLVED;
+                    $this->count($classification === LeadCutoverDisposition::NEEDS_MANUAL_ASSIGNMENT_CURRENT_MONTH
+                        ? 'lead_coordinator_pic_manual_assignment'
+                        : 'lead_coordinator_pic_excluded_from_cutover');
+                    $this->ambiguous('lead', $sourceId, 'source Lead PIC recovered only with non-confirmed evidence', [
+                        'classification' => $classification,
+                        'evidence_confidence' => $ownerResolution['confidence'],
+                        'source_user_id' => $ownerResolution['source_user_id'],
+                    ]);
+                    $this->recordTargetLeadDisposition($sourceId, $classification, $ownerResolution);
+
+                    continue;
+                }
+
+                $sourceSalesUserId = $ownerResolution['source_user_id'];
+                $this->count('lead_coordinator_pic_recovered');
+            }
+
             $branchId = $this->branchIds[(int) $lead->branch_id] ?? null;
             $projectId = $this->projectIds[(int) $lead->project_id] ?? null;
-            $salesPicId = $this->userIds[(int) $lead->sales_user_id] ?? null;
+            $salesPicId = $this->userIds[$sourceSalesUserId] ?? null;
             $createdBy = $this->userIds[(int) $lead->created_by] ?? $salesPicId;
 
             if (! in_array((string) $lead->source, ['Online', 'Offline', 'Referral', 'Freelance', 'Lead Cabang', 'Lead Pusat'], true)) {
@@ -1178,6 +1221,107 @@ class OasisCrmMigrationService
         }
 
         return ['No Respon', self::STATUS_MAP[$original] ?? 'Tidak Diketahui'];
+    }
+
+    /**
+     * @return array{source_user_id: ?int, confidence: string, candidate_source_user_ids: list<int>}
+     */
+    private function resolveSourceSalesOwner(object $lead): array
+    {
+        $candidates = [];
+        $addCandidate = function (?int $userId) use (&$candidates): void {
+            if ($userId === null || ! isset($this->sourceUsers[$userId])) {
+                return;
+            }
+
+            $user = $this->sourceUsers[$userId];
+            $roleName = $this->roleNames[(int) ($user->role_id ?? 0)] ?? '';
+            if ($roleName === 'sales') {
+                $candidates[$userId] ??= [];
+            }
+        };
+
+        $addCandidate($lead->created_by !== null ? (int) $lead->created_by : null);
+        foreach ($this->historiesByLead[(int) $lead->id] ?? [] as $history) {
+            $addCandidate($history->actor_id !== null ? (int) $history->actor_id : null);
+        }
+
+        $candidateIds = array_map('intval', array_keys($candidates));
+        if (count($candidateIds) !== 1) {
+            return [
+                'source_user_id' => null,
+                'confidence' => count($candidateIds) > 1 ? 'AMBIGUOUS' : 'NONE',
+                'candidate_source_user_ids' => $candidateIds,
+            ];
+        }
+
+        $signalCount = 0;
+        if ($lead->created_by !== null && (int) $lead->created_by === $candidateIds[0]) {
+            $signalCount++;
+        }
+        foreach ($this->historiesByLead[(int) $lead->id] ?? [] as $history) {
+            if ((int) ($history->actor_id ?? 0) === $candidateIds[0]) {
+                $signalCount++;
+                break;
+            }
+        }
+
+        return [
+            'source_user_id' => $candidateIds[0],
+            'confidence' => $signalCount >= 2 ? 'CONFIRMED' : 'HIGH CONFIDENCE',
+            'candidate_source_user_ids' => $candidateIds,
+        ];
+    }
+
+    private function sourceLeadIsCurrentCutoverMonth(object $lead): bool
+    {
+        $cutoverAt = $this->freezeAt ?? CarbonImmutable::now($this->sourceTimezone);
+        $createdAt = $lead->created_at ?? $lead->lead_date ?? null;
+        if ($createdAt === null) {
+            return false;
+        }
+
+        return CarbonImmutable::parse((string) $createdAt, $this->sourceTimezone)
+            ->greaterThanOrEqualTo($cutoverAt->startOfMonth());
+    }
+
+    /** @param array<string, mixed> $ownerResolution */
+    private function recordTargetLeadDisposition(int $sourceLeadId, string $classification, array $ownerResolution): void
+    {
+        $targetLeadId = $this->targetIds['lead'][$sourceLeadId] ?? null;
+        if (! $this->apply || $targetLeadId === null || ! $this->target->getSchemaBuilder()->hasTable('lead_cutover_dispositions')) {
+            return;
+        }
+
+        $cutoverAt = $this->freezeAt ?? CarbonImmutable::now($this->sourceTimezone);
+        $sourcePicId = $this->sourceLeadsPicId($sourceLeadId);
+        $now = now();
+        $this->target->table('lead_cutover_dispositions')->updateOrInsert(
+            ['lead_id' => $targetLeadId],
+            [
+                'classification' => $classification,
+                'evidence_confidence' => $ownerResolution['confidence'],
+                'cutover_at' => $cutoverAt->format('Y-m-d H:i:s'),
+                'current_month_boundary' => $cutoverAt->startOfMonth()->format('Y-m-d H:i:s'),
+                'old_sales_pic_id' => $sourcePicId !== null ? ($this->userIds[(int) $sourcePicId] ?? null) : null,
+                'new_sales_pic_id' => null,
+                'old_team_id' => null,
+                'new_team_id' => null,
+                'evidence' => json_encode([
+                    'source_lead_id' => $sourceLeadId,
+                    'candidate_source_user_ids' => $ownerResolution['candidate_source_user_ids'],
+                ], JSON_THROW_ON_ERROR),
+                'reason' => 'Legacy Lead PIC is not Sales and ownership is not confirmed.',
+                'applied_at' => $now,
+                'updated_at' => $now,
+                'created_at' => $now,
+            ],
+        );
+    }
+
+    private function sourceLeadsPicId(int $sourceLeadId): ?int
+    {
+        return $this->source->table('sales_leads')->where('id', $sourceLeadId)->value('sales_user_id');
     }
 
     private function sourceName(string $source): string

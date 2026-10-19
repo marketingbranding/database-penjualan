@@ -209,6 +209,60 @@ class OasisCrmMigrationTest extends TestCase
         $this->assertEquals((array) $beforeSecondRun, (array) DB::table('leads')->where('id_lead', 'CRM-1')->firstOrFail());
     }
 
+    public function test_coordinator_pic_is_imported_only_when_sales_owner_is_confirmed_by_history(): void
+    {
+        $this->seedLegacySnapshot();
+        DB::connection('legacy_test')->table('roles')->insert(['id' => 2, 'slug' => 'sales_coordinator']);
+        DB::connection('legacy_test')->table('users')->insert([
+            'id' => 3, 'name' => 'Coordinator', 'email' => 'coordinator@example.test', 'password' => 'hashed-three',
+            'branch_id' => 1, 'role_id' => 2, 'created_at' => '2026-10-19 09:00:00', 'updated_at' => '2026-10-19 09:00:00',
+        ]);
+        DB::connection('legacy_test')->table('sales_leads')->insert([
+            'id' => 2, 'branch_id' => 1, 'project_id' => 1, 'sales_user_id' => 3, 'created_by' => 1,
+            'source' => 'Online', 'platform' => 'TikTok', 'customer_name' => 'Recovered CRM Lead',
+            'phone' => '081234567892', 'campaign_name' => null, 'id_promo' => null, 'lead_date' => '2026-10-19',
+            'current_status' => 'discussion', 'notes' => null, 'deleted_at' => null,
+            'created_at' => '2026-10-19 10:30:00', 'updated_at' => '2026-10-19 10:30:00',
+        ]);
+        DB::connection('legacy_test')->table('sales_lead_status_histories')->insert([
+            'id' => 2, 'sales_lead_id' => 2, 'actor_id' => 1, 'status' => 'discussion',
+            'changed_at' => '2026-10-19 10:30:00', 'created_at' => '2026-10-19 10:30:00', 'updated_at' => '2026-10-19 10:30:00',
+        ]);
+
+        $this->artisan('migration:import-oasis', [
+            '--source' => 'legacy_test', '--apply' => true, '--freeze-at' => '2026-10-19 12:00:00',
+            '--timezone' => 'Asia/Jakarta',
+        ])->assertSuccessful()->expectsOutputToContain('lead_coordinator_pic_recovered');
+
+        $sales = User::query()->where('email', 'sales-one@example.test')->firstOrFail();
+        $this->assertDatabaseHas('leads', ['id_lead' => 'CRM-2', 'sales_pic_id' => $sales->id, 'created_by' => $sales->id]);
+    }
+
+    public function test_unresolved_coordinator_pic_is_isolated_from_operational_import(): void
+    {
+        $this->seedLegacySnapshot();
+        DB::connection('legacy_test')->table('roles')->insert(['id' => 2, 'slug' => 'sales_coordinator']);
+        DB::connection('legacy_test')->table('users')->insert([
+            'id' => 3, 'name' => 'Coordinator', 'email' => 'coordinator@example.test', 'password' => 'hashed-three',
+            'branch_id' => 1, 'role_id' => 2, 'created_at' => '2026-09-01 09:00:00', 'updated_at' => '2026-09-01 09:00:00',
+        ]);
+        DB::connection('legacy_test')->table('sales_leads')->insert([
+            'id' => 2, 'branch_id' => 1, 'project_id' => 1, 'sales_user_id' => 3, 'created_by' => 3,
+            'source' => 'Online', 'platform' => 'TikTok', 'customer_name' => 'Unresolved CRM Lead',
+            'phone' => '081234567892', 'campaign_name' => null, 'id_promo' => null, 'lead_date' => '2026-09-01',
+            'current_status' => 'discussion', 'notes' => null, 'deleted_at' => null,
+            'created_at' => '2026-09-01 10:30:00', 'updated_at' => '2026-09-01 10:30:00',
+        ]);
+
+        $this->artisan('migration:import-oasis', [
+            '--source' => 'legacy_test', '--apply' => true, '--freeze-at' => '2026-10-19 12:00:00',
+            '--timezone' => 'Asia/Jakarta',
+        ])->assertFailed()->expectsOutputToContain('lead_coordinator_pic_excluded_from_cutover');
+
+        $this->assertDatabaseMissing('leads', ['id_lead' => 'CRM-2']);
+        $this->assertDatabaseHas('leads', ['id_lead' => 'CRM-1']);
+    }
+
     private function seedLegacySnapshot(): void
     {
         DB::connection('legacy_test')->table('branches')->insert([
