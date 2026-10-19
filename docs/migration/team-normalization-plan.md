@@ -37,6 +37,13 @@ decision.
 
 ## Phase 2 — Build the final Coordinator Teams
 
+The production forensic review found that the legacy `sales_coordinator_sales`
+pivot is the authoritative current membership source. It contains 56 valid
+rows for 16 Coordinators and 56 distinct Sales users. Use those rows as the
+initial proposal; do not infer membership from `supervisor_user_id`, empty
+legacy `teams` rows, alphabetical order, or same-Branch membership. One active
+Sales user remains unassigned and requires a business decision before cutover.
+
 For each real Coordinator:
 
 1. Create or select one final active Team in the correct Branch.
@@ -44,7 +51,7 @@ For each real Coordinator:
 3. Set `coordinator_id` to the Coordinator user.
 4. Set `supervisor_id` only when the branch hierarchy has confirmed it.
 5. Provision the Team-scoped Coordinator role.
-6. Assign only the confirmed Sales members to the Team.
+6. Assign only the confirmed Sales members from the legacy pivot to the Team.
 7. Mark one membership as default for users who legitimately have one Team.
 
 Do not split a legacy Team based only on alphabetical order, current row order,

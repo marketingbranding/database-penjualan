@@ -63,6 +63,14 @@ nine have no `project_id`.
 
 ## Findings
 
+> **Production evidence update (2026-10-19):** The legacy production CRM has a
+> populated `sales_coordinator_sales` pivot containing 56 current valid rows
+> across all 16 Coordinators. This is stronger evidence than the legacy Team
+> containers inspected in OASIS Next and changes the migration conclusion from
+> “mapping unavailable” to “membership mostly automatable.” See
+> `legacy-organization-forensics.md` for the anonymized forensic record. The
+> OASIS Next Team and Lead findings below remain valid and still block cutover.
+
 ### Critical
 
 1. **Coordinator scope is not configured for 15 of 16 Coordinator role users.**
@@ -91,6 +99,10 @@ nine have no `project_id`.
    scope is inferred through project branch and linked Lead/Agenda context.
 
 ## Coordinator mapping result
+
+The table below is the OASIS Next **Team-based audit baseline**, not the legacy
+production pivot result. The legacy pivot result is documented separately in
+`legacy-organization-forensics.md`.
 
 | Mapping status | Count | Interpretation |
 | --- | ---: | --- |
