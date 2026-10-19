@@ -14,6 +14,11 @@
             {{ $search }}
         @endisset
         @if (isset($filters))
+            <button type="button" class="module-toolbar-desktop-filter-toggle" data-desktop-filter-toggle aria-expanded="false" aria-controls="desktop-filters-{{ substr(md5((string) $action), 0, 8) }}" hidden>
+                <span aria-hidden="true">☷</span>
+                Filter
+                <span class="module-toolbar-filter-count" data-desktop-filter-count hidden>0</span>
+            </button>
             <button type="button" class="module-toolbar-filter-toggle" data-mobile-filter-open aria-expanded="false">
                 <span aria-hidden="true">☷</span>
                 Filter
@@ -23,7 +28,7 @@
     </div>
 
     @if (isset($filters))
-        <div class="module-toolbar-desktop-filters" data-toolbar-desktop-filters>
+        <div id="desktop-filters-{{ substr(md5((string) $action), 0, 8) }}" class="module-toolbar-desktop-filters" data-toolbar-desktop-filters>
             {{ $filters }}
         </div>
 

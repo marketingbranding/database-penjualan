@@ -271,12 +271,18 @@ const updateToolbarUi = (toolbar) => {
     const entries = readFilterEntries(mobileFilters, timezone);
     const count = entries.length;
     const countBadge = toolbar.querySelector('[data-filter-count]');
+    const desktopCountBadge = toolbar.querySelector('[data-desktop-filter-count]');
     const selectedLabel = toolbar.querySelector('[data-filter-selected-label]');
     const applyButton = toolbar.querySelector('[data-mobile-filter-apply]');
 
     if (countBadge) {
         countBadge.textContent = count.toString();
         countBadge.hidden = count === 0;
+    }
+
+    if (desktopCountBadge) {
+        desktopCountBadge.textContent = count.toString();
+        desktopCountBadge.hidden = count === 0;
     }
 
     if (selectedLabel) {
@@ -441,7 +447,18 @@ const syncResponsiveControls = () => {
     document.querySelectorAll('[data-mobile-filter-form]').forEach((toolbar) => {
         const desktop = toolbar.querySelector('[data-toolbar-desktop-filters]');
         const mobile = toolbar.querySelector('[data-toolbar-mobile-filters]');
+        const desktopToggle = toolbar.querySelector('[data-desktop-filter-toggle]');
         const isMobile = mobileFilterMedia.matches;
+        const desktopFilterCount = desktop?.querySelectorAll('.module-filter-pill, .module-filter-extra').length || 0;
+        const shouldCollapseDesktopFilters = desktopFilterCount > 2;
+
+        if (desktopToggle) {
+            desktopToggle.hidden = isMobile || ! shouldCollapseDesktopFilters;
+            desktopToggle.setAttribute('aria-expanded', (toolbar._desktopFiltersOpen === true).toString());
+        }
+
+        desktop?.classList.toggle('is-collapsed', ! isMobile && shouldCollapseDesktopFilters && toolbar._desktopFiltersOpen !== true);
+        desktop?.classList.toggle('is-open', ! isMobile && shouldCollapseDesktopFilters && toolbar._desktopFiltersOpen === true);
 
         desktop?.querySelectorAll('input, select, textarea').forEach((control) => {
             control.disabled = isMobile;
@@ -560,6 +577,16 @@ const initializeToolbar = (toolbar) => {
         }
     });
 
+    document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape' || mobileFilterMedia.matches || toolbar._desktopFiltersOpen !== true) {
+            return;
+        }
+
+        toolbar._desktopFiltersOpen = false;
+        syncResponsiveControls();
+        toolbar.querySelector('[data-desktop-filter-toggle]')?.focus();
+    });
+
     updateToolbarUi(toolbar);
 };
 
@@ -569,6 +596,17 @@ const initializeMobileFilters = () => {
     mobileFilterMedia.addEventListener('change', syncResponsiveControls);
 
     if (! window._oasisMobileFilterEscapeBound) {
+        document.addEventListener('click', (event) => {
+            const toggle = event.target.closest('[data-desktop-filter-toggle]');
+            const toolbar = toggle?.closest('[data-mobile-filter-form]');
+
+            if (! toolbar || mobileFilterMedia.matches) {
+                return;
+            }
+
+            toolbar._desktopFiltersOpen = toolbar._desktopFiltersOpen !== true;
+            syncResponsiveControls();
+        }, true);
         document.addEventListener('keydown', (event) => {
             if (event.key !== 'Escape') {
                 return;
@@ -587,6 +625,8 @@ const initializeMobileFilters = () => {
         window._oasisMobileFilterEscapeBound = true;
     }
 };
+
+window.OasisMobileFilters = initializeMobileFilters;
 
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeMobileFilters, { once: true });

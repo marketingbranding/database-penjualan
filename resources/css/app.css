@@ -1952,6 +1952,29 @@ select:-webkit-autofill:focus {
     gap: 0.625rem;
 }
 
+.module-toolbar-desktop-filters.is-collapsed {
+    display: none;
+}
+
+.module-toolbar-desktop-filters.is-open {
+    width: 100%;
+    border-top: 1px solid rgb(var(--c-line));
+    padding-top: 0.75rem;
+}
+
+.module-toolbar-desktop-filter-toggle {
+    display: none;
+    min-height: 40px;
+    align-items: center;
+    gap: 0.45rem;
+    border: 1px solid rgb(var(--c-line-strong));
+    border-radius: 13px;
+    padding: 0 0.85rem;
+    color: rgb(var(--c-accent-text));
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
 .module-toolbar-filter-sheet {
     display: none;
 }
@@ -1983,6 +2006,16 @@ select:-webkit-autofill:focus {
     color: rgb(var(--c-accent-text));
     font-size: 0.75rem;
     font-weight: 600;
+}
+
+@media (min-width: 768px) {
+    .module-toolbar-desktop-filter-toggle {
+        display: inline-flex;
+    }
+
+    .module-toolbar-desktop-filter-toggle[hidden] {
+        display: none;
+    }
 }
 
 .module-search-input {
