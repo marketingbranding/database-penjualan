@@ -16,7 +16,12 @@ use Illuminate\Support\Facades\DB;
 
 class CoordinatorSalesDashboardService
 {
-    public function __construct(private LeadMovementService $leadMovementService) {}
+    public function __construct(
+        private LeadMovementService $leadMovementService,
+        private SalesLeadTargetService $leadTargets,
+        private SalesDailyPlanService $dailyPlans,
+        private DailyAgendaPlanner $planner,
+    ) {}
 
     public function isCoordinator(User $user): bool
     {
@@ -91,12 +96,15 @@ class CoordinatorSalesDashboardService
             'date_to' => $month->endOfMonth()->toDateString(),
         ], [$team->getKey()]);
 
-        $salesRows = $sales->map(function (User $salesUser) use ($stageRows, $overdueRows, $todayAgendaRows, $movementRows): array {
+        $salesRows = $sales->map(function (User $salesUser) use ($stageRows, $overdueRows, $todayAgendaRows, $movementRows, $team, $today, $month): array {
             $salesStages = $stageRows->where('sales_pic_id', $salesUser->getKey())->keyBy('status_lead');
             $agendaRows = $todayAgendaRows->where('owner_id', $salesUser->getKey());
             $agendaTotal = (int) $agendaRows->sum('total');
             $agendaDone = (int) ($agendaRows->firstWhere('status', 'done')->total ?? 0);
             $stages = $this->stageCounts($salesStages);
+            $dailyPlan = $this->dailyPlans->forSales($salesUser, $today, $team)->load('agendas');
+            $dailyPlanMinutes = $this->planner->effectiveMinutes($dailyPlan);
+            $leadTarget = $this->leadTargets->progress($salesUser, $month);
 
             return [
                 'user' => $salesUser,
@@ -105,6 +113,10 @@ class CoordinatorSalesDashboardService
                 'agenda_total' => $agendaTotal,
                 'agenda_done' => $agendaDone,
                 'agenda_unfinished' => max(0, $agendaTotal - $agendaDone),
+                'daily_plan' => $dailyPlan,
+                'daily_plan_minutes' => $dailyPlanMinutes,
+                'daily_plan_status' => $dailyPlan->status,
+                'lead_target' => $leadTarget,
                 'movement_utj' => (int) $movementRows->where('sales_pic_id', $salesUser->getKey())->where('status_to', 'UTJ')->sum('total'),
                 'movement_akad' => (int) $movementRows->where('sales_pic_id', $salesUser->getKey())->where('status_to', 'Akad')->sum('total'),
                 'stages' => $stages,

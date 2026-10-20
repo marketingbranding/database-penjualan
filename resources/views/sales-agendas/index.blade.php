@@ -22,12 +22,13 @@
                 </x-toolbar>
             </x-slot>
             <x-data-table caption="Queue agenda">
-                <x-slot name="header"><tr><th>Tanggal</th><th>Aktivitas</th><th>Lokasi</th><th>Pemilik</th><th>Dibuat oleh</th><th>Status</th><th class="text-right">Aksi</th></tr></x-slot>
+                <x-slot name="header"><tr><th>Tanggal</th><th>Aktivitas</th><th>Durasi / Timeline</th><th>Lokasi</th><th>Pemilik</th><th>Status</th><th class="text-right">Aksi</th></tr></x-slot>
                 <x-slot name="body">
                     @forelse ($agendas as $agenda)
                         <tr>
                             <td class="whitespace-nowrap"><div class="font-semibold">{{ $agenda->agenda_date->translatedFormat('d M Y') }}</div><div class="text-[11px] text-muted">{{ $agenda->agenda_date->format('H:i') }}</div></td>
-                            <td><div class="font-semibold">{{ $agenda->title }}</div><div class="mt-1 text-[11px] text-orange">{{ $agenda->activity_category }}</div>@if ($agenda->salesCase)<div class="text-[11px] text-muted">{{ $agenda->salesCase->consumer->nama_konsumen }}</div>@elseif ($agenda->lead)<div class="text-[11px] text-muted">{{ $agenda->lead->id_lead }} · {{ $agenda->lead->nama_konsumen }}</div>@endif</td>
+                            <td><div class="font-semibold">{{ $agenda->title }}</div><div class="mt-1 text-[11px] text-orange">{{ $agenda->activity_category }}</div><div class="mt-1 max-w-[260px] truncate text-[11px] text-muted" title="{{ $agenda->plan_detail }}">{{ $agenda->plan_detail ?: 'Detail belum diisi' }}</div>@if ($agenda->salesCase)<div class="text-[11px] text-muted">{{ $agenda->salesCase->consumer->nama_konsumen }}</div>@elseif ($agenda->lead)<div class="text-[11px] text-muted">{{ $agenda->lead->id_lead }} · {{ $agenda->lead->nama_konsumen }}</div>@endif</td>
+                            <td class="whitespace-nowrap">@if ($agenda->duration_minutes)<strong>{{ $agenda->duration_minutes }} menit</strong><div class="text-[11px] text-muted">{{ \App\Support\BusinessTime::format($agenda->planned_start_at, 'H:i') }}–{{ \App\Support\BusinessTime::format($agenda->planned_end_at, 'H:i') }}</div>@else<span class="text-muted">Agenda legacy</span>@endif</td>
                             <td class="text-muted">{{ $agenda->location ?: 'Lokasi belum diisi' }}@if ($agenda->evidence->isNotEmpty())<div class="text-[11px]">{{ $agenda->evidence->count() }} foto</div>@endif</td>
                             <td class="text-muted">{{ $agenda->owner?->name ?? '-' }}</td>
                             <td class="text-muted">{{ $agenda->creator?->name ?? '-' }}@if ($agenda->creator?->isNot($agenda->owner))<div class="text-[11px]">@php($redirect = $agenda->assignmentHistories->firstWhere('action', 'redirected'))@if ($redirect)Dialihkan ke {{ $redirect->toUser?->name ?? '-' }} oleh {{ $redirect->byUser?->name ?? '-' }}@if ($redirect->reason) · {{ $redirect->reason }}@endif @endif</div>@endif</td>

@@ -8,6 +8,11 @@ use Illuminate\Validation\Rule;
 
 class StoreLeadRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        $this->merge(['no_hp' => trim((string) $this->input('no_hp', ''))]);
+    }
+
     public function authorize(): bool
     {
         return $this->user()?->can('create', Lead::class) ?? false;
@@ -23,7 +28,7 @@ class StoreLeadRequest extends FormRequest
             'kanal_masuk' => ['required', Rule::in(Lead::CHANNELS)],
             'aktivitas_lead' => ['required', Rule::in(Lead::ACTIVITIES)],
             'nama_konsumen' => ['required', 'string', 'max:255'],
-            'no_hp' => ['nullable', 'string', 'max:40'],
+            'no_hp' => ['required', 'string', 'max:40'],
             'project_id' => ['nullable', 'integer', 'exists:projects,id'],
             'sales_pic_id' => ['required', 'integer', 'exists:users,id'],
             'status_lead' => ['required', Rule::in(Lead::STATUSES)],

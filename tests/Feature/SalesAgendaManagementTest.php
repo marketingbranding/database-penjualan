@@ -29,6 +29,8 @@ class SalesAgendaManagementTest extends TestCase
             'agenda_date' => '2026-10-08',
             'activity_category' => 'Cek Lokasi',
             'title' => 'Kunjungan lokasi calon konsumen',
+            'plan_detail' => 'Kunjungan dan cek kebutuhan konsumen di lokasi.',
+            'duration_minutes' => 60,
             'location' => 'Perumahan Marison',
             'activity_result' => 'Konsumen hadir untuk melihat lokasi.',
             'evidence' => [$image],
@@ -135,6 +137,8 @@ class SalesAgendaManagementTest extends TestCase
             'agenda_date' => '2026-10-08',
             'activity_category' => 'Follow-up',
             'title' => 'Follow up lead',
+            'plan_detail' => 'Hubungi Lead dan catat hasil percakapan.',
+            'duration_minutes' => 30,
         ])->assertRedirect();
 
         $this->assertDatabaseHas('sales_agendas', [
@@ -176,6 +180,8 @@ class SalesAgendaManagementTest extends TestCase
                 'agenda_date' => '2026-10-08',
                 'activity_category' => 'Follow-up',
                 'title' => 'Agenda lintas cabang',
+                'plan_detail' => 'Validasi kebutuhan sebelum follow-up.',
+                'duration_minutes' => 30,
             ])
             ->assertSessionHasErrors('sales_case_id');
 

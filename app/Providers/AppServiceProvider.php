@@ -14,6 +14,7 @@ use App\Models\SalesAgenda;
 use App\Models\SalesCase;
 use App\Models\SalesCaseChangeRequest;
 use App\Models\SalesCaseStatusHistory;
+use App\Models\SalesLeadTarget;
 use App\Models\User;
 use App\Observers\AuditableObserver;
 use App\Observers\LotObserver;
@@ -48,6 +49,7 @@ class AppServiceProvider extends ServiceProvider
         SalesAgenda::observe(AuditableObserver::class);
         Lead::observe(AuditableObserver::class);
         LeadTimeTarget::observe(AuditableObserver::class);
+        SalesLeadTarget::observe(AuditableObserver::class);
 
         Gate::before(function (User $user, string $ability): ?bool {
             if ($user->hasGlobalRole('super_admin')) {

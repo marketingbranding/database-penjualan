@@ -70,7 +70,7 @@ class LeadManagementTest extends TestCase
         Notification::assertNothingSent();
     }
 
-    public function test_sales_can_create_a_lead_without_a_phone_number(): void
+    public function test_sales_cannot_create_a_lead_without_a_phone_number(): void
     {
         [, $team, $sales, $project] = $this->salesContext();
         $payload = [
@@ -87,12 +87,9 @@ class LeadManagementTest extends TestCase
         $this->actingAs($sales)
             ->withSession(['active_team_id' => $team->id])
             ->post(route('leads.store'), $payload)
-            ->assertRedirect();
+            ->assertSessionHasErrors('no_hp');
 
-        $this->assertDatabaseHas('leads', [
-            'nama_konsumen' => 'Lead Tanpa Nomor',
-            'no_hp' => null,
-        ]);
+        $this->assertDatabaseMissing('leads', ['nama_konsumen' => 'Lead Tanpa Nomor']);
     }
 
     public function test_sales_can_record_activity_and_change_lead_status(): void
@@ -318,7 +315,7 @@ class LeadManagementTest extends TestCase
             ->withSession(['active_team_id' => $team->id])
             ->post(route('leads.store'), [
                 'tanggal_lead' => '2026-06-28', 'sumber_lead' => 'Online', 'kanal_masuk' => 'TikTok',
-                'aktivitas_lead' => 'Live', 'nama_konsumen' => 'Citra', 'project_id' => $project->id,
+                'aktivitas_lead' => 'Live', 'nama_konsumen' => 'Citra', 'no_hp' => '085727614860', 'project_id' => $project->id,
                 'sales_pic_id' => $otherSales->id, 'status_lead' => 'Diskusi',
             ])
             ->assertSessionHasErrors('sales_pic_id');
@@ -400,6 +397,7 @@ class LeadManagementTest extends TestCase
                 'kanal_masuk' => 'TikTok',
                 'aktivitas_lead' => 'Live',
                 'nama_konsumen' => 'Citra',
+                'no_hp' => '085727614860',
                 'project_id' => $project->id,
                 'sales_pic_id' => $coordinator->id,
                 'status_lead' => 'Diskusi',
@@ -425,7 +423,7 @@ class LeadManagementTest extends TestCase
         $nonSales = User::factory()->for($branch, 'branch')->create();
         $payload = [
             'tanggal_lead' => '2026-06-28', 'sumber_lead' => 'Online', 'kanal_masuk' => 'TikTok',
-            'aktivitas_lead' => 'Live', 'nama_konsumen' => 'Assigned Sales', 'project_id' => null,
+            'aktivitas_lead' => 'Live', 'nama_konsumen' => 'Assigned Sales', 'no_hp' => '085727614860', 'project_id' => null,
             'status_lead' => 'No Respon',
         ];
 

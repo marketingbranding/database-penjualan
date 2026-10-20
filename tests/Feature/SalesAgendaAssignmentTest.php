@@ -39,6 +39,8 @@ class SalesAgendaAssignmentTest extends TestCase
             'agenda_date' => '2026-10-15',
             'activity_category' => 'Follow-up',
             'title' => 'Agenda untuk Sales',
+            'plan_detail' => 'Follow-up Lead untuk Sales.',
+            'duration_minutes' => 30,
         ])->assertRedirect();
 
         $agenda = SalesAgenda::query()->latest('id')->firstOrFail();
@@ -60,6 +62,8 @@ class SalesAgendaAssignmentTest extends TestCase
             'agenda_date' => '2026-10-15',
             'activity_category' => 'Follow-up',
             'title' => 'Agenda lintas tim',
+            'plan_detail' => 'Follow-up Lead lintas tim.',
+            'duration_minutes' => 30,
         ])->assertSessionHasErrors('owner_id');
     }
 

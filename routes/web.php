@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\ProjectBlockController;
 use App\Http\Controllers\Admin\ProjectController;
 use App\Http\Controllers\Admin\PromotionController;
 use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\SalesLeadTargetController;
 use App\Http\Controllers\Admin\SpatialWorkspaceController;
 use App\Http\Controllers\Admin\TeamController;
 use App\Http\Controllers\Admin\UserController;
@@ -25,6 +26,7 @@ use App\Http\Controllers\PsjbUtjController;
 use App\Http\Controllers\SalesAgendaController;
 use App\Http\Controllers\SalesCaseChangeController;
 use App\Http\Controllers\SalesCaseStatusController;
+use App\Http\Controllers\SalesDailyPlanController;
 use App\Http\Controllers\SalesFeeReportController;
 use App\Http\Controllers\SalesProcessController;
 use App\Http\Controllers\TeamContextController;
@@ -127,6 +129,12 @@ Route::middleware('auth')->group(function () {
     Route::patch('/agenda-sales/{salesAgenda}/cancel', [SalesAgendaController::class, 'cancel'])->name('sales-agendas.cancel');
     Route::delete('/agenda-sales/{salesAgenda}', [SalesAgendaController::class, 'destroy'])->name('sales-agendas.destroy');
 
+    Route::get('/buku-saku', [SalesDailyPlanController::class, 'index'])->name('daily-plans.index');
+    Route::get('/buku-saku/{salesDailyPlan}', [SalesDailyPlanController::class, 'show'])->name('daily-plans.show');
+    Route::post('/buku-saku/{salesDailyPlan}/agendas', [SalesDailyPlanController::class, 'storeAgenda'])->name('daily-plans.agendas.store');
+    Route::patch('/buku-saku/{salesDailyPlan}/reorder', [SalesDailyPlanController::class, 'reorder'])->name('daily-plans.reorder');
+    Route::post('/buku-saku/{salesDailyPlan}/submit', [SalesDailyPlanController::class, 'submit'])->name('daily-plans.submit');
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -163,6 +171,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified'])->group(
     Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
     Route::get('/lead-times', [LeadTimeController::class, 'index'])->middleware('permission:lead-time.view')->name('lead-times.index');
     Route::patch('/lead-times/{leadTimeTarget}', [LeadTimeController::class, 'update'])->name('lead-times.update');
+    Route::get('/sales-lead-targets', [SalesLeadTargetController::class, 'index'])->middleware('permission:sales-targets.manage')->name('sales-lead-targets.index');
+    Route::post('/sales-lead-targets', [SalesLeadTargetController::class, 'store'])->middleware('permission:sales-targets.manage')->name('sales-lead-targets.store');
+    Route::patch('/sales-lead-targets/{salesLeadTarget}', [SalesLeadTargetController::class, 'update'])->middleware('permission:sales-targets.manage')->name('sales-lead-targets.update');
 
     Route::get('/banks', [BankController::class, 'index'])->middleware('permission:banks.view')->name('banks.index');
     Route::post('/banks', [BankController::class, 'store'])->name('banks.store');

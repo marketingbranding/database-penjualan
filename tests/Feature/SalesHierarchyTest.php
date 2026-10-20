@@ -252,6 +252,6 @@ class SalesHierarchyTest extends TestCase
     /** @return array<string, string> */
     private function agendaPayload(): array
     {
-        return ['agenda_date' => '2026-10-15', 'activity_category' => 'Follow-up', 'title' => 'Agenda hierarchy'];
+        return ['agenda_date' => '2026-10-15', 'activity_category' => 'Follow-up', 'title' => 'Agenda hierarchy', 'plan_detail' => 'Follow-up terstruktur untuk Lead.', 'duration_minutes' => 30];
     }
 }

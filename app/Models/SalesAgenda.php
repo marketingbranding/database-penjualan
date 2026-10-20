@@ -12,7 +12,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'branch_id', 'created_by', 'sales_case_id', 'lead_id', 'agenda_date', 'activity_category',
-    'owner_id', 'team_id', 'title', 'location', 'activity_result', 'status', 'completed_at',
+    'owner_id', 'team_id', 'daily_plan_id', 'title', 'plan_detail', 'planned_quantity',
+    'duration_minutes', 'sort_order', 'planned_start_at', 'planned_end_at', 'location',
+    'activity_result', 'status', 'completed_at',
 ])]
 class SalesAgenda extends Model
 {
@@ -55,6 +57,11 @@ class SalesAgenda extends Model
         return $this->belongsTo(Team::class);
     }
 
+    public function dailyPlan(): BelongsTo
+    {
+        return $this->belongsTo(SalesDailyPlan::class, 'daily_plan_id');
+    }
+
     public function salesCase(): BelongsTo
     {
         return $this->belongsTo(SalesCase::class);
@@ -84,6 +91,11 @@ class SalesAgenda extends Model
     {
         return [
             'agenda_date' => 'date',
+            'duration_minutes' => 'integer',
+            'sort_order' => 'integer',
+            'planned_quantity' => 'integer',
+            'planned_start_at' => 'datetime',
+            'planned_end_at' => 'datetime',
             'completed_at' => 'datetime',
         ];
     }

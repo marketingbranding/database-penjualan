@@ -44,7 +44,7 @@
     </nav>
 
     <div class="mt-auto flex flex-col items-center gap-2">
-        @canany(['branches.view', 'projects.view', 'lots.view', 'audit-logs.view', 'banks.view', 'lead-time.view', 'promotions.view', 'users.view', 'teams.view', 'roles.view'])
+        @canany(['branches.view', 'projects.view', 'lots.view', 'audit-logs.view', 'banks.view', 'lead-time.view', 'promotions.view', 'users.view', 'teams.view', 'roles.view', 'sales-targets.manage'])
             <a href="{{ route($settingsRoute) }}" class="{{ $railLink }} {{ request()->routeIs('admin.*') ? $activeRailLink : '' }}" aria-label="Pengaturan" title="Pengaturan">
                 <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9.75 3.5h4.5l.55 2.05a7.7 7.7 0 0 1 1.7.98l2.03-.65 2.25 3.9-1.48 1.5a7.7 7.7 0 0 1 0 1.96l1.48 1.5-2.25 3.9-2.03-.65a7.7 7.7 0 0 1-1.7.98l-.55 2.05h-4.5l-.55-2.05a7.7 7.7 0 0 1-1.7-.98l-2.03.65-2.25-3.9 1.48-1.5a7.7 7.7 0 0 1 0-1.96l-1.48-1.5 2.25-3.9 2.03.65a7.7 7.7 0 0 1 1.7-.98l.55-2.05Z" /><circle cx="12" cy="12" r="2.75" stroke-width="1.8" /></svg>
             </a>
@@ -92,6 +92,9 @@
                 @canany(['sales.view-own', 'sales.view-team', 'sales.view-all'])
                     <a href="{{ route('sales-agendas.index') }}" class="{{ $panelLink }} {{ request()->routeIs('sales-agendas.*') ? $activePanelLink : $inactivePanelLink }}">
                         <svg class="size-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><rect width="16" height="16" x="4" y="5" rx="2" stroke-width="1.8" /><path stroke-linecap="round" stroke-width="1.8" d="M8 3v4m8-4v4M4 10h16" /></svg><span>Agenda sales</span>
+                    </a>
+                    <a href="{{ route('daily-plans.index') }}" class="{{ $panelLink }} {{ request()->routeIs('daily-plans.*') ? $activePanelLink : $inactivePanelLink }}">
+                        <svg class="size-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M5 5h14v14H5zM8 9h8M8 12h8M8 15h5" /></svg><span>Buku Saku harian</span>
                     </a>
                 @endcanany
                 @canany(['leads.view-own', 'leads.view-team', 'leads.view-branch', 'leads.view-all', 'leads.monitor'])
@@ -145,7 +148,7 @@
             </div>
         @endcan
 
-        @canany(['branches.view', 'projects.view', 'lots.view', 'audit-logs.view', 'banks.view', 'lead-time.view', 'promotions.view', 'users.view', 'teams.view', 'roles.view'])
+        @canany(['branches.view', 'projects.view', 'lots.view', 'audit-logs.view', 'banks.view', 'lead-time.view', 'promotions.view', 'users.view', 'teams.view', 'roles.view', 'sales-targets.manage'])
             <div class="my-3 border-t border-line"></div>
             <div x-data="{ open: {{ request()->routeIs('admin.*') ? 'true' : 'false' }} }">
                 <button type="button" class="flex min-h-[35px] w-full items-center justify-between rounded-xl px-2.5 py-2 text-left text-[11px] font-medium text-muted transition hover:bg-canvas hover:text-ink" @click="open = ! open" :aria-expanded="open.toString()">
@@ -159,6 +162,7 @@
                     @can('audit-logs.view')<a href="{{ route('admin.audit-logs.index') }}" class="{{ $panelLink }} {{ request()->routeIs('admin.audit-logs.*') ? $activePanelLink : $inactivePanelLink }}"><span>Audit log</span></a>@endcan
                     @can('banks.view')<a href="{{ route('admin.banks.index') }}" class="{{ $panelLink }} {{ request()->routeIs('admin.banks.*') ? $activePanelLink : $inactivePanelLink }}"><span>Bank</span></a>@endcan
                     @can('lead-time.view')<a href="{{ route('admin.lead-times.index') }}" class="{{ $panelLink }} {{ request()->routeIs('admin.lead-times.*') ? $activePanelLink : $inactivePanelLink }}"><span>Target lead time</span></a>@endcan
+                    @can('sales-targets.manage')<a href="{{ route('admin.sales-lead-targets.index') }}" class="{{ $panelLink }} {{ request()->routeIs('admin.sales-lead-targets.*') ? $activePanelLink : $inactivePanelLink }}"><span>Target Lead Sales</span></a>@endcan
                     @can('promotions.view')<a href="{{ route('admin.promotions.index') }}" class="{{ $panelLink }} {{ request()->routeIs('admin.promotions.*') ? $activePanelLink : $inactivePanelLink }}"><span>Promo</span></a>@endcan
                     @can('users.view')<a href="{{ route('admin.users.index') }}" class="{{ $panelLink }} {{ request()->routeIs('admin.users.*') ? $activePanelLink : $inactivePanelLink }}"><span>Pengguna</span></a>@endcan
                     @can('teams.view')<a href="{{ route('admin.teams.index') }}" class="{{ $panelLink }} {{ request()->routeIs('admin.teams.*') ? $activePanelLink : $inactivePanelLink }}"><span>Tim</span></a>@endcan

@@ -13,7 +13,12 @@ use Illuminate\Support\Collection;
 
 class PersonalSalesDashboardService
 {
-    public function __construct(private LeadMovementService $leadMovementService) {}
+    public function __construct(
+        private LeadMovementService $leadMovementService,
+        private SalesLeadTargetService $leadTargets,
+        private SalesDailyPlanService $dailyPlans,
+        private DailyAgendaPlanner $planner,
+    ) {}
 
     public function isPersonalSales(User $user): bool
     {
@@ -66,6 +71,24 @@ class PersonalSalesDashboardService
             ->orderBy('agenda_date')
             ->orderBy('id')
             ->get();
+        $team = $this->dailyPlans->resolveSalesTeam($user);
+        $dailyPlan = $team === null ? null : $this->dailyPlans->forSales($user, $today, $team)->load(['team', 'agendas']);
+        $dailyPlanAgendas = $dailyPlan?->agendas->where('status', '!=', 'cancelled')->values() ?? collect();
+        $currentAgenda = $dailyPlanAgendas->first(fn (SalesAgenda $agenda): bool => $agenda->status === 'planned'
+            && $agenda->planned_start_at !== null
+            && $agenda->planned_end_at !== null
+            && $now->betweenIncluded($agenda->planned_start_at, $agenda->planned_end_at));
+        $nextPlanAgenda = $dailyPlanAgendas->first(fn (SalesAgenda $agenda): bool => $agenda->status === 'planned'
+            && $agenda->planned_end_at !== null
+            && CarbonImmutable::instance($agenda->planned_end_at)->gt($now)
+            && ($currentAgenda === null || $agenda->sort_order > $currentAgenda->sort_order));
+        $currentPlanRemainingMinutes = $currentAgenda?->planned_end_at === null
+            ? 0
+            : max(0, $now->diffInMinutes(CarbonImmutable::instance($currentAgenda->planned_end_at), false));
+        $isLunchBreak = $now->toDateString() === $today
+            && $now->format('H:i') >= '12:00'
+            && $now->format('H:i') < '13:00';
+        $leadTarget = $this->leadTargets->progress($user, $now);
         $nextAgenda = $todayAgendas->firstWhere('status', 'planned');
 
         if ($nextAgenda === null) {
@@ -93,6 +116,14 @@ class PersonalSalesDashboardService
             'header' => ['date' => $this->formatFullDate($now), 'branch' => $user->branch?->name ?? 'Cabang belum diatur', 'greeting' => $this->greeting($now).', '.str($user->name)->before(' ')],
             'nextAgenda' => $nextAgenda ? $this->agendaCard($nextAgenda, $todayAgendas->where('status', 'planned')->values(), $today) : null,
             'todayAgendas' => $todayAgendas->map(fn (SalesAgenda $agenda): array => $this->agendaCard($agenda, collect(), $today))->all(),
+            'leadTarget' => $leadTarget,
+            'dailyPlan' => $dailyPlan,
+            'dailyPlanAgendas' => $dailyPlanAgendas,
+            'currentPlanAgenda' => $currentAgenda,
+            'nextPlanAgenda' => $nextPlanAgenda,
+            'currentPlanRemainingMinutes' => $currentPlanRemainingMinutes,
+            'isLunchBreak' => $isLunchBreak,
+            'dailyPlanMinutes' => $dailyPlan ? $this->planner->effectiveMinutes($dailyPlan) : 0,
             'actions' => [
                 'overdue' => (int) ($actionMetrics->overdue_count ?? 0),
                 'today' => (int) ($actionMetrics->today_count ?? 0),

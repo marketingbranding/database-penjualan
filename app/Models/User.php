@@ -63,6 +63,16 @@ class User extends Authenticatable
         return $this->hasMany(Lead::class, 'created_by');
     }
 
+    public function salesLeadTargets(): HasMany
+    {
+        return $this->hasMany(SalesLeadTarget::class, 'sales_id');
+    }
+
+    public function dailyPlans(): HasMany
+    {
+        return $this->hasMany(SalesDailyPlan::class, 'sales_id');
+    }
+
     public function canAccessAllBranches(): bool
     {
         return $this->hasGlobalRole('super_admin') || $this->hasGlobalRole('pusat');

@@ -4,9 +4,12 @@ namespace App\Policies;
 
 use App\Models\SalesAgenda;
 use App\Models\User;
+use App\Services\SalesDailyPlanService;
 
 class SalesAgendaPolicy
 {
+    public function __construct(private SalesDailyPlanService $dailyPlans) {}
+
     /**
      * Determine whether the user can view any models.
      */
@@ -59,9 +62,17 @@ class SalesAgendaPolicy
      */
     public function update(User $user, SalesAgenda $salesAgenda): bool
     {
-        return $this->view($user, $salesAgenda)
-            && ($salesAgenda->owner_id === $user->getKey() || $user->can('sales.view-all'))
-            && $user->can('sales.update');
+        if (! $this->view($user, $salesAgenda) || ! $user->can('sales.update')) {
+            return false;
+        }
+
+        $dailyPlan = $salesAgenda->dailyPlan;
+
+        if ($dailyPlan?->status === 'submitted') {
+            return $this->dailyPlans->isCoordinatorForPlan($user, $dailyPlan);
+        }
+
+        return $salesAgenda->owner_id === $user->getKey() || $user->can('sales.view-all');
     }
 
     /**
@@ -69,7 +80,9 @@ class SalesAgendaPolicy
      */
     public function delete(User $user, SalesAgenda $salesAgenda): bool
     {
-        return $this->update($user, $salesAgenda) && $user->can('sales.delete');
+        return $salesAgenda->dailyPlan?->status !== 'submitted'
+            && $this->update($user, $salesAgenda)
+            && $user->can('sales.delete');
     }
 
     public function redirect(User $user, SalesAgenda $salesAgenda): bool

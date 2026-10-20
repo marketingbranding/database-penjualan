@@ -28,6 +28,20 @@
 
     <div class="personal-dashboard">
         <div class="personal-mobile-dashboard">
+        <section class="personal-dashboard-section" aria-labelledby="buku-saku-summary-title">
+            <div class="personal-section-heading"><div><p class="personal-section-kicker">Buku Saku</p><h2 id="buku-saku-summary-title">Rencana kerja hari ini</h2></div><a href="{{ route('daily-plans.index') }}" class="personal-inline-action">Buka Buku Saku</a></div>
+            <div class="grid gap-3 sm:grid-cols-2">
+                <div class="rounded-2xl border border-line bg-surface p-4"><span class="text-xs font-semibold uppercase tracking-[0.12em] text-muted">Target Lead bulan ini</span><strong class="mt-1 block text-2xl text-ink">{{ $leadTarget['achieved'] }} / {{ $leadTarget['target'] }}</strong><span class="text-xs text-muted">{{ $leadTarget['percentage'] }}% tercapai berdasarkan sales_pic_id</span></div>
+                <div class="rounded-2xl border border-line bg-surface p-4"><span class="text-xs font-semibold uppercase tracking-[0.12em] text-muted">Rencana kerja</span><strong class="mt-1 block text-2xl text-ink">{{ $dailyPlanMinutes }} / 420 <small class="text-sm font-medium">menit</small></strong><span class="text-xs text-muted">{{ strtoupper($dailyPlan?->status ?? 'DRAFT') }}</span></div>
+            </div>
+            @if ($currentPlanAgenda)
+                <div class="mt-3 rounded-2xl border border-lime/30 bg-lime-soft p-4"><p class="text-xs font-semibold uppercase tracking-[0.12em] text-lime-dark">Sedang berjalan</p><strong class="mt-1 block text-lg text-ink">{{ $currentPlanAgenda->title }}</strong><span class="text-sm text-muted">{{ \App\Support\BusinessTime::format($currentPlanAgenda->planned_start_at, 'H:i') }}–{{ \App\Support\BusinessTime::format($currentPlanAgenda->planned_end_at, 'H:i') }} · Sisa {{ $currentPlanRemainingMinutes }} menit</span></div>
+            @elseif ($isLunchBreak)
+                <div class="mt-3 rounded-2xl border border-orange/30 bg-orange/10 p-4"><p class="text-xs font-semibold uppercase tracking-[0.12em] text-orange">Istirahat</p><strong class="mt-1 block text-lg text-ink">12:00–13:00</strong>@if ($nextPlanAgenda)<span class="text-sm text-muted">Agenda berikutnya: {{ \App\Support\BusinessTime::format($nextPlanAgenda->planned_start_at, 'H:i') }} · {{ $nextPlanAgenda->title }}</span>@endif</div>
+            @elseif ($nextPlanAgenda)
+                <div class="mt-3 rounded-2xl border border-line bg-surface p-4"><p class="text-xs font-semibold uppercase tracking-[0.12em] text-muted">Berikutnya</p><strong class="mt-1 block text-lg text-ink">{{ $nextPlanAgenda->title }}</strong><span class="text-sm text-muted">{{ \App\Support\BusinessTime::format($nextPlanAgenda->planned_start_at, 'H:i') }}–{{ \App\Support\BusinessTime::format($nextPlanAgenda->planned_end_at, 'H:i') }}</span></div>
+            @endif
+        </section>
         <section class="personal-dashboard-section personal-next-section" aria-labelledby="next-agenda-title">
             <div class="personal-section-heading"><div><p class="personal-section-kicker">Prioritas</p><h2 id="next-agenda-title">Agenda berikutnya</h2></div>@can('sales.create')<a href="{{ route('sales-agendas.create') }}" class="personal-inline-action">Agenda baru</a>@endcan</div>
             @if ($nextAgenda)
@@ -109,7 +123,8 @@
 
         <div class="personal-desktop-dashboard">
             <section class="personal-kpi-grid" aria-label="Ringkasan penjualan">
-                <article class="personal-kpi-card"><span>Lead aktif saya</span><strong>{{ number_format($month['activeLeads'], 0, ',', '.') }}</strong><small>{{ number_format($actions['newLeads'], 0, ',', '.') }} lead baru minggu ini</small></article>
+                <article class="personal-kpi-card"><span>Target Lead bulan ini</span><strong>{{ $leadTarget['achieved'] }} / {{ $leadTarget['target'] }}</strong><small>{{ $leadTarget['percentage'] }}% tercapai berdasarkan sales_pic_id</small></article>
+                <article class="personal-kpi-card"><span>Rencana kerja hari ini</span><strong>{{ $dailyPlanMinutes }} / 420 <small>menit</small></strong><small>{{ strtoupper($dailyPlan?->status ?? 'DRAFT') }}</small></article>
                 <article class="personal-kpi-card"><span>Agenda hari ini</span><strong>{{ number_format(count($todayAgendas), 0, ',', '.') }}</strong><small>{{ number_format(collect($todayAgendas)->where('model.status', 'done')->count(), 0, ',', '.') }} selesai</small></article>
                 <article class="personal-kpi-card is-danger"><span>Follow-up terlambat</span><strong>{{ number_format($actions['overdue'], 0, ',', '.') }}</strong><a href="{{ $actions['urls']['overdue'] }}">Kerjakan sekarang</a></article>
                 <article class="personal-kpi-card"><span>Akad bulan ini</span><strong>{{ number_format($month['akadMovement'], 0, ',', '.') }} <small>/ target</small></strong><i><b style="width: {{ min(100, $month['akadMovement'] * 10) }}%"></b></i></article>

@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <x-page-header :title="$readonly ? 'Detail agenda' : ($agenda ? 'Edit agenda' : 'Agenda baru')" description="Jadwalkan follow-up lapangan dan tautkan ke Lead atau transaksi." />
+        <x-page-header :title="$readonly ? 'Detail agenda' : ($agenda ? 'Edit agenda' : 'Agenda baru')" description="Rencanakan aktivitas dengan durasi; jam mulai dan selesai dihitung otomatis." />
     </x-slot>
 
     <div class="module-page">
@@ -12,6 +12,9 @@
                         <div><span class="text-muted">Status</span><p class="mt-1 font-semibold text-ink">{{ str($agenda->status)->replace('_', ' ')->title() }}</p></div>
                         <div><span class="text-muted">Judul</span><p class="mt-1 font-semibold text-ink">{{ $agenda->title }}</p></div>
                         <div><span class="text-muted">Kategori</span><p class="mt-1 font-semibold text-ink">{{ $agenda->activity_category }}</p></div>
+                        <div><span class="text-muted">Durasi efektif</span><p class="mt-1 font-semibold text-ink">{{ $agenda->duration_minutes ? $agenda->duration_minutes.' menit' : 'Agenda legacy' }}</p></div>
+                        <div><span class="text-muted">Waktu rencana</span><p class="mt-1 font-semibold text-ink">{{ $agenda->planned_start_at ? \App\Support\BusinessTime::format($agenda->planned_start_at, 'H:i').'–'.\App\Support\BusinessTime::format($agenda->planned_end_at, 'H:i') : 'Belum dijadwalkan' }}</p></div>
+                        <div class="md:col-span-2"><span class="text-muted">Detail / Rencana Kegiatan</span><p class="mt-1 whitespace-pre-line font-semibold text-ink">{{ $agenda->plan_detail ?: '—' }}</p></div>
                         <div><span class="text-muted">Pemilik agenda</span><p class="mt-1 font-semibold text-ink">{{ $agenda->owner?->name ?? '-' }}</p></div>
                         <div><span class="text-muted">Dibuat oleh</span><p class="mt-1 font-semibold text-ink">{{ $agenda->creator?->name ?? '-' }}</p></div>
                         <div><span class="text-muted">Lokasi</span><p class="mt-1 font-semibold text-ink">{{ $agenda->location ?: '-' }}</p></div>
@@ -91,6 +94,19 @@
                 </div>
 
                 <div>
+                    <x-input-label for="duration_minutes" value="Durasi (menit) {{ ! $agenda || $agenda->duration_minutes !== null ? '*' : '' }}" />
+                    <x-text-input id="duration_minutes" name="duration_minutes" type="number" min="1" max="420" class="mt-1 block w-full" :required="! $agenda || $agenda->duration_minutes !== null" value="{{ old('duration_minutes', $agenda?->duration_minutes) }}" placeholder="60" />
+                    <p class="mt-1 text-xs text-muted">Jam mulai dan selesai dibuat otomatis dari urutan agenda.</p>
+                    <x-input-error :messages="$errors->get('duration_minutes')" class="mt-2" />
+                </div>
+
+                <div>
+                    <x-input-label for="planned_quantity" value="Target kuantitas (opsional)" />
+                    <x-text-input id="planned_quantity" name="planned_quantity" type="number" min="0" class="mt-1 block w-full" value="{{ old('planned_quantity', $agenda?->planned_quantity) }}" />
+                    <x-input-error :messages="$errors->get('planned_quantity')" class="mt-2" />
+                </div>
+
+                <div>
                     <x-input-label for="location" value="Lokasi" />
                     <x-text-input id="location" name="location" type="text" class="mt-1 block w-full" value="{{ old('location', $agenda?->location) }}" />
                     <x-input-error :messages="$errors->get('location')" class="mt-2" />
@@ -124,6 +140,12 @@
                     <p class="mt-1 text-xs text-muted">Opsional. Maksimal 2 foto JPEG, PNG, atau WebP. Maksimal 10 MB per foto.</p>
                     <x-input-error :messages="$errors->get('evidence')" class="mt-2" />
                     <x-input-error :messages="$errors->get('evidence.*')" class="mt-2" />
+                </div>
+
+                <div class="md:col-span-2">
+                    <x-input-label for="plan_detail" value="Detail / Rencana Kegiatan {{ ! $agenda || $agenda->duration_minutes !== null ? '*' : '' }}" />
+                    <textarea id="plan_detail" name="plan_detail" rows="4" class="workspace-control mt-1 block w-full py-2.5 text-sm" {{ ! $agenda || $agenda->duration_minutes !== null ? 'required' : '' }} placeholder="Jelaskan tema Live, proyek yang dibahas, poin utama, dan CTA.">{{ old('plan_detail', $agenda?->plan_detail) }}</textarea>
+                    <x-input-error :messages="$errors->get('plan_detail')" class="mt-2" />
                 </div>
 
                 <div class="md:col-span-2">

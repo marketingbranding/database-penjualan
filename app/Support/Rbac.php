@@ -24,6 +24,7 @@ class Rbac
             'teams.view', 'teams.create', 'teams.update', 'teams.delete',
             'sales.view-own', 'sales.view-team', 'sales.view-all',
             'sales.create', 'sales.update', 'sales.delete',
+            'sales-targets.view-all', 'sales-targets.manage',
             'leads.view-own', 'leads.view-team', 'leads.view-branch', 'leads.view-all',
             'leads.create', 'leads.update-own', 'leads.update-team', 'leads.delete', 'leads.monitor',
             'sales-fee-reports.view', 'sales-fee-reports.print', 'sales-fee-reports.export',
@@ -45,6 +46,7 @@ class Rbac
             'sales-process.view', 'psjb-utj.view', 'bi-checking.view', 'filing.view', 'bank-process.view', 'ppjb.view', 'akad.view', 'bast.view',
             'promotions.view',
             'sales.view-team', 'sales.create', 'sales.update',
+            'sales-targets.view-team',
             'leads.view-branch', 'leads.monitor',
             'sales-fee-reports.view', 'sales-fee-reports.print', 'sales-fee-reports.export',
             'reports.view', 'reports.team-performance',
@@ -90,10 +92,12 @@ class Rbac
     public const TEAM_ROLES = [
         'sales' => [
             'dashboard.view', 'sales.view-own', 'sales.create', 'sales.update', 'sales.delete',
+            'sales-targets.view-own',
             'leads.view-own', 'leads.create', 'leads.update-own',
         ],
         'koordinator_sales' => [
             'dashboard.view', 'sales.view-team', 'sales.create', 'sales.update',
+            'sales-targets.view-team',
             'leads.view-team', 'leads.create', 'leads.update-team',
         ],
     ];

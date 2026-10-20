@@ -12,9 +12,12 @@ use App\Models\Role;
 use App\Models\SalesAgenda;
 use App\Models\SalesAgendaAssignmentHistory;
 use App\Models\SalesCase;
+use App\Models\SalesDailyPlan;
 use App\Models\Team;
 use App\Models\User;
 use App\Notifications\SalesAgendaAssignmentNotification;
+use App\Notifications\SalesAgendaChangedNotification;
+use App\Services\SalesDailyPlanService;
 use App\Support\AuditLogger;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
@@ -27,6 +30,8 @@ use Illuminate\Validation\ValidationException;
 class SalesAgendaController extends Controller
 {
     use AuthorizesRequests;
+
+    public function __construct(private SalesDailyPlanService $dailyPlans) {}
 
     public function index(Request $request): View
     {
@@ -46,7 +51,7 @@ class SalesAgendaController extends Controller
         $view = $request->string('view')->toString() === 'redirected' ? 'redirected' : 'active';
 
         $agendas = SalesAgenda::query()
-            ->with(['creator', 'owner', 'branch', 'lead', 'salesCase.consumer', 'salesCase.lot.project', 'evidence', 'assignmentHistories.fromUser', 'assignmentHistories.toUser', 'assignmentHistories.byUser'])
+            ->with(['creator', 'owner', 'branch', 'lead', 'salesCase.consumer', 'salesCase.lot.project', 'evidence', 'dailyPlan', 'assignmentHistories.fromUser', 'assignmentHistories.toUser', 'assignmentHistories.byUser'])
             ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
             ->when(! $user->canAccessAllBranches() && ! $branchId, fn ($query) => $query->whereRaw('1 = 0'))
             ->when($view === 'redirected', function ($query) use ($user): void {
@@ -115,20 +120,32 @@ class SalesAgendaController extends Controller
         $this->ensureLeadBelongsToUserScope($request->user(), $data['lead_id'] ?? null);
         $agendaTeam = $this->resolveAgendaTeam($request->user());
         $owner = $this->resolveAgendaOwner($request->user(), $agendaTeam, $data['owner_id'] ?? null);
+        $dailyPlan = $this->dailyPlanForOwner($owner, $agendaTeam, $data['agenda_date']);
+
+        if ($dailyPlan?->status === 'submitted') {
+            throw ValidationException::withMessages(['agenda_date' => 'Rencana kerja yang sudah dikirim tidak dapat ditambah agendanya.']);
+        }
 
         if ($owner->getKey() !== $request->user()->getKey() && $request->hasFile('evidence')) {
             throw ValidationException::withMessages(['evidence' => 'Bukti foto hanya dapat diunggah oleh pemilik agenda.']);
         }
 
-        $agenda = DB::transaction(function () use ($data, $request, $agendaTeam, $owner): SalesAgenda {
+        $agenda = DB::transaction(function () use ($data, $request, $agendaTeam, $owner, $dailyPlan): SalesAgenda {
+            $dailyPlan?->refresh();
             $agenda = SalesAgenda::query()->create([
                 ...collect($data)->except('evidence')->all(),
                 'branch_id' => $agendaTeam?->branch_id ?? $request->user()->branch_id,
                 'team_id' => $agendaTeam?->getKey(),
+                'daily_plan_id' => $dailyPlan?->getKey(),
                 'created_by' => $request->user()->getKey(),
                 'owner_id' => $owner->getKey(),
                 'status' => 'planned',
             ]);
+
+            if ($dailyPlan !== null) {
+                $dailyPlan->updateQuietly(['last_modified_by' => $request->user()->getKey()]);
+                $this->dailyPlans->recalculateAndValidate($dailyPlan, false);
+            }
 
             $this->storeEvidence($agenda, $request);
 
@@ -221,11 +238,14 @@ class SalesAgendaController extends Controller
         $owner = null;
 
         DB::transaction(function () use ($data, $request, $salesAgenda, &$owner): void {
-            $agenda = SalesAgenda::query()->lockForUpdate()->with(['team', 'owner', 'evidence'])->findOrFail($salesAgenda->getKey());
+            $agenda = SalesAgenda::query()->lockForUpdate()->with(['team', 'owner', 'evidence', 'dailyPlan'])->findOrFail($salesAgenda->getKey());
             $this->authorize('cancelAsCoordinator', $agenda);
             $this->ensurePlannedWithoutEvidence($agenda);
             $owner = $agenda->owner;
             $agenda->update(['status' => 'cancelled']);
+            if ($agenda->dailyPlan !== null) {
+                $this->dailyPlans->recalculateAndValidate($agenda->dailyPlan, $agenda->dailyPlan->status === 'submitted');
+            }
             SalesAgendaAssignmentHistory::query()->create([
                 'sales_agenda_id' => $agenda->getKey(),
                 'action' => 'cancelled_by_coordinator',
@@ -253,7 +273,7 @@ class SalesAgendaController extends Controller
 
     private function agendaView(SalesAgenda $salesAgenda, bool $readonly): View
     {
-        $salesAgenda->load(['evidence', 'owner', 'creator', 'lead', 'assignmentHistories.fromUser', 'assignmentHistories.toUser', 'assignmentHistories.byUser']);
+        $salesAgenda->load(['evidence', 'owner', 'creator', 'lead', 'dailyPlan', 'assignmentHistories.fromUser', 'assignmentHistories.toUser', 'assignmentHistories.byUser']);
 
         return view('sales-agendas.create', [
             'salesCases' => $this->availableSalesCases(request()->user()),
@@ -272,11 +292,31 @@ class SalesAgendaController extends Controller
         $this->ensureSalesCaseBelongsToUserBranch($request->user(), $data['sales_case_id'] ?? null);
         $this->ensureLeadBelongsToUserScope($request->user(), $data['lead_id'] ?? null);
         $this->ensureEvidenceLimit($salesAgenda, $request);
+        $dailyPlan = $salesAgenda->dailyPlan;
+        $wasSubmitted = $dailyPlan?->status === 'submitted';
+        $oldValues = $salesAgenda->only(['title', 'activity_category', 'duration_minutes', 'plan_detail', 'planned_quantity', 'agenda_date']);
 
-        DB::transaction(function () use ($data, $request, $salesAgenda): void {
-            $salesAgenda->update(collect($data)->except('evidence')->all());
-            $this->storeEvidence($salesAgenda, $request);
+        if ($dailyPlan !== null && $data['agenda_date'] !== $dailyPlan->plan_date->toDateString()) {
+            throw ValidationException::withMessages(['agenda_date' => 'Tanggal agenda dalam rencana kerja tidak dapat dipindahkan.']);
+        }
+
+        DB::transaction(function () use ($data, $request, $salesAgenda, $dailyPlan, $wasSubmitted): void {
+            $agenda = SalesAgenda::query()->lockForUpdate()->findOrFail($salesAgenda->getKey());
+            $agenda->update(collect($data)->except('evidence')->all());
+            $this->storeEvidence($agenda, $request);
+
+            if ($dailyPlan !== null) {
+                $dailyPlan->updateQuietly(['last_modified_by' => $request->user()->getKey()]);
+                $this->dailyPlans->recalculateAndValidate($dailyPlan, $wasSubmitted);
+            }
         });
+
+        $updatedAgenda = $salesAgenda->fresh(['owner', 'dailyPlan']);
+
+        if ($wasSubmitted && $dailyPlan !== null && $updatedAgenda !== null && $updatedAgenda->owner_id !== $request->user()->getKey()) {
+            $updatedAgenda->owner?->notify(new SalesAgendaChangedNotification($updatedAgenda, $request->user()->name));
+            AuditLogger::record($updatedAgenda, 'agenda_updated_after_submission', $oldValues, $updatedAgenda->only(array_keys($oldValues)), 'Agenda submitted diperbarui oleh Koordinator');
+        }
 
         return redirect()->route('sales-agendas.index')->with('status', 'agenda-updated');
     }
@@ -305,6 +345,7 @@ class SalesAgendaController extends Controller
         DB::transaction(function () use ($salesAgenda): void {
             $agenda = SalesAgenda::query()->lockForUpdate()->with('evidence')->findOrFail($salesAgenda->getKey());
             $this->authorize('update', $agenda);
+            $this->ensureNotSubmittedPlan($agenda);
             $this->ensurePlannedWithoutEvidence($agenda);
             $agenda->update(['status' => 'cancelled']);
         });
@@ -449,6 +490,17 @@ class SalesAgendaController extends Controller
         return $this->activeSalesInTeam($ownerId, $team->getKey());
     }
 
+    private function dailyPlanForOwner(User $owner, ?Team $team, string $date): ?SalesDailyPlan
+    {
+        if ($team === null) {
+            return null;
+        }
+
+        $salesTeam = $this->dailyPlans->resolveSalesTeam($owner, $team->getKey());
+
+        return $salesTeam === null ? null : $this->dailyPlans->forSales($owner, $date, $salesTeam);
+    }
+
     private function activeSalesInTeam(int $userId, ?int $teamId): User
     {
         $team = $teamId !== null ? Team::query()->findOrFail($teamId) : null;
@@ -505,6 +557,13 @@ class SalesAgendaController extends Controller
     {
         if ($agenda->status !== 'planned') {
             throw ValidationException::withMessages(['status' => 'Agenda hanya dapat diubah saat masih direncanakan.']);
+        }
+    }
+
+    private function ensureNotSubmittedPlan(SalesAgenda $agenda): void
+    {
+        if ($agenda->dailyPlan?->status === 'submitted') {
+            throw ValidationException::withMessages(['agenda' => 'Agenda pada rencana submitted harus tetap berjumlah 420 menit. Gunakan Edit untuk menyesuaikan durasi.']);
         }
     }
 }

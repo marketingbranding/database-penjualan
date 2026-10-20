@@ -18,12 +18,18 @@ class UpdateSalesAgendaRequest extends FormRequest
 
     public function rules(): array
     {
+        $agenda = $this->route('salesAgenda');
+        $isPlannableAgenda = $agenda instanceof SalesAgenda && $agenda->duration_minutes !== null;
+
         return [
             'sales_case_id' => ['nullable', 'integer', 'exists:sales_cases,id'],
             'lead_id' => ['nullable', 'integer', 'exists:leads,id'],
             'agenda_date' => ['required', 'date'],
             'activity_category' => ['required', Rule::in(SalesAgenda::CATEGORIES)],
             'title' => ['required', 'string', 'max:255'],
+            'plan_detail' => [$isPlannableAgenda ? 'required' : 'nullable', 'string', 'max:5000'],
+            'duration_minutes' => [$isPlannableAgenda ? 'required' : 'nullable', 'integer', 'min:1', 'max:420'],
+            'planned_quantity' => ['nullable', 'integer', 'min:0', 'max:1000000'],
             'location' => ['nullable', 'string', 'max:255'],
             'activity_result' => ['nullable', 'string', 'max:5000'],
             'evidence' => ['nullable', 'array', 'max:2'],
